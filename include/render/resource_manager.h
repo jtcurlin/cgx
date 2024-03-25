@@ -25,6 +25,8 @@ namespace cgx::render
         std::shared_ptr<Material> getMaterial(const std::string& materialID);
         std::shared_ptr<Texture> getTexture(const std::string& textureID);
 
+        void createModel(std::string name, std::vector<std::shared_ptr<Mesh>> meshes);
+
         const std::unordered_map<std::string, std::shared_ptr<Model>>& GetModels() const { return m_models; }
         const std::unordered_map<std::string, std::shared_ptr<Shader>>& GetShaders() const { return m_shaders; }
 

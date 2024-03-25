@@ -17,6 +17,8 @@ namespace cgx::render
         void Draw(Shader& shader);
         inline const std::string& getName() { return m_name; }
 
+        void Log();
+
     private:
         std::string                         m_name;
         std::vector<std::shared_ptr<Mesh>>  m_meshes;

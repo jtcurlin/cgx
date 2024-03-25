@@ -13,15 +13,15 @@ namespace cgx::render
     {
     public:
         Material(
-            std::string id, 
-            glm::vec3 ambient_color, 
-            glm::vec3 diffuse_color, 
-            glm::vec3 specular_color, 
-            float m_shininess, 
-            std::shared_ptr<Texture> ambient_map,
-            std::shared_ptr<Texture> diffuse_map,
-            std::shared_ptr<Texture> specular_map,
-            std::shared_ptr<Texture> normal_map
+            std::string id = "none", 
+            glm::vec3 ambient_color = glm::vec3(0.2f, 0.1f, 0.1f), 
+            glm::vec3 diffuse_color = glm::vec3(1.0f, 0.75f, 0.8f), 
+            glm::vec3 specular_color = glm::vec3(1.0f, 0.9f, 0.9f), 
+            float m_shininess = 32.0f, 
+            std::shared_ptr<Texture> ambient_map = nullptr,
+            std::shared_ptr<Texture> diffuse_map = nullptr,
+            std::shared_ptr<Texture> specular_map = nullptr,
+            std::shared_ptr<Texture> normal_map = nullptr
         ); 
         ~Material() = default;
 
@@ -31,6 +31,9 @@ namespace cgx::render
         void setNormalMap(const std::shared_ptr<Texture>& map) { m_normal_map = map; }
 
         void bind(Shader &shader);
+
+        void Log();
+
 
     private:
         std::string m_id;

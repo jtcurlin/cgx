@@ -103,9 +103,17 @@ target_sources(cgx
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/imgui_ecs_window.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/imgui_render_settings_window.cpp
 
+    # geometry
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/geometry/primitive_mesh.h
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/geometry/primitive_mesh.cpp
+
     # utility
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include/utility/logging.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/utility/math.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/utility/error.h
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/utility/logging.cpp
 

@@ -166,6 +166,7 @@ namespace cgx::gui
                     {
                         render_component.model = pair.second;
                         CGX_TRACE("Entity {}: RenderComponent Model changed to {}.", entity, pair.first);
+                        render_component.model->Log();
                     }
                     if (is_selected)
                     {

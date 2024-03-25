@@ -30,8 +30,12 @@
 #include "render/resource_manager.h"
 #include "render/framebuffer.h"
 
+#include "geometry/primitive_mesh.h"
+#include "geometry/common.h"
+
 #include "utility/logging.h"
 #include "utility/paths.h"      // cmake-configured shader/asset paths
+#include "utility/math.h"
 
 #include <glm/gtc/type_ptr.hpp>
 #include <filesystem>
@@ -98,6 +102,9 @@ namespace cgx::core {
         std::unique_ptr<cgx::gui::ImGuiECSWindow> m_imgui_ecs_window;
 
         std::shared_ptr<cgx::gui::RenderSettings> m_render_settings;
+
+        std::shared_ptr<cgx::render::Mesh> m_primitive_plane_mesh;
+        std::shared_ptr<cgx::render::Shader> m_primitive_shader;
 
         bool m_is_running;
         bool m_imgui_active;

@@ -34,11 +34,11 @@ namespace cgx::render
     void Material::bind(Shader &shader)
     {
         // TODO!
-        shader.use();
-        shader.setVec3("material.ambient_color", m_ambient_color);
-        shader.setVec3("material.diffuse_color", m_diffuse_color);     
-        shader.setVec3("material.specular_color", m_specular_color);
-        shader.setFloat("material.shininess", m_shininess);
+        shader.use(); 
+        shader.setVec3("material.ambient_color", m_ambient_color); 
+        shader.setVec3("material.diffuse_color", m_diffuse_color); 
+        shader.setVec3("material.specular_color", m_specular_color); 
+        shader.setFloat("material.shininess", m_shininess); 
 
         int map_bitset = 0;
         if (m_ambient_map != nullptr)
@@ -61,7 +61,37 @@ namespace cgx::render
         }
         shader.setInt("material.map_bitset", map_bitset);
         
-        glActiveTexture(GL_TEXTURE0);
+        glActiveTexture(GL_TEXTURE0); 
     } 
+
+    void Material::Log()
+    {
+        CGX_DEBUG(" > Id = {}", m_id);
+        CGX_DEBUG(" > Ambient_color = ({}, {}, {})", m_ambient_color.x, m_ambient_color.y, m_ambient_color.z);
+        CGX_DEBUG(" > Diffuse = ({}, {}, {})", m_diffuse_color.x, m_diffuse_color.y, m_diffuse_color.z);
+        CGX_DEBUG(" > Specular = ({}, {}, {})", m_specular_color.x, m_specular_color.y, m_specular_color.z);
+        CGX_DEBUG(" > Shininess = {}", m_shininess);
+
+        if (m_ambient_map != nullptr)
+        {
+            CGX_DEBUG(" > Ambient Map = {}", m_ambient_map->GetID());
+        } else CGX_DEBUG(" > Ambient Map = [None]");
+        
+        if (m_ambient_map != nullptr)
+        {
+            CGX_DEBUG(" > Diffuse Map = {}", m_diffuse_map->GetID());
+        } else CGX_DEBUG(" > Diffuse Map = [None]");
+        
+        if (m_ambient_map != nullptr)
+        {
+            CGX_DEBUG(" > Specular Map = {}", m_specular_map->GetID());
+        } else CGX_DEBUG(" > Specular Map = [None]");
+
+        if (m_ambient_map != nullptr)
+        {
+            CGX_DEBUG(" > Normal Map = {}", m_normal_map->GetID());
+        } else CGX_DEBUG(" > Normal Map = [None]");
+
+    }
 
 }

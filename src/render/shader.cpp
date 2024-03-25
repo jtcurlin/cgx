@@ -1,6 +1,7 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "render/shader.h"
+#include "utility/error.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -88,12 +89,15 @@ namespace cgx::render
 
     Shader::~Shader() 
     {
-        glDeleteShader(ID);
+        glDeleteShader(ID); 
+        CGX_CHECK_GL_ERROR;
     }
 
     void Shader::use() const
     {
-        glUseProgram(ID);
+        CGX_DEBUG("Using Shader {}", m_name);
+        glUseProgram(ID); 
+        CGX_CHECK_GL_ERROR;
     }
 
     void Shader::checkCompileErrors(unsigned int shader, std::string type)

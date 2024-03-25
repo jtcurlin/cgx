@@ -14,5 +14,16 @@ namespace cgx::render
         {
             mesh->Draw(shader);
         }
+
+    }
+
+    void Model::Log()
+    {
+        for (size_t i = 0; i < m_meshes.size(); ++i)
+        {
+            CGX_DEBUG("[Model {}] : [Mesh {}]", m_name, i);
+            auto& mesh = m_meshes[i];
+            mesh->Log();
+        }
     }
 }

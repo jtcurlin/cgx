@@ -6,6 +6,7 @@
 #include <glad/glad.h>
 #include <stb/stb_image.h>
 
+
 namespace cgx::render
 {
     CubeMap::CubeMap(std::vector<std::string> face_paths, std::shared_ptr<Shader> shader)
@@ -26,7 +27,6 @@ namespace cgx::render
         const int skybox_texture_unit = 11;
         m_shader->use();
         m_shader->setInt("skybox", skybox_texture_unit);
-
     }
 
     CubeMap::~CubeMap()

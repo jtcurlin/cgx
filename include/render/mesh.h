@@ -50,10 +50,14 @@ namespace cgx::render
         std::vector<unsigned int>   m_indices;
         std::shared_ptr<Material>   m_material;          
 
-        Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::shared_ptr<Material> material);
+        Mesh(
+            std::vector<Vertex> vertices, 
+            std::vector<unsigned int> indices, 
+            std::shared_ptr<Material> material );
         ~Mesh();
 
         void Draw(Shader &shader) const;
+        void Log() const;
 
     private:
         // render data

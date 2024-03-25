@@ -74,6 +74,11 @@ namespace cgx::render
         }
     }
 
+    void ResourceManager::createModel(std::string name, std::vector<std::shared_ptr<Mesh>> meshes)
+    {
+         m_models[name] = std::make_shared<Model>(name, meshes);
+    }
+
     std::shared_ptr<Shader> ResourceManager::loadShader(const std::string& name, const std::string& shader_dir)
     {
         std::string vert_path = (std::filesystem::path(shader_dir) / (name + ".vs")).string();

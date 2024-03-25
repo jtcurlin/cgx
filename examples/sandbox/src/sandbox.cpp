@@ -33,6 +33,8 @@ void Sandbox::Initialize()
 
     CGX_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "MSAA Framebuffer not complete.");
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    
 }
 
 void Sandbox::Update()
@@ -44,6 +46,7 @@ void Sandbox::Render()
 {
     float r, g, b, a;
     m_framebuffer->getClearColor(r, g, b, a);
+    glDisable(GL_CULL_FACE);
     glClearColor(r, g, b, a);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -57,7 +60,6 @@ void Sandbox::Render()
     }
 
     // glEnable(GL_DEPTH_TEST);
-
 
     glViewport(0, 0, m_settings.render_width, m_settings.render_height);
     glClearColor(r, g, b, a);
@@ -93,7 +95,13 @@ void Sandbox::ImguiRender()
 
 void Sandbox::LoadAssets()
 {
-    model_filenames = {"soccerball/ball.obj", "light_cube/light_cube.obj", "sponza/sponza.obj", "backpack/backpack.obj"};
+    model_filenames = {
+        "soccerball/ball.obj", 
+        "light_cube/light_cube.obj", 
+        "sponza/sponza.obj", 
+        "backpack/backpack.obj",
+        "holodeck/holodeck.obj"
+    };
     // shader names (relative to shader directory - 'cgx/cgx/shaders/', extension-less filename of vert & frag shaders)
     shader_names = {"model", "lighting"};   // i.e. "model" -> fetches 'cgx/cgx/shaders/model.vs' and 'cgx/cgx/shaders/model.fs'
 
@@ -108,14 +116,17 @@ void Sandbox::LoadAssets()
 
     m_skybox = std::make_unique<cgx::render::CubeMap>(face_paths, m_resource_manager->loadShader("skybox", m_settings.shader_dir.string()));
 
+    /*
     for (const auto& filename : model_filenames)
     {
         std::filesystem::path model_path = m_settings.asset_dir / filename;
         loaded_models[filename] = m_resource_manager->loadModel(model_path.string());
     }
+    */
 
     for (const auto& name : shader_names)
     {
+        CGX_DEBUG("Loading Shader {}", name);
         m_resource_manager->loadShader(name, m_settings.shader_dir.string());
     }
 }
