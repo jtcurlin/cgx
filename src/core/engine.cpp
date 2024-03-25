@@ -139,14 +139,14 @@ namespace cgx::core {
         m_resource_manager->createModel("plane2", meshes2);
 
         cgx::geometry::PrimitiveMeshInfo primitive_info {cgx::geometry::PrimitiveMeshType::plane, {1, 1, 1}, {5, 5, 5}};
-        std::shared_ptr<cgx::render::Mesh> mesh3 = std::make_shared<cgx::render::Mesh>(cgx::geometry::create_plane(
+        std::shared_ptr<cgx::render::Mesh> mesh3 = cgx::geometry::create_plane(
             primitive_info,
             cgx::geometry::Axis::x,
             cgx::geometry::Axis::z, 
             cgx::geometry::WindingOrder::CW,
             {0, 0, 0},
             {0, 1}, 
-            {0, 1} ));
+            {0, 1} );
 
         CGX_INFO("Mesh3:")
         

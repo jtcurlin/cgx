@@ -5,7 +5,7 @@
 
 namespace cgx::geometry
 {
-    cgx::render::Mesh create_plane(const PrimitiveMeshInfo& info,
+    std::shared_ptr<cgx::render::Mesh> create_plane(const PrimitiveMeshInfo& info,
                                 Axis horizontal_axis,
                                 Axis vertical_axis,
                                 WindingOrder winding,
@@ -81,7 +81,7 @@ namespace cgx::geometry
                 indices.push_back(top_left);
             }
         }
-        return cgx::render::Mesh(vertices, indices, nullptr);
+        return std::make_shared<cgx::render::Mesh>(cgx::render::Mesh(vertices, indices, nullptr));
     }
 
 } // namespace cgx::geometry

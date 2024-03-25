@@ -29,7 +29,7 @@ namespace cgx::geometry
     };
     */
 
-    cgx::render::Mesh create_plane(const PrimitiveMeshInfo& info,
+    std::shared_ptr<cgx::render::Mesh> create_plane(const PrimitiveMeshInfo& info,
                                 Axis horizontal_axis,
                                 Axis vertical_axis,
                                 WindingOrder winding,
