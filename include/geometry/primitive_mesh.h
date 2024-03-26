@@ -3,38 +3,35 @@
 #pragma once
 
 #include "core/common.h"
-#include "geometry/common.h"
 #include "utility/math.h"
 #include "render/mesh.h"
 
 namespace cgx::geometry
 {
-
-    enum class PrimitiveMeshType
+    enum class Axis
     {
-        plane
+        x,
+        y,
+        z
     };
 
-    struct PrimitiveMeshInfo
-    {
-        PrimitiveMeshType   type;
-        uint32_t            segments[3] = {1, 1, 1};
-        glm::vec3           size{1.0f};
-    };
+    std::shared_ptr<cgx::render::Mesh> create_plane(
+        uint32_t x_segments = 1,
+        uint32_t y_segments = 1,
+        uint32_t z_segments = 1,
+        glm::vec3 size = glm::vec3(1.0f),
+        Axis horizontal_axis = Axis::x,
+        Axis vertical_axis = Axis::z,
+        glm::vec3 offset = glm::vec3(0.0f),
+        glm::vec2 u_range = {0.0f, 1.0f},
+        glm::vec2 v_range = {0.0f, 1.0f}
+    );
 
-    /*
-    struct PrimitiveMesh{
-        std::vector<Vertex>     vertices;
-        std::vector<uint32_t>   indices;
-    };
-    */
+    std::shared_ptr<cgx::render::Mesh> create_sphere(
+        uint32_t sector_count = 10,
+        uint32_t stack_count = 10,
+        float radius = 1
+    );
 
-    std::shared_ptr<cgx::render::Mesh> create_plane(const PrimitiveMeshInfo& info,
-                                Axis horizontal_axis,
-                                Axis vertical_axis,
-                                WindingOrder winding,
-                                glm::vec3 offset,
-                                glm::vec2 u_range,
-                                glm::vec2 v_range);
 
 } // namespace cgx::geometry

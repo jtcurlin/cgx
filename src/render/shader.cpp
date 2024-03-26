@@ -95,9 +95,8 @@ namespace cgx::render
 
     void Shader::use() const
     {
-        CGX_DEBUG("Using Shader {}", m_name);
-        glUseProgram(ID); 
-        CGX_CHECK_GL_ERROR;
+        glUseProgram(ID); CGX_CHECK_GL_ERROR;
+        
     }
 
     void Shader::checkCompileErrors(unsigned int shader, std::string type)

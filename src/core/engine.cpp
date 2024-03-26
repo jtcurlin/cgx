@@ -101,65 +101,27 @@ namespace cgx::core {
         
         m_imgui_render_settings_window = std::make_unique<cgx::gui::ImGuiRenderSettingsWindow>(m_render_settings);
         m_imgui_manager->RegisterImGuiWindow(m_imgui_render_settings_window.get());
-
-        std::vector<cgx::render::Vertex> vertices1 = {
-            {{-2.5, 0, -2.5}, {0, 1, 0}, {0, 0}},  // Bottom-left corner
-            {{2.5, 0, -2.5}, {0, 1, 0}, {5, 0}},   // Bottom-right corner
-            {{2.5, 0, 2.5}, {0, 1, 0}, {5, 5}},    // Top-right corner
-            {{-2.5, 0, 2.5}, {0, 1, 0}, {0, 5}}    // Top-left corner
-        }; 
-
-        std::vector<uint32_t> indices1 = {
-            0, 1, 2,  // First triangle
-            2, 3, 0   // Second triangle
-        };
-
-        std::vector<std::shared_ptr<cgx::render::Mesh>> meshes1; 
-        meshes1.push_back(std::make_shared<cgx::render::Mesh>(vertices1, indices1, nullptr));
-
-
-        m_resource_manager->createModel("plane1", meshes1);
         
-        std::vector<cgx::render::Vertex> vertices2 = {
-            {{-0.00, 0.00, 0.00}, {-0, 1, -0}, {0, 0}},  // Bottom-left corner
-            {{5.00, 0.00, 0.00}, {-0, 1, -0}, {1, 0}},   // Bottom-right corner
-            {{0.00, 0.00, 5.00}, {-0, 1, -0}, {0, 1}},    // Top-right corner
-            {{5.00, 0.00, 5.00}, {-0, 1, -0}, {1, 1}}    // Top-left corner
-        };
-
-        std::vector<uint32_t> indices2 = {
-            2, 3, 1,  // First triangle
-            1, 0, 2   // Second triangle
-        };
-
-
-        std::vector<std::shared_ptr<cgx::render::Mesh>> meshes2;
-        meshes2.push_back(std::make_shared<cgx::render::Mesh>(vertices2, indices2, nullptr));
-
-        m_resource_manager->createModel("plane2", meshes2);
-
-        cgx::geometry::PrimitiveMeshInfo primitive_info {cgx::geometry::PrimitiveMeshType::plane, {1, 1, 1}, {5, 5, 5}};
         std::shared_ptr<cgx::render::Mesh> mesh3 = cgx::geometry::create_plane(
-            primitive_info,
-            cgx::geometry::Axis::x,
-            cgx::geometry::Axis::z, 
-            cgx::geometry::WindingOrder::CW,
-            {0, 0, 0},
-            {0, 1}, 
-            {0, 1} );
-
-        CGX_INFO("Mesh3:")
+            5, 5, 5, glm::vec3(5, 5, 5),
+            cgx::geometry::Axis::x, cgx::geometry::Axis::z, 
+            {0, 0, 0}, {0, 1}, {0, 1} 
+        );
         
         std::vector<std::shared_ptr<cgx::render::Mesh>> meshes3; 
         meshes3.push_back(mesh3);;
         m_resource_manager->createModel("primitive_plane", meshes3);
+
+        std::shared_ptr<cgx::render::Mesh> mesh4 = cgx::geometry::create_sphere(30, 30, 5);
+        std::vector<std::shared_ptr<cgx::render::Mesh>> meshes4;
+        meshes4.push_back(mesh4);
+        m_resource_manager->createModel("primitive_sphere", meshes4);
 
         glEnable(GL_DEBUG_OUTPUT);
         // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         // glDepthMask(GL_TRUE);
         // glEnable(GL_DEPTH_TEST);
         // glDepthFunc(GL_LESS);
-
 
     }
 

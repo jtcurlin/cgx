@@ -31,7 +31,6 @@
 #include "render/framebuffer.h"
 
 #include "geometry/primitive_mesh.h"
-#include "geometry/common.h"
 
 #include "utility/logging.h"
 #include "utility/paths.h"      // cmake-configured shader/asset paths
