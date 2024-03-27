@@ -30,6 +30,8 @@ namespace cgx::gui
         void setMinSize(float width, float height); 
         void setMaxSize(float width, float height);
 
+        
+
     protected:
         std::string m_title                 = "Window";
         bool        m_is_visible            = true;

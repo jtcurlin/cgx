@@ -74,6 +74,68 @@ namespace cgx::render
         }
     }
 
+    /* IN PROGRESS
+    void ResourceManager::deleteModel(const std::string& model_id)
+    {
+        auto it = m_models.find(model_id);
+        if (it != m_models.end())
+        {
+            m_models.erase(it);
+        }
+        else // (model ID not found)
+        {
+
+        }
+
+    }
+    
+    void ResourceManager::deleteMaterial(const std::string& material_id)
+    {
+        auto it = m_materials.find(material_id);
+        if (it != m_materials.end())
+        {
+            m_materials.erase(it);
+
+        }
+        else // (material ID not found)
+        {
+
+        }
+
+    }
+    
+    void ResourceManager::deleteTexture(const std::string& texture_id)
+    {
+        auto it = m_textures.find(texture_id);
+        if (it != m_textures.end())
+        {
+            m_textures.erase(it);
+
+        }
+        else // (texture ID not found)
+        {
+
+        }
+
+    }
+    
+    void ResourceManager::deleteShader(const std::string& shader_id)
+    {
+        auto it = m_shaders.find(shader_id);
+        if (it != m_shaders.end())
+        {
+            m_shaders.erase(it);
+
+        }
+        else // (shader ID not found)
+        {
+
+        }
+    
+
+    }
+    */
+
     void ResourceManager::createModel(std::string name, std::vector<std::shared_ptr<Mesh>> meshes)
     {
          m_models[name] = std::make_shared<Model>(name, meshes);
