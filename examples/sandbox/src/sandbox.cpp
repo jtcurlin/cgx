@@ -3,7 +3,6 @@
 #include "sandbox.h"
 #include <imgui.h>
 
-
 Sandbox::Sandbox() {}
 
 Sandbox::~Sandbox() {}
@@ -18,21 +17,21 @@ void Sandbox::Initialize()
     glBindFramebuffer(GL_FRAMEBUFFER, m_msaa_framebuffer);
 
     unsigned int msaa_tex_color_buf;
-    glGenTextures(1, &msaa_tex_color_buf);
-    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msaa_tex_color_buf);
-    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGB, m_settings.render_width, m_settings.render_height, GL_TRUE);
-    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, msaa_tex_color_buf, 0);
+    glGenTextures(1, &msaa_tex_color_buf); CGX_CHECK_GL_ERROR;
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msaa_tex_color_buf); CGX_CHECK_GL_ERROR;
+    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGB, m_settings.render_width, m_settings.render_height, GL_TRUE); CGX_CHECK_GL_ERROR;
+    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0); CGX_CHECK_GL_ERROR;
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, msaa_tex_color_buf, 0); CGX_CHECK_GL_ERROR;
 
     unsigned int msaa_rbo;
-    glGenRenderbuffers(1, &msaa_rbo);
-    glBindRenderbuffer(GL_RENDERBUFFER, msaa_rbo);
-    glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, m_settings.render_width, m_settings.render_height);
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, msaa_rbo);
+    glGenRenderbuffers(1, &msaa_rbo); CGX_CHECK_GL_ERROR;
+    glBindRenderbuffer(GL_RENDERBUFFER, msaa_rbo); CGX_CHECK_GL_ERROR;
+    glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, m_settings.render_width, m_settings.render_height); CGX_CHECK_GL_ERROR;
+    glBindRenderbuffer(GL_RENDERBUFFER, 0); CGX_CHECK_GL_ERROR;
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, msaa_rbo); CGX_CHECK_GL_ERROR;
 
-    CGX_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "MSAA Framebuffer not complete.");
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    CGX_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "MSAA Framebuffer not complete."); 
+    glBindFramebuffer(GL_FRAMEBUFFER, 0); CGX_CHECK_GL_ERROR;
 
     
 }
@@ -102,9 +101,9 @@ void Sandbox::LoadAssets()
         "backpack/backpack.obj",
         "holodeck/holodeck.obj"
     };
-    // shader names (relative to shader directory - 'cgx/cgx/shaders/', extension-less filename of vert & frag shaders)
     shader_names = {"model", "lighting"};   // i.e. "model" -> fetches 'cgx/cgx/shaders/model.vs' and 'cgx/cgx/shaders/model.fs'
 
+    /*
     std::vector<std::string> face_paths = {
         "/Users/curlin/dev/cgx/build/cgx_debug/data/assets/skybox_mountains/right.jpg",   // right
         "/Users/curlin/dev/cgx/build/cgx_debug/data/assets/skybox_mountains/left.jpg",    // left
@@ -115,19 +114,18 @@ void Sandbox::LoadAssets()
     };
 
     m_skybox = std::make_unique<cgx::render::CubeMap>(face_paths, m_resource_manager->loadShader("skybox", m_settings.shader_dir.string()));
+    */
 
-    /*
     for (const auto& filename : model_filenames)
     {
         std::filesystem::path model_path = m_settings.asset_dir / filename;
-        loaded_models[filename] = m_resource_manager->loadModel(model_path.string());
+        cgx::resource::ResourceManager::getSingleton().importResource<cgx::resource::Model>(model_path);
     }
-    */
 
     for (const auto& name : shader_names)
     {
-        CGX_DEBUG("Loading Shader {}", name);
-        m_resource_manager->loadShader(name, m_settings.shader_dir.string());
+        auto shader = std::make_shared<cgx::resource::Shader>(m_settings.shader_dir.string(), name);
+        cgx::resource::ResourceManager::getSingleton().loadResource<cgx::resource::Shader>(shader);
     }
 }
 

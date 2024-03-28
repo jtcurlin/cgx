@@ -1,7 +1,5 @@
 // Copyright © 2024 Jacob Curlin
 
-#define STB_IMAGE_IMPLEMENTATION
-
 #include "core/engine.h"
 #include "ecs/events/engine_events.h"
 
@@ -57,13 +55,11 @@ namespace cgx::core {
         m_input_manager = std::make_shared<cgx::input::InputManager>(m_ecs_manager, m_window_manager);
         // (temp : remove this)
 
-        m_resource_manager = std::make_unique<cgx::render::ResourceManager>();
-
         // check glad loaded
         CGX_ASSERT(gladLoadGLLoader((GLADloadproc) glfwGetProcAddress), "Failed to initialize GLAD.");
         if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) { exit(1); }
 
-        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_DEPTH_TEST); CGX_CHECK_GL_ERROR;
 
         m_framebuffer = std::make_shared<cgx::render::Framebuffer>(m_settings.render_width, m_settings.render_height);
         m_framebuffer->setClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -89,7 +85,7 @@ namespace cgx::core {
         m_imgui_render_window = std::make_unique<cgx::gui::ImGuiRenderWindow>(m_framebuffer);
         m_imgui_manager->RegisterImGuiWindow(m_imgui_render_window.get());
 
-        m_imgui_ecs_window = std::make_unique<cgx::gui::ImGuiECSWindow>(m_ecs_manager, m_resource_manager);
+        m_imgui_ecs_window = std::make_unique<cgx::gui::ImGuiECSWindow>(m_ecs_manager);
         m_imgui_manager->RegisterImGuiWindow(m_imgui_ecs_window.get());
 
         m_imgui_performance_window = std::make_unique<cgx::gui::ImGuiPerformanceWindow>(m_time_system);
@@ -101,23 +97,15 @@ namespace cgx::core {
         
         m_imgui_render_settings_window = std::make_unique<cgx::gui::ImGuiRenderSettingsWindow>(m_render_settings);
         m_imgui_manager->RegisterImGuiWindow(m_imgui_render_settings_window.get());
-        
-        std::shared_ptr<cgx::render::Mesh> mesh3 = cgx::geometry::create_plane(
-            5, 5, 5, glm::vec3(5, 5, 5),
-            cgx::geometry::Axis::x, cgx::geometry::Axis::z, 
-            {0, 0, 0}, {0, 1}, {0, 1} 
-        );
-        
-        std::vector<std::shared_ptr<cgx::render::Mesh>> meshes3; 
-        meshes3.push_back(mesh3);;
-        m_resource_manager->createModel("primitive_plane", meshes3);
 
-        std::shared_ptr<cgx::render::Mesh> mesh4 = cgx::geometry::create_sphere(30, 30, 5);
-        std::vector<std::shared_ptr<cgx::render::Mesh>> meshes4;
-        meshes4.push_back(mesh4);
-        m_resource_manager->createModel("primitive_sphere", meshes4);
+        auto model_importer = std::make_shared<cgx::resource::ResourceImporterOBJ>();
+        auto image_importer = std::make_shared<cgx::resource::ResourceImporterImage>();
 
-        glEnable(GL_DEBUG_OUTPUT);
+        auto& resource_manager = cgx::resource::ResourceManager::getSingleton();
+
+        resource_manager.registerImporter<cgx::resource::Model>(model_importer);
+        resource_manager.registerImporter<cgx::resource::Texture>(image_importer);
+        
         // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         // glDepthMask(GL_TRUE);
         // glEnable(GL_DEPTH_TEST);
@@ -154,8 +142,8 @@ namespace cgx::core {
             // skip rendering of entity if it has no RenderComponent
             if (!m_ecs_manager->HasComponent<RenderComponent>(entity)) { continue; }
 
-            std::shared_ptr<cgx::render::Model> model = m_ecs_manager->GetComponent<RenderComponent>(entity).model;
-            std::shared_ptr<cgx::render::Shader> shader = m_ecs_manager->GetComponent<RenderComponent>(entity).shader;
+            std::shared_ptr<cgx::resource::Model> model = m_ecs_manager->GetComponent<RenderComponent>(entity).model;
+            std::shared_ptr<cgx::resource::Shader> shader = m_ecs_manager->GetComponent<RenderComponent>(entity).shader;
 
             // skip rendering of entity if either RenderComponent.model or RenderComponent.shader uninitialized
             if (!(model && shader)) { continue; }
@@ -178,7 +166,7 @@ namespace cgx::core {
             }
 
             // activate shader program, set shader data, draw
-            shader->use();
+            shader->Use();
 
             // shader->setVec3("light.position", (m_ecsHandler->GetComponent<TransformComponent>(light))) /TODO
             shader->setVec3("light.position", 1.0f, 1.0f, 1.0f);

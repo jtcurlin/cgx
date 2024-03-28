@@ -2,10 +2,14 @@
 
 #include "geometry/primitive_mesh.h"
 
+#include "resource/mesh.h"
+#include "resource/material.h"
+
+#include "resource/resource_manager.h"
 
 namespace cgx::geometry
 {
-    std::shared_ptr<cgx::render::Mesh> create_plane(
+    void create_plane(
         uint32_t x_segments,
         uint32_t y_segments,
         uint32_t z_segments,
@@ -45,7 +49,7 @@ namespace cgx::geometry
 
         glm::vec3 size_scale(size.x, size.y, size.z);
 
-        std::vector<cgx::render::Vertex> vertices;
+        std::vector<cgx::resource::Vertex> vertices;
         std::vector<uint32_t> indices;
 
         for (uint32_t j = 0; j <= vertical_count; ++j)
@@ -92,11 +96,18 @@ namespace cgx::geometry
                 indices.push_back(top_left);
             }
         }
-        return std::make_shared<cgx::render::Mesh>(vertices, indices, nullptr);
+
+        auto mesh = std::make_shared<cgx::resource::Mesh>(
+            "primitive_plane",
+            vertices,
+            indices,
+            nullptr
+        );
+        cgx::resource::ResourceManager::getSingleton().loadResource<cgx::resource::Mesh>(mesh);
     }
 
 
-    std::shared_ptr<cgx::render::Mesh> create_sphere(uint32_t sector_count, uint32_t stack_count, float radius)
+    void create_sphere(uint32_t sector_count, uint32_t stack_count, float radius)
     {
         float pi = glm::pi<float>();
 
@@ -108,7 +119,7 @@ namespace cgx::geometry
 
         float length_inv = 1.0f / radius;    
 
-        std::vector<cgx::render::Vertex> vertices;
+        std::vector<cgx::resource::Vertex> vertices;
 
         float xy, z;
         for (uint32_t i = 0; i <= stack_count; ++i)
@@ -119,7 +130,7 @@ namespace cgx::geometry
 
             for (uint32_t j = 0; j <= sector_count; ++j)
             {
-                cgx::render::Vertex vertex;
+                cgx::resource::Vertex vertex;
 
                 sector_angle = j * sector_step;
 
@@ -176,7 +187,13 @@ namespace cgx::geometry
             }
         }
 
-        return std::make_shared<cgx::render::Mesh>(vertices, indices, nullptr);
+        auto mesh = std::make_shared<cgx::resource::Mesh>(
+            "primitive_plane",
+            vertices,
+            indices,
+            nullptr
+        );
+        cgx::resource::ResourceManager::getSingleton().loadResource<cgx::resource::Mesh>(mesh);
     }
 
 } // namespace cgx::geometry

@@ -36,10 +36,8 @@ protected:
 private:
 
     std::vector<std::string> model_filenames;
-    std::unordered_map<std::string, std::shared_ptr<cgx::render::Model>> loaded_models;
 
     std::vector<std::string> shader_names;
-    std::unordered_map<std::string, std::shared_ptr<cgx::render::Shader>> loaded_shaders;
 
     std::unique_ptr<cgx::render::CubeMap> m_skybox;
 

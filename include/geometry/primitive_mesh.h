@@ -4,7 +4,7 @@
 
 #include "core/common.h"
 #include "utility/math.h"
-#include "render/mesh.h"
+#include "resource/mesh.h"
 
 namespace cgx::geometry
 {
@@ -15,7 +15,7 @@ namespace cgx::geometry
         z
     };
 
-    std::shared_ptr<cgx::render::Mesh> create_plane(
+    void create_plane(
         uint32_t x_segments = 1,
         uint32_t y_segments = 1,
         uint32_t z_segments = 1,
@@ -27,7 +27,7 @@ namespace cgx::geometry
         glm::vec2 v_range = {0.0f, 1.0f}
     );
 
-    std::shared_ptr<cgx::render::Mesh> create_sphere(
+    void create_sphere(
         uint32_t sector_count = 10,
         uint32_t stack_count = 10,
         float radius = 1

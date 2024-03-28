@@ -2,14 +2,12 @@
 
 #include "cube_map.h"
 
-#include <core/common.h>
 #include <glad/glad.h>
 #include <stb/stb_image.h>
 
-
 namespace cgx::render
 {
-    CubeMap::CubeMap(std::vector<std::string> face_paths, std::shared_ptr<Shader> shader)
+    CubeMap::CubeMap(std::vector<std::string> face_paths, std::shared_ptr<cgx::resource::Shader> shader)
         : m_vertices(s_cube_vertices)
         , m_shader(std::move(shader))
     {
@@ -25,7 +23,7 @@ namespace cgx::render
         glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
 
         const int skybox_texture_unit = 11;
-        m_shader->use();
+        m_shader->Use();
         m_shader->setInt("skybox", skybox_texture_unit);
     }
 
@@ -38,7 +36,7 @@ namespace cgx::render
     void CubeMap::Draw(glm::mat4 view, glm::mat4 proj)
     {
         glDepthFunc(GL_LEQUAL);
-        m_shader->use();
+        m_shader->Use();
         glm::mat4 new_view = glm::mat4(glm::mat3(view));
         m_shader->setMat4("view", new_view);
         m_shader->setMat4("proj", proj);

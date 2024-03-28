@@ -3,7 +3,7 @@
 #pragma once
 
 #include <core/common.h>
-#include <render/shader.h>
+#include <resource/shader.h>
 #include <glm/glm.hpp>
 
 #include <array>
@@ -18,7 +18,7 @@ namespace cgx::render
     class CubeMap
     {
     public:
-        CubeMap(std::vector<std::string> face_paths, std::shared_ptr<Shader> shader);
+        CubeMap(std::vector<std::string> face_paths, std::shared_ptr<cgx::resource::Shader> shader);
         ~CubeMap();
 
         uint32_t loadCubeMap(std::vector<std::string> faces);
@@ -27,7 +27,7 @@ namespace cgx::render
 
     private:
         VertexArray m_vertices;
-        std::shared_ptr<Shader> m_shader;
+        std::shared_ptr<cgx::resource::Shader> m_shader;
 
         uint32_t m_VAO          = 0;
         uint32_t m_VBO          = 0;

@@ -14,42 +14,6 @@
 
 namespace cgx::core
 {
-
-    // templated UID class for generating unique identifiers w/ optional string associations
-    template<typename T>
-    class UID
-    {
-    public:
-        // construct a UID with or without an associated string
-        UID () : m_id(generate()) {}
-        UID(const std::string& str) : m_id(generate(str)) {}
-
-        // implicit UID->size_t conversion 
-        operator size_t() const { return m_id; }
-
-    private:
-        size_t m_id; // the unique identifier
-        static std::atomic<size_t> s_next_id; // atomic counter for next available id
-
-        // thread-safe generation of a new UID w/o string association
-        static size_t generate() 
-        { 
-            return s_next_id.fetch_add(1, std::memory_order_relaxed);
-        }
-
-        // thread-safe generation of a new UID w/ string association
-        static size_t generate(const std::string& str)
-        {
-            size_t id = generate();
-            UIDRegistry::associate<T>(id, str);
-            return id;
-        }
-
-    }; // class UID
-
-    template<typename T>
-    std::atomic<size_t> UID<T>::s_next_id(0);
-
     // registry class for managing UID <-> string associations
     class UIDRegistry
     {
@@ -120,6 +84,41 @@ namespace cgx::core
     }; // class UIDRegistry
 
     std::mutex UIDRegistry::s_registry_mutex;
+
+    // templated UID class for generating unique identifiers w/ optional string associations
+    template<typename T>
+    class UID
+    {
+    public:
+        // construct a UID with or without an associated string
+        UID () : m_id(generate()) {}
+        UID(const std::string& str) : m_id(generate(str)) {}
+
+        // implicit UID->size_t conversion 
+        operator size_t() const { return m_id; }
+
+    private:
+        size_t m_id; // the unique identifier
+        static std::atomic<size_t> s_next_id; // atomic counter for next available id
+
+        // thread-safe generation of a new UID w/o string association
+        static size_t generate() 
+        { 
+            return s_next_id.fetch_add(1, std::memory_order_relaxed);
+        }
+
+        // thread-safe generation of a new UID w/ string association
+        static size_t generate(const std::string& str)
+        {
+            size_t id = generate();
+            UIDRegistry::associate<T>(id, str);
+            return id;
+        }
+
+    }; // class UID
+
+    template<typename T>
+    std::atomic<size_t> UID<T>::s_next_id(0);
 
 
 } // namespace cgx::core

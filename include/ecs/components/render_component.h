@@ -3,11 +3,11 @@
 #pragma once
 
 #include "core/common.h"
-#include "render/model.h"
-#include "render/shader.h"
+#include "resource/model.h"
+#include "resource/shader.h"
 
 struct RenderComponent
 {
-    std::shared_ptr<cgx::render::Model> model;
-    std::shared_ptr<cgx::render::Shader> shader;
+    std::shared_ptr<cgx::resource::Model> model;
+    std::shared_ptr<cgx::resource::Shader> shader;
 };

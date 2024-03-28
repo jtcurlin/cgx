@@ -23,11 +23,25 @@
 #include "gui/imgui_performance_window.h"
 #include "gui/imgui_render_settings_window.h"
 
-#include "render/camera.h"
+/*
 #include "render/mesh.h"
 #include "render/model.h"
 #include "render/shader.h"
 #include "render/resource_manager.h"
+*/
+
+#include "resource/resource.h"
+#include "resource/resource_manager.h"
+#include "resource/material.h"
+#include "resource/model.h"
+#include "resource/mesh.h"
+#include "resource/shader.h"
+#include "resource/texture.h"
+#include "resource/import/resource_importer.h"
+#include "resource/import/resource_importer_image.h"
+#include "resource/import/resource_importer_obj.h"
+
+#include "render/camera.h"
 #include "render/framebuffer.h"
 
 #include "geometry/primitive_mesh.h"
@@ -92,7 +106,6 @@ namespace cgx::core {
 
         // shared
         std::shared_ptr<cgx::ecs::ECSManager> m_ecs_manager;
-        std::shared_ptr<cgx::render::ResourceManager> m_resource_manager;
 
         std::unique_ptr<cgx::gui::ImGuiManager> m_imgui_manager;
         std::unique_ptr<cgx::gui::ImGuiRenderWindow> m_imgui_render_window;
@@ -102,8 +115,8 @@ namespace cgx::core {
 
         std::shared_ptr<cgx::gui::RenderSettings> m_render_settings;
 
-        std::shared_ptr<cgx::render::Mesh> m_primitive_plane_mesh;
-        std::shared_ptr<cgx::render::Shader> m_primitive_shader;
+        // std::shared_ptr<cgx::resource::Mesh> m_primitive_plane_mesh;
+        // std::shared_ptr<cgx::resource::Shader> m_primitive_shader;
 
         bool m_is_running;
         bool m_imgui_active;

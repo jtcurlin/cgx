@@ -8,6 +8,8 @@
 #include "ecs/components/light_component.h"
 #include "ecs/components/rigid_body.h"
 #include "ecs/events/engine_events.h"
+#include "resource/resource.h"
+#include "resource/resource_manager.h"
 #include "utility/logging.h"
 
 #include <imgui/imgui.h>
@@ -15,18 +17,17 @@
 #include <imgui/backends/imgui_impl_opengl3.h>
 
 #include <algorithm>
+#include <string>
 #include <vector>
 
 
 namespace cgx::gui 
 {
     ImGuiECSWindow::ImGuiECSWindow(
-        std::shared_ptr<cgx::ecs::ECSManager> ecs_manager, 
-        std::shared_ptr<cgx::render::ResourceManager> resource_manager
+        std::shared_ptr<cgx::ecs::ECSManager> ecs_manager 
     )
         : ImGuiWindow("ECS Management") 
         , m_ecs_manager(ecs_manager)
-        , m_resource_manager(resource_manager)
         , m_current_entity(cgx::ecs::MAX_ENTITIES)
     {
         m_ecs_manager->AddEventListener(cgx::events::ecs::ENTITY_CREATED, [this](cgx::ecs::Event& event) {
@@ -158,14 +159,15 @@ namespace cgx::gui
                 render_component.model->getName().c_str() : "No Model Selected"
             ))
             {
-                const std::unordered_map<std::string, std::shared_ptr<cgx::render::Model>>& models = m_resource_manager->GetModels();
-                for (const auto& pair : models)
+                auto models = cgx::resource::ResourceManager::getSingleton().getAllRUIDs<cgx::resource::Model>();
+                for (const auto& ruid : models)
                 {
-                    bool is_selected = (render_component.model == pair.second);
-                    if (ImGui::Selectable(pair.first.c_str(), is_selected))
+                    bool is_selected = render_component.model != nullptr ? (render_component.model->getRUID() == ruid) : false;
+                    std::string model_name = cgx::resource::ResourceManager::getSingleton().getResourceMetadata(ruid).name;
+                    if (ImGui::Selectable(model_name.c_str(), is_selected))
                     {
-                        render_component.model = pair.second;
-                        CGX_TRACE("Entity {}: RenderComponent Model changed to {}.", entity, pair.first);
+                        render_component.model = cgx::resource::ResourceManager::getSingleton().getResource<cgx::resource::Model>(ruid);
+                        CGX_TRACE("Entity {}: RenderComponent Model changed to {}.", entity, model_name);
                         render_component.model->Log();
                     }
                     if (is_selected)
@@ -178,17 +180,18 @@ namespace cgx::gui
             if (ImGui::BeginCombo(
                 "Shader##RenderComponentShader", 
                 render_component.shader ? 
-                render_component.shader->GetName().c_str() : "No Shader Selected"
+                render_component.shader->getName().c_str() : "No Shader Selected"
             ))
             {
-                const std::unordered_map<std::string, std::shared_ptr<cgx::render::Shader>>& shaders = m_resource_manager->GetShaders();
-                for (const auto& pair : shaders)
+                auto shaders = cgx::resource::ResourceManager::getSingleton().getAllRUIDs<cgx::resource::Shader>();
+                for (const auto& ruid : shaders)
                 {
-                    bool is_selected = (render_component.shader == pair.second);
-                    if (ImGui::Selectable(pair.first.c_str(), is_selected))
+                    bool is_selected = render_component.shader != nullptr ? (render_component.shader->getRUID() == ruid) : false;
+                    std::string shader_name = cgx::resource::ResourceManager::getSingleton().getResourceMetadata(ruid).name;
+                    if (ImGui::Selectable(shader_name.c_str(), is_selected))
                     {
-                        render_component.shader = pair.second;
-                        CGX_TRACE("Entity {}: RenderComponent Shader changed to {}.", entity, pair.first);
+                        render_component.shader = cgx::resource::ResourceManager::getSingleton().getResource<cgx::resource::Shader>(ruid);
+                        CGX_TRACE("Entity {}: RenderComponent Shader changed to {}.", entity, shader_name);
                     }
                     if (is_selected)
                     {

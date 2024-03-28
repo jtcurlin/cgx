@@ -70,22 +70,31 @@ target_sources(cgx
     # render
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include/render/camera.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/render/material.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/render/mesh.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/render/model.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/render/shader.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/render/texture.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/render/resource_manager.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/render/framebuffer.h
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/render/camera.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/render/material.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/render/mesh.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/render/model.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/render/shader.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/render/texture.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/render/resource_manager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/render/framebuffer.cpp
+
+    #resource
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/resource/resource_manager.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/resource/material.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/resource/mesh.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/resource/model.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/resource/shader.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/resource/texture.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/resource/import/resource_importer.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/resource/import/resource_importer_image.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/resource/import/resource_importer_obj.h
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/resource/resource_manager.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/resource/material.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/resource/mesh.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/resource/model.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/resource/shader.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/resource/texture.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/resource/import/resource_importer_image.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/resource/import/resource_importer_obj.cpp
 
     # gui
     PUBLIC

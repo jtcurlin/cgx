@@ -2,6 +2,8 @@
 
 #pragma once
 
+#define GL_SILENCE_DEPRECATION
+
 #include "core/common.h"
 #include "input/input_types.h"
 #include <GLFW/glfw3.h>

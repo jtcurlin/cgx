@@ -1,18 +1,54 @@
 // Copyright © 2024 Jacob Curlin
 
-#include "render/mesh.h"
+#include "resource/mesh.h"
+#include "resource/shader.h"
 #include "utility/error.h"
 
-namespace cgx::render
-{
+#include <glad/glad.h>
 
-    Mesh::Mesh(std::vector<Vertex> vertices, std::vector<unsigned int> indices, std::shared_ptr<Material> material)
-        : m_vertices(std::move(vertices)), m_indices(std::move(indices)), m_material(std::move(material))
+namespace cgx::resource
+{
+    Mesh::Mesh(const std::string& source_path,
+               const std::string& derived_path,
+               const std::string& name,
+               const std::vector<Vertex>& vertices,
+               const std::vector<uint32_t>& indices,
+               const std::shared_ptr<Material>& material)
+        : Resource(source_path, derived_path, name) 
+        , m_vertices(vertices), m_indices(indices), m_material(material)
     {
-        if (material == nullptr)
+        Setup();
+    }
+    
+    Mesh::Mesh(const std::string& name,
+               const std::vector<Vertex>& vertices,
+               const std::vector<uint32_t>& indices,
+               const std::shared_ptr<Material>& material)
+        : Resource(name), m_vertices(vertices), m_indices(indices), m_material(material)
+    {
+        Setup();
+    }
+    
+    Mesh::~Mesh()
+    {
+        Destroy();
+    }
+
+    void Mesh::Draw(Shader& shader) const
+    {
+        if (m_material != nullptr)
         {
-            m_material = std::make_shared<Material>();
+            m_material->Bind(shader);    
         }
+
+        glBindVertexArray(m_vao); CGX_CHECK_GL_ERROR;
+        glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(m_indices.size()), GL_UNSIGNED_INT, nullptr); CGX_CHECK_GL_ERROR;
+        glBindVertexArray(0); CGX_CHECK_GL_ERROR;
+    }
+    
+    void Mesh::Setup()
+    {
+        // CGX_ASSERT(true, "todo");  need to add assertions to check vertices, indices ready for gl init
 
         glGenVertexArrays(1, &m_vao); CGX_CHECK_GL_ERROR;
         glGenBuffers(1, &m_vbo); CGX_CHECK_GL_ERROR;
@@ -42,9 +78,10 @@ namespace cgx::render
 
         glBindVertexArray(0);   // unbind any bound vertex arrays
     }
-
-    Mesh::~Mesh() {
-        glDeleteVertexArrays(1, &m_vao);    // free VAO
+    
+    void Mesh::Destroy()
+    {
+        glDeleteVertexArrays(1, &m_vao);
         glDeleteBuffers(1, &m_vbo);
         glDeleteBuffers(1, &m_ebo);
     }
@@ -89,20 +126,7 @@ namespace cgx::render
         {
             CGX_DEBUG("  [No material assigned]")
         }
-
         CGX_DEBUG("m_vao = {}", m_vao);
     }
 
-    void Mesh::Draw(Shader& shader) const
-    {
-        if (m_material != nullptr)
-        {
-            m_material->bind(shader);    
-        }
-
-        glBindVertexArray(m_vao); CGX_CHECK_GL_ERROR;
-        glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(m_indices.size()), GL_UNSIGNED_INT, nullptr); CGX_CHECK_GL_ERROR;
-        glBindVertexArray(0); CGX_CHECK_GL_ERROR;
-    }
-
-}
+} // namespace cgx::render
