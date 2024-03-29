@@ -18,11 +18,10 @@ namespace cgx::resource
     {
     public:
         Model(const std::string& path, const std::string& name, const std::vector<std::shared_ptr<Mesh>>& meshes);
-        Model(const std::string& name, const std::vector<std::shared_ptr<Mesh>>& meshes);
 
         ~Model() = default; // todo
 
-        virtual std::string getTypeName() const override { return "Model"; }
+        virtual ResourceType getType() const override { return ResourceType::Model; }
 
         void Draw(Shader& shader) const; 
 

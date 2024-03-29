@@ -18,11 +18,16 @@ namespace cgx::resource
     class Texture : public Resource
     {
     public:
-        Texture(const std::string& path, uint32_t width, uint32_t height, 
-                uint32_t num_channels, GLenum format, unsigned char* pixels); 
+        Texture(
+            const std::string& path, 
+            const std::string& tag,
+            uint32_t width, uint32_t height, 
+            uint32_t num_channels, 
+            GLenum format, 
+            unsigned char* pixels); 
         ~Texture();
 
-        virtual std::string getTypeName() const override { return "Texture"; }
+        virtual ResourceType getType() const override { return ResourceType::Texture; }
 
         void Setup();
         void Bind(uint32_t slot) const;

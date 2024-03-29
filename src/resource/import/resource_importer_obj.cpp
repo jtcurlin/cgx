@@ -14,101 +14,187 @@
 
 #include "glm/glm.hpp"
 
-#include <filesystem>
 #include <sstream>
 #include <iomanip>
 
 namespace cgx::resource
 {
-    void ResourceImporterOBJ::Initialize(const std::string& path) 
+    bool ResourceImporterOBJ::Initialize(const std::string& path)
     {
-        m_source_path = path;
-    }
-
-    RUID ResourceImporterOBJ::Import()
-    {
-        CGX_ASSERT(!m_source_path.empty(), "ResourceImporterOBJ::Import() called with empty source path.");
-
-        std::filesystem::path obj_file_path = m_source_path;
-        std::filesystem::path mat_dir_path = obj_file_path.parent_path();
-
-        tinyobj::ObjReaderConfig reader_config;
-        reader_config.mtl_search_path = "";
-
-        tinyobj::ObjReader reader;
-
-        if (!reader.ParseFromFile(m_source_path, reader_config))
+        // check source file path non-empty
+        if (path.empty())
         {
-            if (!reader.Error().empty())
-            {
-                CGX_ERROR("TinyObjReader: {}", reader.Error());
-            }
+            CGX_ERROR("ResourceImporterOBJ: failed to import file. (empty path provided)");
             return false;
         }
 
-        /* note: disabling warning messages for the moment since the syntax warnings are annoying as fuck
-        if (!reader.Warning().empty())
+        // check source file path exists
+        m_source_path = std::filesystem::path(path);  
+        if (!std::filesystem::exists(m_source_path))
         {
-            CGX_WARN("[ResourceManager::loadModel] TinyObjReader: {}", reader.Warning())
+            CGX_ERROR("ResourceImporter: failed to import file at provided path [{}]. " \
+                      "(invalid file path)", m_source_path.string());
+            return false;
         }
-        */
 
-        auto& attrib = reader.GetAttrib();
-        auto& shapes = reader.GetShapes();
-        auto& materials = reader.GetMaterials();
+        // normalize path (convert '//', '\', etc.)
+        m_source_path = m_source_path.make_preferred().string();
 
-        std::unordered_map<unsigned int, std::shared_ptr<Material>> material_id_to_material;
-        
-        for (size_t src_mat_id = 0; src_mat_id < materials.size(); src_mat_id++)
+        m_mat_dir_path = m_source_path.parent_path();
+        m_tinyobj_reader_config.mtl_search_path = m_mat_dir_path.string();
+
+        // initialize / execute parsing w/ tinyobjreader
+        if (!m_tinyobj_reader.ParseFromFile(m_source_path, m_tinyobj_reader_config))
         {
-            auto src_mat = materials[src_mat_id];
-            // create material id ( {.obj model path}_{material name} )
-            std::ostringstream derived_path_stream;
-            derived_path_stream << m_source_path << "_" << src_mat.name;
-            std::string derived_path = derived_path_stream.str();
+            CGX_ERROR("ResourceImporterOBJ: Initialization Failed. (tinyobjreader " \
+                      "failed to parse file at path [{}]", m_source_path.string());
 
-            glm::vec3 ambient_color, diffuse_color, specular_color;
-            std::filesystem::path ambient_tex_path, diffuse_tex_path, specular_tex_path, normal_tex_path;
-            float shininess;
+            if (!m_tinyobj_reader.Error().empty())
+            {
+                CGX_ERROR("ResourceImporterOBJ: {}", m_tinyobj_reader.Error());
+            }
+            return false;
+        }
+        if (m_enable_format_warnings && !m_tinyobj_reader.Warning().empty())
+        {
+            CGX_WARN("ResourceImporterOBJ: TinyObjReader : {}", m_tinyobj_reader.Warning());
+        }
+        m_initialized = true;
+        return m_initialized;
+    }
 
-            shininess = static_cast<float>(src_mat.shininess);
-            ambient_color = glm::vec3(src_mat.ambient[0], src_mat.ambient[1], src_mat.ambient[2]);
-            diffuse_color = glm::vec3(src_mat.diffuse[0], src_mat.diffuse[1], src_mat.diffuse[2]);
-            specular_color = glm::vec3(src_mat.specular[0], src_mat.specular[1], src_mat.specular[2]);
+    void ResourceImporterOBJ::Reset()
+    {
+        m_source_path.clear();
+        m_mat_dir_path.clear();
 
-            if (!src_mat.ambient_texname.empty()) { ambient_tex_path = mat_dir_path / src_mat.ambient_texname; }
-            if (!src_mat.diffuse_texname.empty()) { diffuse_tex_path = mat_dir_path / src_mat.diffuse_texname; }
-            if (!src_mat.specular_texname.empty()) { specular_tex_path = mat_dir_path / src_mat.specular_texname; } 
-            if (!src_mat.bump_texname.empty()) { normal_tex_path = mat_dir_path / src_mat.bump_texname; }
+        m_tinyobj_reader_config = tinyobj::ObjReaderConfig();
 
-            std::shared_ptr<Texture> ambient_map = !ambient_tex_path.empty() ? 
-                ResourceManager::getSingleton().importResource<Texture>(ambient_tex_path.string()) : nullptr; 
-            std::shared_ptr<Texture> diffuse_map = !diffuse_tex_path.empty() ? 
-                ResourceManager::getSingleton().importResource<Texture>(diffuse_tex_path.string()) : nullptr; 
-            std::shared_ptr<Texture> specular_map = !specular_tex_path.empty() ? 
-                ResourceManager::getSingleton().importResource<Texture>(specular_tex_path.string()) : nullptr; 
-            std::shared_ptr<Texture> normal_map = !normal_tex_path.empty() ? 
-                ResourceManager::getSingleton().importResource<Texture>(normal_tex_path.string()) : nullptr; 
+        m_tinyobj_reader = tinyobj::ObjReader();
 
-            std::shared_ptr<Material> material; 
-            material = std::make_shared<Material>(
-                m_source_path,
-                derived_path,
-                src_mat.name,
-                ambient_color,
-                diffuse_color,
-                specular_color,
-                shininess,
-                ambient_map,
-                diffuse_map,
-                specular_map,
-                normal_map
+        m_mat_ruids.clear();
+        m_mesh_ruids.clear();
+
+        m_enable_format_warnings = false;
+    }
+    
+    RUID ResourceImporterOBJ::Import()
+    {
+        ImportMaterials();
+        ImportMeshes();
+
+        auto& resource_manager = ResourceManager::getSingleton();
+
+        // construct vector of Mesh shared ptr's from the stored Mesh RUID vector
+        std::vector<std::shared_ptr<Mesh>> meshes;  
+        for (auto& ruid : m_mesh_ruids)
+        {
+            meshes.push_back(resource_manager.getResource<Mesh>(ruid));
+        }
+
+        // construct Model resource
+        auto model = std::make_shared<Model>(
+            m_source_path.string(), 
+            m_source_path.stem().string(),
+            meshes
+        );
+
+        Reset(); // reset importer
+
+        // register Model resource and return its resource UID.
+        return resource_manager.RegisterResource<Model>(model, false);
+    }
+
+    void ResourceImporterOBJ::ImportMaterials()
+    {
+        auto& resource_manager = ResourceManager::getSingleton();
+        auto& materials = m_tinyobj_reader.GetMaterials();
+
+        std::stringstream path_ss, tag_ss;
+        for (size_t mat_id=0; mat_id < materials.size(); mat_id++)
+        {
+            auto& mat = materials[mat_id];
+
+            // build material's path and tag strings
+            path_ss << m_source_path.string() << ":";
+            tag_ss << m_source_path.stem().string() << "_"; 
+            if (!mat.name.empty())
+            {
+                path_ss << "material_" << mat.name;
+                tag_ss << mat.name;
+            } 
+            else 
+            { 
+                path_ss << "material_" << std::setw(3) << std::setfill('0') << mat_id;
+                tag_ss << "material" << std::setw(3) << std::setfill('0') << mat_id; 
+            }
+
+            // parse & load material's corresponding texture resources
+            std::shared_ptr<Texture> ambient_map, diffuse_map, specular_map, normal_map;
+
+            std::filesystem::path tex_path; // temp for holding derived tex paths
+            if (!mat.ambient_texname.empty()) 
+            { 
+                tex_path = (m_mat_dir_path / mat.ambient_texname).string(); 
+                RUID id = resource_manager.ImportResource<Texture>(tex_path);
+                ambient_map = resource_manager.getResource<Texture>(id);
+            } else { ambient_map = nullptr; }
+
+            if (!mat.diffuse_texname.empty()) 
+            { 
+                tex_path = (m_mat_dir_path / mat.diffuse_texname).string(); 
+                RUID id = resource_manager.ImportResource<Texture>(tex_path);
+                diffuse_map = resource_manager.getResource<Texture>(id);
+            } else { diffuse_map = nullptr; }
+
+            if (!mat.specular_texname.empty()) 
+            {   
+                tex_path = (m_mat_dir_path / mat.specular_texname).string(); 
+                RUID id = resource_manager.ImportResource<Texture>(tex_path);
+                specular_map = resource_manager.getResource<Texture>(id);
+            } else {specular_map = nullptr; }
+
+            if (!mat.bump_texname.empty()) 
+            { 
+                tex_path = (m_mat_dir_path / mat.bump_texname).string(); 
+                RUID id = resource_manager.ImportResource<Texture>(tex_path);
+                normal_map = resource_manager.getResource<Texture>(id);
+            } else {normal_map = nullptr; }
+
+            auto material = std::make_shared<Material>(
+                path_ss.str(), tag_ss.str(), static_cast<float>(mat.shininess),
+                glm::vec3(mat.ambient[0], mat.ambient[1], mat.ambient[2]),
+                glm::vec3(mat.diffuse[0], mat.diffuse[1], mat.diffuse[2]),
+                glm::vec3(mat.specular[0], mat.specular[1], mat.specular[2]),
+                ambient_map, diffuse_map, specular_map, normal_map
             );
 
-            auto curr_material = ResourceManager::getSingleton().loadResource<Material>(material);
-            material_id_to_material[src_mat_id] = curr_material;
+            // initialize Material resource and load into ResourceManager
+            RUID material_ruid = resource_manager.RegisterResource<Material>(material, false);
+
+            // if ruid valid (successfully loaded/registered), add to tinyobj_mat_id -> resource UID map
+            if (material_ruid != k_invalid_id) 
+            {
+                m_mat_ruids[mat_id] = material_ruid;
+            }
+            else
+            {
+                CGX_WARN("ResourceImporterOBJ: Failed to register material. (path : [{}])", path_ss.str());
+            }
+
+            path_ss.clear();
+            tag_ss.clear();
         }
 
+    }
+
+    void ResourceImporterOBJ::ImportMeshes()
+    {
+        auto& resource_manager = ResourceManager::getSingleton();
+
+        auto& attrib = m_tinyobj_reader.GetAttrib();
+        auto& shapes = m_tinyobj_reader.GetShapes();
+        
         std::vector<std::shared_ptr<Mesh>> meshes;
 
         std::unordered_map<unsigned int, std::vector<Vertex>> material_to_vertices;
@@ -172,24 +258,27 @@ namespace cgx::resource
         }
 
         size_t mesh_index = 0;
+        std::stringstream path_ss, tag_ss;
         for (auto& [material_id, vertices] : material_to_vertices) 
         {
-            std::shared_ptr<Material> material = material_id_to_material[material_id];
-            std::vector<unsigned int>& indices = material_to_indices[material_id];
-            
+            path_ss << m_source_path.string() << ":mesh_" << std::setw(3) << std::setfill('0') << mesh_index;
+            tag_ss << m_source_path.stem().string() << "_mesh" << std::setw(3) << std::setfill('0') << mesh_index;
+            mesh_index++;
+
+            auto material = resource_manager.getResource<Material>(m_mat_ruids[material_id]);
+            auto& indices = material_to_indices[material_id];
+
             auto mesh = std::make_shared<cgx::resource::Mesh>(
-                obj_file_path.string(), 
-                obj_file_path.string() + "_mesh" + std::to_string(mesh_index), 
-                "mesh " + std::to_string(mesh_index),
-                vertices, indices, material);
+                path_ss.str(), tag_ss.str(),
+                vertices, indices, material
+            );
 
-            mesh = ResourceManager::getSingleton().loadResource<Mesh>(mesh);
-            meshes.push_back(mesh);
+            path_ss.clear();
+            tag_ss.clear();
+
+            auto mesh_ruid = resource_manager.RegisterResource<Mesh>(mesh, false);
+            m_mesh_ruids.push_back(mesh_ruid);
         }
-
-        std::shared_ptr<Model> model = std::make_shared<Model>(obj_file_path.string(), obj_file_path.filename().string(), meshes);
-        return ResourceManager::getSingleton().loadResource<Model>(model)->getRUID();
-        
     }
 
 

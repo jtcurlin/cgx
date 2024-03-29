@@ -15,13 +15,15 @@ namespace cgx::resource
     public:
         virtual ~ResourceImporter() = default;
 
-        virtual void Initialize(const std::string& path) = 0;
+        virtual bool Initialize(const std::string& path) = 0;
 
         virtual RUID Import() = 0;
 
         virtual std::string getTypeName() const = 0;
 
     protected:
+        bool m_initialized = false;
+
         // errors? store last error? etc. 
 
     }; // class ResourceImporter

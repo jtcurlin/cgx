@@ -5,15 +5,34 @@
 
 #include <fstream>
 #include <filesystem>
+namespace fs = std::filesystem;
 
 namespace cgx::resource
 {
-    Shader::Shader(const std::string& shader_root_dir, const std::string& shader_name)
-        : Resource(shader_root_dir + shader_name, shader_root_dir + "/" + shader_name, shader_name)
-        , m_vert_path(shader_root_dir +  shader_name + "/" + shader_name + ".vs") 
-        , m_frag_path(shader_root_dir + shader_name + "/" + shader_name + ".fs")
+    Shader::Shader(const std::string& path, const std::string& tag)
+        : Resource(path, tag)
     {
-        m_initialized = Initialize();
+        fs::path shader_root_path {path};
+
+        std::string base_shader_filename = shader_root_path.filename().string();
+
+        m_vert_path = shader_root_path / (base_shader_filename + ".vs");
+        m_frag_path = shader_root_path / (base_shader_filename + ".fs");
+
+        if (!fs::exists(m_vert_path))
+        {
+            CGX_ERROR("Shader: Vertex shader does not exist at derived path [{}].", m_vert_path);
+            m_initialized = false;
+        }
+        else if (!fs::exists(m_frag_path))
+        {
+            CGX_ERROR("Shader: Fragment shader does not exist at derived path [{}].", m_frag_path);
+            m_initialized = false;
+        }
+        else
+        {
+            m_initialized = Initialize();
+        }
     }
 
     Shader::~Shader() 
@@ -129,8 +148,8 @@ namespace cgx::resource
 
     void Shader::Log() const
     {
-        CGX_DEBUG("Shader {}: m_vert_path = {}", getName(), m_vert_path);
-        CGX_DEBUG("Shader {}: m_frag_path = {}", getName(), m_frag_path);
+        CGX_DEBUG("Shader {}: m_vert_path = {}", getTag(), m_vert_path);
+        CGX_DEBUG("Shader {}: m_frag_path = {}", getTag(), m_frag_path);
     }
 
 } // namespace cgx::resource

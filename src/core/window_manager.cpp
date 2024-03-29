@@ -23,7 +23,6 @@ namespace cgx::core
     void WindowManager::Initialize(int width, int height, const char* label)
     {
 
-        CGX_TRACE("Initializing window : '{}' ({}w x {}h)", label, width, height);
         glfwInit();
 
         glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -45,6 +44,8 @@ namespace cgx::core
 
         glfwMakeContextCurrent(m_window);
         glfwSetFramebufferSizeCallback(m_window, FramebufferSizeCallback);
+
+        CGX_INFO("WindowManager: Initialized. [Window '{}' : {} x {}]", label, width, height);
     }
 
     void WindowManager::Update() {

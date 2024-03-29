@@ -12,11 +12,7 @@
 namespace cgx::resource
 {
     Model::Model(const std::string& path, const std::string& name, const std::vector<std::shared_ptr<Mesh>>& meshes)
-        : Resource(path, path, name), m_meshes(meshes)
-    {}
-
-    Model::Model(const std::string& name, const std::vector<std::shared_ptr<Mesh>>& meshes)
-         : Resource(name) , m_meshes(meshes)
+        : Resource(path, name), m_meshes(meshes)
     {}
     
     void Model::Draw(Shader& shader) const
@@ -31,7 +27,7 @@ namespace cgx::resource
     {
         for (size_t i = 0; i < m_meshes.size(); ++i)
         {
-            CGX_DEBUG("[Model {}] : [Mesh {}]", getName(), i);
+            CGX_DEBUG("[Model {}] : [Mesh {}]", getTag(), i);
             auto& mesh = m_meshes[i];
         }
 

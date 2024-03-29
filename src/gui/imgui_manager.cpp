@@ -152,4 +152,44 @@ namespace cgx::gui
         ImGui::EndMainMenuBar();
         }
     }
+
+    void ImGuiManager::EnableInput()
+    {
+        ImGuiIO& io = ImGui::GetIO();
+
+        io.ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
+        io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
+
+        // io.MouseDrawCursor = true;
+    }
+
+    void ImGuiManager::DisableInput()
+    {
+        ImGuiIO& io = ImGui::GetIO();
+
+        io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+        io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
+
+        // io.MouseDrawCursor = false;
+
+        ClearInputs(io);
+    }
+
+    void ImGuiManager::ClearInputs(ImGuiIO& io)
+    {
+        for (int i=0; i < IM_ARRAYSIZE(io.MouseDown); i++)
+        {
+            io.MouseDown[i] = false;
+        }
+
+        for (int i=0 ; i < IM_ARRAYSIZE(io.KeysDown); i++)
+        {
+            io.KeysDown[i] = false;
+        }
+
+        io.MouseWheel = 0;
+        io.MouseWheelH = 0;
+
+        io.InputQueueCharacters.clear();
+    }
 }

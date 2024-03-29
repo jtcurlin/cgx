@@ -15,22 +15,21 @@
 namespace cgx::resource
 {
     Material::Material(
-        const std::string& source_path,
-        const std::string& derived_path,
-        const std::string& name,
+        const std::string& path,
+        const std::string& tag,
+        float shininess, 
         glm::vec3 ambient_color, 
         glm::vec3 diffuse_color, 
         glm::vec3 specular_color, 
-        float shininess, 
         const std::shared_ptr<Texture>& ambient_map,
         const std::shared_ptr<Texture>& diffuse_map,
         const std::shared_ptr<Texture>& specular_map,
         const std::shared_ptr<Texture>& normal_map)
-        : Resource(source_path, derived_path, name)
+        : Resource(path, tag)
+        , m_shininess(shininess)
         , m_ambient_color(ambient_color)
         , m_diffuse_color(diffuse_color)
         , m_specular_color(specular_color)
-        , m_shininess(shininess)
         , m_ambient_map(ambient_map)
         , m_diffuse_map(diffuse_map)
         , m_specular_map(specular_map)
@@ -78,22 +77,22 @@ namespace cgx::resource
 
         if (m_ambient_map != nullptr)
         {
-            CGX_DEBUG(" > Ambient Map = {}", m_ambient_map->getRUID());
+            CGX_DEBUG(" > Ambient Map = {}", m_ambient_map->getID());
         } else CGX_DEBUG(" > Ambient Map = [None]");
         
         if (m_diffuse_map != nullptr)
         {
-            CGX_DEBUG(" > Diffuse Map = {}", m_diffuse_map->getRUID());
+            CGX_DEBUG(" > Diffuse Map = {}", m_diffuse_map->getID());
         } else CGX_DEBUG(" > Diffuse Map = [None]");
         
         if (m_specular_map != nullptr)
         {
-            CGX_DEBUG(" > Specular Map = {}", m_specular_map->getRUID());
+            CGX_DEBUG(" > Specular Map = {}", m_specular_map->getID());
         } else CGX_DEBUG(" > Specular Map = [None]");
 
         if (m_normal_map != nullptr)
         {
-            CGX_DEBUG(" > Normal Map = {}", m_normal_map->getRUID());
+            CGX_DEBUG(" > Normal Map = {}", m_normal_map->getID());
         } else CGX_DEBUG(" > Normal Map = [None]");
     }
 

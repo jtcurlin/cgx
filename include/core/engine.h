@@ -22,13 +22,8 @@
 #include "gui/imgui_ecs_window.h"
 #include "gui/imgui_performance_window.h"
 #include "gui/imgui_render_settings_window.h"
-
-/*
-#include "render/mesh.h"
-#include "render/model.h"
-#include "render/shader.h"
-#include "render/resource_manager.h"
-*/
+#include "gui/imgui_resource_manager_window.h"
+#include "gui/resource_manager_adapter.h"
 
 #include "resource/resource.h"
 #include "resource/resource_manager.h"
@@ -108,10 +103,12 @@ namespace cgx::core {
         std::shared_ptr<cgx::ecs::ECSManager> m_ecs_manager;
 
         std::unique_ptr<cgx::gui::ImGuiManager> m_imgui_manager;
+        std::unique_ptr<cgx::gui::ImGuiECSWindow> m_imgui_ecs_window;
         std::unique_ptr<cgx::gui::ImGuiRenderWindow> m_imgui_render_window;
         std::unique_ptr<cgx::gui::ImGuiPerformanceWindow> m_imgui_performance_window;
         std::unique_ptr<cgx::gui::ImGuiRenderSettingsWindow> m_imgui_render_settings_window;
-        std::unique_ptr<cgx::gui::ImGuiECSWindow> m_imgui_ecs_window;
+        std::unique_ptr<cgx::gui::ImGuiResourceManagerWindow> m_imgui_resource_manager_window;
+        std::shared_ptr<cgx::gui::ResourceManagerAdapter> m_resource_manager_adapter;
 
         std::shared_ptr<cgx::gui::RenderSettings> m_render_settings;
 

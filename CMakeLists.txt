@@ -104,7 +104,8 @@ target_sources(cgx
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gui/imgui_performance_window.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gui/imgui_ecs_window.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gui/imgui_render_settings_window.h
-        # ${CMAKE_CURRENT_SOURCE_DIR}/include/gui/imgui_resource_manager_window.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gui/imgui_resource_manager_window.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gui/resource_manager_adapter.h
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/imgui_manager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/imgui_render_window.cpp
@@ -112,7 +113,8 @@ target_sources(cgx
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/imgui_performance_window.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/imgui_ecs_window.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/imgui_render_settings_window.cpp
-        # ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/imgui_resource_manager_window.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/imgui_resource_manager_window.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/resource_manager_adapter.cpp
 
     # geometry
     PUBLIC

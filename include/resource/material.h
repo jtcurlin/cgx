@@ -19,13 +19,11 @@ namespace cgx::resource
     {
     public:
         Material(
-            const std::string& source_path,
-            const std::string& derived_path,
-            const std::string& name,
+            const std::string& path, const std::string& tag,
+            float shininess = 32.0f, 
             glm::vec3 ambient_color = glm::vec3(0.2f, 0.1f, 0.1f), 
             glm::vec3 diffuse_color = glm::vec3(1.0f, 0.75f, 0.8f), 
             glm::vec3 specular_color = glm::vec3(1.0f, 0.9f, 0.9f), 
-            float shininess = 32.0f, 
             const std::shared_ptr<Texture>& ambient_map = nullptr,
             const std::shared_ptr<Texture>& diffuse_map = nullptr,
             const std::shared_ptr<Texture>& specular_map = nullptr,
@@ -33,7 +31,7 @@ namespace cgx::resource
         );
         ~Material() = default;
 
-        virtual std::string getTypeName() const override { return "Material"; }
+        virtual ResourceType getType() const override { return ResourceType::Material; }
 
         void setAmbientMap(const std::shared_ptr<Texture>& map)     { m_ambient_map = map;  }
         void setDiffuseMap(const std::shared_ptr<Texture>& map)     { m_diffuse_map = map;  }

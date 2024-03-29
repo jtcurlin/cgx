@@ -8,23 +8,13 @@
 
 namespace cgx::resource
 {
-    Mesh::Mesh(const std::string& source_path,
-               const std::string& derived_path,
-               const std::string& name,
+    Mesh::Mesh(const std::string& path,
+               const std::string& tag,
                const std::vector<Vertex>& vertices,
                const std::vector<uint32_t>& indices,
                const std::shared_ptr<Material>& material)
-        : Resource(source_path, derived_path, name) 
+        : Resource(path, tag)
         , m_vertices(vertices), m_indices(indices), m_material(material)
-    {
-        Setup();
-    }
-    
-    Mesh::Mesh(const std::string& name,
-               const std::vector<Vertex>& vertices,
-               const std::vector<uint32_t>& indices,
-               const std::shared_ptr<Material>& material)
-        : Resource(name), m_vertices(vertices), m_indices(indices), m_material(material)
     {
         Setup();
     }

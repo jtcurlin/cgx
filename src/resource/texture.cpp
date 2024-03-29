@@ -9,17 +9,13 @@
 
 namespace cgx::resource
 {
-    Texture::Texture(const std::string& path, uint32_t width, uint32_t height, 
-                     uint32_t num_channels, GLenum format, unsigned char* pixels)
-        : Resource(path, path)
-        , m_width(width)
-        , m_height(height)
-        , m_num_channels(num_channels)
-        , m_format(format) 
-        , m_pixels(pixels)
-    {
-        Setup();
-    }
+    Texture::Texture(const std::string& path, const std::string& tag,
+                     uint32_t width, uint32_t height, uint32_t num_channels, 
+                     GLenum format, unsigned char* pixels)
+        : Resource(path, tag)
+        , m_width(width), m_height(height), m_num_channels(num_channels)
+        , m_format(format) , m_pixels(pixels)
+    { Setup(); }
 
     Texture::~Texture()
     {

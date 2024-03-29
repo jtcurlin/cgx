@@ -18,10 +18,10 @@ namespace cgx::resource
     public:
 
         // Shader(const std::string& shader_dir_path, const std::string& vert_filename, const std::string& frag_filename);       // constructor
-        Shader(const std::string& shader_root_dir, const std::string& shader_name);
+        Shader(const std::string& path, const std::string& tag); 
         ~Shader();                                                      
 
-        virtual std::string getTypeName() const override { return "Shader"; }
+        virtual ResourceType getType() const override { return ResourceType::Shader; }
 
         bool isInitialized() const { return m_initialized; }
 
@@ -33,8 +33,8 @@ namespace cgx::resource
         bool m_initialized = false;
 
         unsigned int m_program_id;        // shader program reference m_program_id
-        std::string m_vert_path;
-        std::string m_frag_path;
+        std::string m_vert_path = "";
+        std::string m_frag_path = "";
 
         bool checkCompileErrors(unsigned int shader, std::string type);
 

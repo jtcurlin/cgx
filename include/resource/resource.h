@@ -7,15 +7,18 @@
 
 namespace cgx::resource
 {
-    using RUID = size_t;  // resource unique-identifiers are size_t's
+    class ResourceManager;
 
-    struct ResourceMetadata
+    using RUID = size_t;
+    const RUID k_invalid_id = 0;
+
+    enum class ResourceType
     {
-        RUID ruid = 0;
-        std::string type = "";
-        std::string name = "";
-        std::string source_path = "";
-        std::string derived_path = "";
+        Mesh,
+        Model,
+        Material,
+        Texture,
+        Shader
     };
 
     class Resource
@@ -23,52 +26,32 @@ namespace cgx::resource
     public:
         virtual ~Resource() = default;
 
-        virtual std::string getTypeName() const = 0;
+        virtual ResourceType getType() const = 0;
 
-        RUID getRUID() const                   { return m_ruid; }
-        ResourceMetadata getMetadata() const    { return {m_ruid, getTypeName(), m_name, m_source_path, m_derived_path}; }
+        RUID getID() const                      { return m_id; }
+        bool isActive() const                   { return m_id != k_invalid_id; }
+        std::string getTag() const              { return m_tag; }
+        void setTag(const std::string& tag)     { m_tag = tag; }
+        bool hasTag() const                     {return !m_tag.empty(); }
 
-        std::string getName() const             { return m_name; }
-        void setName(const std::string& name)   { m_name = name; }
-
-        std::string getSourcePath() const             { return m_source_path; }
-        void setSourcePath(const std::string& path)   { m_source_path = path; }
-
-        std::string getDerivedPath() const             { return m_derived_path; }
-        void setDerivedPath(const std::string& path)   { m_derived_path = path; }
+        std::string getPath() const             { return m_path; }
+        void setPath(const std::string& path)   { m_path = path; }
 
     protected:
-        Resource(const std::string& source_path, const std::string& derived_path, const std::string& name = "")
-            : m_source_path(source_path), m_derived_path(derived_path), m_name(name)
-        { 
-            m_ruid = GenerateRUID();
-            if (m_name.empty())
-            {
-                m_name = deriveNameFromPath(derived_path);
-            }
-        }
-
-        Resource(const std::string& name)
-            : m_name(name)
-        {
-            m_ruid = GenerateRUID();
-        }
+        Resource(const std::string& path, const std::string& tag = "")
+            : m_tag(tag), m_path(path)
+        {}
 
     private:
-        size_t m_ruid;
+        friend class ResourceManager;
+        void setID(RUID id) { m_id = id; };
+
+        RUID m_id;
+        std::string m_tag; 
+        std::string m_path;
+
         
-        std::string m_name;
-        std::string m_source_path = "";
-        std::string m_derived_path = "";
-
-        // generate a unique resource ID
-        static RUID GenerateRUID() { 
-            static RUID s_next_ruid = 0;
-            static std::mutex s_ruid_mutex;
-            std::lock_guard<std::mutex> lock(s_ruid_mutex);
-            return s_next_ruid++;
-        }
-
+        /*
         // derive a name for a resource from a filepath
         static std::string deriveNameFromPath(const std::string& path)
         {
@@ -91,6 +74,7 @@ namespace cgx::resource
 
             return file_name;
         }
+        */
 
     }; // class Resource
 

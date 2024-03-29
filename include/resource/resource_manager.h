@@ -6,6 +6,10 @@
 #include "resource/resource.h"
 #include "resource/import/resource_importer.h"
 
+#include "ecs/ecs_manager.h"
+#include "ecs/events/engine_events.h"
+
+#include <iomanip>
 #include <typeindex>
 #include <typeinfo>
 #include <unordered_map>
@@ -25,28 +29,34 @@ namespace cgx::resource
             return s_instance;
         }
 
+        void setECSManager(std::shared_ptr<cgx::ecs::ECSManager> ecs_manager)
+        {
+            m_ecs_manager = ecs_manager;
+        }
+
         template<typename ResourceType>
-        void registerImporter(const std::shared_ptr<ResourceImporter>& importer)
+        void RegisterImporter(const std::shared_ptr<ResourceImporter>& importer)
         {
             std::lock_guard<std::recursive_mutex> lock(m_importers_mutex);
             m_importers[std::type_index(typeid(ResourceType))] = importer;
         }
 
         template<typename ResourceType>
-        void deregisterImporter()
+        void DeregisterImporter()
         {
             std::lock_guard<std::recursive_mutex> lock(m_importers_mutex);
             m_importers.erase(std::type_index(typeid(ResourceType)));
         }
         
         template<typename ResourceType>
-        std::shared_ptr<ResourceType> importResource(const std::string& path)
+        RUID ImportResource(const std::string& path)
         {
-            std::lock_guard<std::recursive_mutex> lock(m_resource_mutex);
-            auto resource_it = m_derived_path_to_ruid.find(path);
-            if (resource_it != m_derived_path_to_ruid.end())
+            std::lock_guard<std::recursive_mutex> lock(m_resources_mutex);
+
+            auto resource_it = m_path_to_id.find(path);
+            if (resource_it != m_path_to_id.end())
             {
-                return std::static_pointer_cast<ResourceType>(m_resources[resource_it->second]);
+                return resource_it->second;
             }
             else
             {
@@ -55,230 +65,264 @@ namespace cgx::resource
                 auto importer_it = m_importers.find(std::type_index(typeid(ResourceType)));
                 if (importer_it != m_importers.end())
                 {
-                    importer_it->second->Initialize(path);
-                    RUID ruid = importer_it->second->Import();
-                    return getResource<ResourceType>(ruid);
+                    if (importer_it->second->Initialize(path))
+                    {
+                        return importer_it->second->Import();
+                    }
+                    else
+                    {
+                        CGX_ERROR("ResourceManager: Failed to import resource at specified path [{}]. " \
+                                  "(Importer initialization was unsuccessful)", path);
+                        return 0;
+                    }
+                }
+                else
+                {
+                    CGX_ERROR("ResourceManager: Failed to import resource at specified path [{}]. " \
+                              "(No importer registered for resource type)", path);
+                    return 0;
                 }
             }
-            CGX_WARN("Failed to import resource from specified path {}", path);
+        }
+
+        template <typename ResourceType>
+        RUID RegisterResource(const std::shared_ptr<ResourceType>& resource, bool permit_duplicate_path)
+        {
+            std::lock_guard<std::recursive_mutex> lock(m_resources_mutex);
+
+            if (resource == nullptr)
+            {
+                CGX_ERROR("ResourceManager: failed to register resource. (null resource)");
+                return k_invalid_id;
+            }
+            if (resource->getPath().empty())
+            {
+                CGX_ERROR("ResourceManager:: failed to register resource. (no path assigned)");
+                return k_invalid_id;
+            }
+
+            auto original_path = resource->getPath();
+            auto search_result = m_path_to_id.find(original_path);
+
+            if (search_result != m_path_to_id.end() && !permit_duplicate_path)
+            {
+                CGX_ERROR("ResourceManager: failed to register resource. (path "  \
+                          "[{}] already registered, duplicates not permitted)", original_path);
+                return k_invalid_id;
+            }
+
+            std::string new_path = original_path;
+            if (search_result != m_path_to_id.end())
+            {
+                bool path_found = false;
+                for (int i=1; i<=999; ++i)
+                {
+                    std::ostringstream oss;
+                    oss << original_path << "_" << std::setw(3) << std::setfill('0') << i;
+                    new_path = oss.str();
+
+                    if (m_path_to_id.find(new_path) == m_path_to_id.end())
+                    {
+                        CGX_INFO("ResourceManager:: path {} already registered. assigning resource " \
+                                 "to path {}.", original_path, new_path);
+                        path_found = true;
+                        break;
+                    }
+                }
+                if (!path_found)
+                {
+                    CGX_ERROR("ResourceManager:: failed to register resource (reached maximum " \
+                              "duplicate paths while attempting to register path {}", original_path);
+                    return k_invalid_id;
+                }
+            }
+
+            RUID id = GenerateID();
+            resource->setID(id);
+            resource->setPath(new_path);
+
+            m_path_to_id[resource->getPath()] = resource->getID();
+            m_resources[resource->getID()] = resource;
+
+            if (resource->hasTag())
+            {
+                m_tag_to_id[resource->getTag()].push_back(resource->getID());
+            }
+
+            cgx::ecs::Event event(cgx::events::resource::RESOURCE_REGISTERED);
+            event.SetParam(cgx::events::resource::RESOURCE_UID, resource->getID());
+            event.SetParam(cgx::events::resource::RESOURCE_PATH, resource->getPath());
+            event.SetParam(cgx::events::resource::RESOURCE_TAG, resource->getTag());
+            event.SetParam(cgx::events::resource::RESOURCE_TYPE, resource->getType());
+            m_ecs_manager->SendEvent(event);
+
+            return id;
+        }
+        
+        bool DeregisterResource(RUID id)
+        {
+            std::lock_guard<std::recursive_mutex> lock(m_resources_mutex);
+
+            auto it = m_resources.find(id);
+
+            if (it != m_resources.end())
+            {
+                // remove resource's tag->id mapping (if present)
+                auto& resource = it->second;
+                if (resource->hasTag())
+                {
+                    
+                    auto& tags = m_tag_to_id[resource->getTag()];
+                    if (!tags.empty())
+                    {
+                        tags.erase(std::remove(tags.begin(), tags.end(), resource->getID()), tags.end());
+                    }
+                }
+
+                // remove resource's path->id mapping
+                m_path_to_id.erase(resource->getPath());
+
+                id = resource->getID();
+
+                m_resources.erase(id); // remove resource (remove id->resource mapping)
+                resource->setID(k_invalid_id); // set resource's id to invalid_id 
+
+                cgx::ecs::Event event(cgx::events::resource::RESOURCE_UNREGISTERED);
+                event.SetParam(cgx::events::resource::RESOURCE_UID, id);
+                m_ecs_manager->SendEvent(event);
+
+                return true;
+            }
+            else
+            {
+                CGX_WARN("ResourceManager: failed to remove resource. (resource ID [{}] not registered)", id);
+                return false;
+            }
+        }
+
+        template <typename ResourceType>
+        std::shared_ptr<ResourceType> getResource(RUID id)
+        {
+            std::lock_guard<std::recursive_mutex> lock(m_resources_mutex);
+
+            auto resource_it = m_resources.find(id);
+            if (resource_it != m_resources.end())
+            {
+                return std::static_pointer_cast<ResourceType>(resource_it->second);
+            }
+
+            CGX_ERROR("ResourceManager: failed to get resource. (resource ID [{}] not registered)", id);
             return nullptr;
         }
 
-        template <typename ResourceType>
-        std::shared_ptr<ResourceType> loadResource(const std::shared_ptr<ResourceType>& resource)
-        {
-            std::lock_guard<std::recursive_mutex> lock(m_resource_mutex);
-
-            ResourceMetadata metadata = resource->getMetadata();
-
-            m_resources[metadata.ruid] = resource;
-
-            if (!(metadata.name.empty()))
-            {
-                m_name_to_ruid[metadata.name].push_back(metadata.ruid);
-            }
-            if (!(metadata.source_path.empty()))
-            {
-                m_source_path_to_ruid[metadata.source_path].push_back(metadata.ruid);
-            }
-            if (!(metadata.derived_path.empty()))
-            {
-                m_derived_path_to_ruid[metadata.derived_path] = metadata.ruid;
-            }
-            
-            return std::static_pointer_cast<ResourceType>(m_resources[metadata.ruid]);
-        }
-        
-        void removeResource(size_t ruid)
-        {
-            std::lock_guard<std::recursive_mutex> lock(m_resource_mutex);
-            
-            auto it = m_resources.find(ruid);
-            if (it != m_resources.end())
-            {
-                auto resource = it->second;
-                auto metadata = resource->getMetadata();
-
-                if (!metadata.name.empty())
-                {
-                    auto& names = m_name_to_ruid[metadata.name];
-                    names.erase(std::remove(names.begin(), names.end(), ruid), names.end());
-                    if (names.empty())
-                    {
-                        m_name_to_ruid.erase(metadata.name);
-                    }
-                }
-
-                if (!metadata.source_path.empty())
-                {
-                    auto& sources = m_source_path_to_ruid[metadata.source_path];
-                    sources.erase(std::remove(sources.begin(), sources.end(), ruid), sources.end());
-                    if (sources.empty())
-                    {
-                        m_source_path_to_ruid.erase(metadata.source_path);
-                    }
-                }
-
-                if (!metadata.derived_path.empty())
-                {
-                    m_derived_path_to_ruid.erase(metadata.derived_path);
-                }
-
-                m_resources.erase(it);
-            }
-            else
-            {
-                CGX_ERROR("Failed to remove resource: RUID {} not found.", ruid);
-            }
-        }
-
-        template <typename ResourceType>
-        std::shared_ptr<ResourceType> getResource(RUID ruid)
-        {
-            std::lock_guard<std::recursive_mutex> lock(m_resource_mutex);
-            auto it = m_resources.find(ruid);
-            if (it != m_resources.end())
-            {
-                return std::static_pointer_cast<ResourceType>(it->second);
-            }
-            else
-            {
-                return nullptr;
-            }
-        }
-
         // get all resources with the specified name (non-templated variant)
-        std::vector<RUID> getRUIDByName(const std::string& name)
+        std::vector<RUID> getIDByTag(const std::string& tag)
         {
-            std::lock_guard<std::recursive_mutex> lock(m_resource_mutex);
-            std::vector<RUID> ruid_list;
+            std::lock_guard<std::recursive_mutex> lock(m_resources_mutex);
 
-            auto resource_it = m_name_to_ruid.find(name);
-            if (resource_it != m_name_to_ruid.end())
+            auto resource_it = m_tag_to_id.find(tag);
+            if (resource_it != m_tag_to_id.end())
             {
-                ruid_list = resource_it->second;
+                return resource_it->second;
             }
-            return ruid_list;
+
+            CGX_WARN("ResourceManager: failed to get ID(s) for tag. (tag {} not registered)", tag);
+            return {};
         }
 
         // get all resources of a particular type with the specified name (templated variant)
         template <typename ResourceType>
-        std::vector<RUID> getRUIDByName(const std::string& name)
+        std::vector<RUID> getResourceIDByTag(const std::string& tag)
         {
-            std::lock_guard<std::recursive_mutex> lock(m_resource_mutex);
-            std::vector<RUID> ruid_list;
+            std::lock_guard<std::recursive_mutex> lock(m_resources_mutex);
 
-            auto resource_it = m_name_to_ruid.find(name);
-            if (resource_it != m_name_to_ruid.end())
+            std::vector<RUID> id_list;
+
+            auto resource_it = m_tag_to_id.find(tag);
+            if (resource_it != m_tag_to_id.end())
             {
-                for (auto ruid : resource_it->second)
+                for (auto id : resource_it->second)
                 {
-                    auto casted_resource = std::dynamic_pointer_cast<ResourceType>(m_resources[ruid]);
+                    auto casted_resource = std::dynamic_pointer_cast<ResourceType>(m_resources[id]);
                     if (casted_resource)
                     {
-                        ruid_list.push_back(casted_resource->getRUID());
+                        id_list.push_back(casted_resource->getID());
                     }
                 }
+                return id_list;
             }
-            return ruid_list;
+            
+            CGX_WARN("ResourceManager:: failed to get ID(s) for tag. (tag [{}] not registered)", tag);
+            return {};
         }
 
-        // get all resources with the specified source path (non-templated variant)
-        std::vector<RUID> getRUIDbySourcePath(const std::string& path)
+        // get all resources with the specified path (non-templated variant)
+        RUID getIDbyPath(const std::string& path)
         {
-            std::lock_guard<std::recursive_mutex> lock(m_resource_mutex);
-            std::vector<RUID> ruid_list;
+            std::lock_guard<std::recursive_mutex> lock(m_resources_mutex);
 
-            auto resource_it = m_source_path_to_ruid.find(path);
-            if (resource_it != m_source_path_to_ruid.end())
+            auto resource_it = m_path_to_id.find(path);
+            if (resource_it != m_path_to_id.end())
             {
-                ruid_list = resource_it->second;
+                return resource_it->second;
             }
-            return ruid_list;
-        }
 
-        // get all resource uid's of a particular type with the specified source path (templated variant)
-        template<typename ResourceType>
-        std::vector<RUID> getRUIDbySourcePath(const std::string& path)
-        {
-            std::lock_guard<std::recursive_mutex> lock(m_resource_mutex);
-            std::vector<RUID> ruid_list;
-
-            auto resource_it = m_source_path_to_ruid.find(path);
-            if (resource_it != m_source_path_to_ruid.end())
-            {
-                for (auto ruid : resource_it->second)
-                {
-                    auto resource = std::dynamic_pointer_cast<ResourceType>(m_resources[ruid]);
-                    if (resource)
-                    {
-                        ruid_list.push_back(resource->getRUID());
-                    }
-                }
-            }
-            return ruid_list;
+            CGX_WARN("ResourceManager: failed to get ID(s) for specified path. (path [{}] not registered)", path);
+            return k_invalid_id;
         }
 
         // get all resource uid's (non-templated variant)
-        std::vector<RUID> getAllRUIDs()
+        std::vector<RUID> getAllIDs()
         {
-            std::lock_guard<std::recursive_mutex> lock(m_resource_mutex);
-            std::vector<RUID> ruid_list;
+            std::lock_guard<std::recursive_mutex> lock(m_resources_mutex);
 
-            for (auto& [ruid, resource] : m_resources)
+            std::vector<RUID> id_list;
+            for (auto& [id, resource] : m_resources)
             {
-                ruid_list.push_back(ruid);
+                id_list.push_back(id);
             }
-            return ruid_list;
+            return id_list;
         }
  
         // get all resource uid's of a particular type (templated variant)
         template<typename ResourceType>
-        std::vector<RUID> getAllRUIDs()
+        std::vector<RUID> getAllIDs()
         {
-            std::lock_guard<std::recursive_mutex> lock(m_resource_mutex);
-            std::vector<RUID> ruid_list;
+            std::lock_guard<std::recursive_mutex> lock(m_resources_mutex);
 
-            for (auto& [ruid, resource] : m_resources)
+            std::vector<RUID> id_list;
+            for (auto& [id, resource] : m_resources)
             {
                 auto casted_resource = std::dynamic_pointer_cast<ResourceType>(resource);
                 if (casted_resource)
                 {
-                    ruid_list.push_back(ruid);
+                    id_list.push_back(id);
                 }
             }
-            return ruid_list;
+            return id_list;
         }
 
-        ResourceMetadata getResourceMetadata(RUID ruid)
-        {
-            std::lock_guard<std::recursive_mutex> lock(m_resource_mutex);
-            ResourceMetadata metadata;
-
-            auto resource_it = m_resources.find(ruid);
-            if (resource_it != m_resources.end())
-            {
-                return resource_it->second->getMetadata();
-            }
-            else
-            {
-                CGX_ERROR("ResourceManager::getResourceMetadata() : RUID {} not found", ruid);
-                return ResourceMetadata();
-            }
-        }
 
     private:
         ResourceManager() {}
 
+        static RUID GenerateID() { 
+            static RUID s_next_id = 1;
+            static std::mutex s_id_mutex;
+            std::lock_guard<std::mutex> lock(s_id_mutex);
+            return s_next_id++;
+        }
+
+        std::shared_ptr<cgx::ecs::ECSManager> m_ecs_manager;
+
         std::unordered_map<RUID, std::shared_ptr<Resource>> m_resources;
-        std::recursive_mutex m_resource_mutex;
+        std::recursive_mutex m_resources_mutex;
 
         std::unordered_map<std::type_index, std::shared_ptr<ResourceImporter>> m_importers;
         std::recursive_mutex m_importers_mutex;
 
-        std::unordered_map<std::string, std::vector<RUID>> m_name_to_ruid;
-        std::unordered_map<std::string, std::vector<RUID>> m_source_path_to_ruid;;
-        std::unordered_map<std::string, RUID> m_derived_path_to_ruid;
+        std::unordered_map<std::string, RUID> m_path_to_id;
+        std::unordered_map<std::string, std::vector<RUID>> m_tag_to_id;
 
     }; // class ResourceManager
 

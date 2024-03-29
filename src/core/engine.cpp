@@ -35,7 +35,7 @@ namespace cgx::core {
 
     void Engine::Initialize() {
         cgx::utility::LoggingHandler::Initialize();
-        CGX_TRACE("engine - initializing")
+        CGX_INFO("Engine: Initializing.")
 
         m_time_system = Time();
         m_time_system.Start();
@@ -50,10 +50,9 @@ namespace cgx::core {
         m_window_manager= std::make_shared<cgx::core::WindowManager>();
         m_window_manager->Initialize(m_settings.window_width,
                                      m_settings.window_height,
-                                     "engine");
+                                     "CGX");
 
         m_input_manager = std::make_shared<cgx::input::InputManager>(m_ecs_manager, m_window_manager);
-        // (temp : remove this)
 
         // check glad loaded
         CGX_ASSERT(gladLoadGLLoader((GLADloadproc) glfwGetProcAddress), "Failed to initialize GLAD.");
@@ -77,15 +76,30 @@ namespace cgx::core {
         }
         m_physics_system->Initialize(m_ecs_manager);
 
+        m_resource_manager_adapter = std::make_shared<cgx::gui::ResourceManagerAdapter>(m_ecs_manager);
+
+        auto model_importer = std::make_shared<cgx::resource::ResourceImporterOBJ>();
+        auto image_importer = std::make_shared<cgx::resource::ResourceImporterImage>();
+
+        auto& resource_manager = cgx::resource::ResourceManager::getSingleton();
+        resource_manager.setECSManager(m_ecs_manager);
+
+        resource_manager.RegisterImporter<cgx::resource::Model>(model_importer);
+        resource_manager.RegisterImporter<cgx::resource::Texture>(image_importer);
+
         // ----- IMGUI ------
+
 
         m_imgui_manager = std::make_unique<cgx::gui::ImGuiManager>();
         m_imgui_manager->Initialize(m_window_manager->getGLFWWindow());
 
+        m_imgui_resource_manager_window = std::make_unique<cgx::gui::ImGuiResourceManagerWindow>(m_settings.asset_dir, m_resource_manager_adapter);
+        m_imgui_manager->RegisterImGuiWindow(m_imgui_resource_manager_window.get());
+
         m_imgui_render_window = std::make_unique<cgx::gui::ImGuiRenderWindow>(m_framebuffer);
         m_imgui_manager->RegisterImGuiWindow(m_imgui_render_window.get());
 
-        m_imgui_ecs_window = std::make_unique<cgx::gui::ImGuiECSWindow>(m_ecs_manager);
+        m_imgui_ecs_window = std::make_unique<cgx::gui::ImGuiECSWindow>(m_ecs_manager, m_resource_manager_adapter);
         m_imgui_manager->RegisterImGuiWindow(m_imgui_ecs_window.get());
 
         m_imgui_performance_window = std::make_unique<cgx::gui::ImGuiPerformanceWindow>(m_time_system);
@@ -98,19 +112,11 @@ namespace cgx::core {
         m_imgui_render_settings_window = std::make_unique<cgx::gui::ImGuiRenderSettingsWindow>(m_render_settings);
         m_imgui_manager->RegisterImGuiWindow(m_imgui_render_settings_window.get());
 
-        auto model_importer = std::make_shared<cgx::resource::ResourceImporterOBJ>();
-        auto image_importer = std::make_shared<cgx::resource::ResourceImporterImage>();
-
-        auto& resource_manager = cgx::resource::ResourceManager::getSingleton();
-
-        resource_manager.registerImporter<cgx::resource::Model>(model_importer);
-        resource_manager.registerImporter<cgx::resource::Texture>(image_importer);
-        
+                
         // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         // glDepthMask(GL_TRUE);
         // glEnable(GL_DEPTH_TEST);
         // glDepthFunc(GL_LESS);
-
     }
 
     void Engine::Update() {
@@ -123,10 +129,6 @@ namespace cgx::core {
     }
 
     void Engine::Render() {
-
-        // glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-        /// glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
         // model, view, projection matrices
         glm::mat4 view_mat = m_camera->getViewMatrix();
         glm::mat4 proj_mat = glm::perspective(
@@ -179,12 +181,6 @@ namespace cgx::core {
             shader->setMat4("model", model_mat);
 
             model->Draw(*shader);
-            GLenum err;
-            while ((err = glGetError()) != GL_NO_ERROR)
-            {
-                CGX_DEBUG("OpenGL error: {}", err);
-            }
-
         }
     }
 
@@ -203,6 +199,7 @@ namespace cgx::core {
         m_ecs_manager->AddEventListener(cgx::events::engine::ENABLE_CAMERA_CONTROL, [this](cgx::ecs::Event& event) {
             this->m_camera->EnableManualControl();
             this->m_window_manager->DisableCursor();
+            this->m_imgui_manager->DisableInput();
         });
 
         // 'g' : activate GUI control (normal cursor operation, fixed camera)
@@ -211,6 +208,7 @@ namespace cgx::core {
         m_ecs_manager->AddEventListener(cgx::events::engine::DISABLE_CAMERA_CONTROL, [this](cgx::ecs::Event& event) {
             this->m_camera->DisableManualControl();
             this->m_window_manager->EnableCursor();
+            this->m_imgui_manager->EnableInput();
         });
     }
 

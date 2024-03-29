@@ -3,28 +3,30 @@
 #pragma once
 
 #include "gui/imgui_window.h"
-#include "render/resource_manager.h"
+#include "gui/resource_manager_adapter.h"
+
+#include "ecs/ecs_manager.h"
+#include "resource/resource.h"
+#include "resource/resource_manager.h"
 
 #include <string>
 #include <vector>
 
 namespace cgx::gui
 {
-    enum class ResourceType
+
+    struct ResourceEntry
     {
-        model,
-        material,
-        texture,
-        shader
+        cgx::resource::RUID ruid;
+        std::string tag;
     };
-
-
 
     class ImGuiResourceManagerWindow : public ImGuiWindow
     {
     public:
         ImGuiResourceManagerWindow(
-            std::shared_ptr<cgx::render::ResourceManager> resource_manager
+            const std::string& data_dir_path,
+            std::shared_ptr<ResourceManagerAdapter> resource_manager_adapter
         );
 
         void Render() override;
@@ -35,20 +37,24 @@ namespace cgx::gui
         void RenderShaderList();
 
         void RenderModelEditor();
-        void RendeMaterialEditor();
+        void RenderMaterialEditor();
         void RenderTextureEditor();
         void RenderShaderEditor();
 
+        void RenderImportButton(const std::vector<std::string>& extensions, 
+                                std::function<void(const std::string&)> file_selected_cb);
+        void PopulateFileList(const std::vector<std::string>& extensions);
+
     private:
-        std::shared_ptr<cgx::render::ResourceManager> m_resource_manager;
 
-        std::vector<std::string> m_models;
-        std::vector<std::string> m_materials;
-        std::vector<std::string> m_textures;
-        std::vector<std::string> m_shaders;
+        std::shared_ptr<ResourceManagerAdapter> m_resource_manager_adapter;
+        std::string m_data_dir_path;
 
-        std::string  m_current_resource;
-        ResourceType m_current_resource_type;
+        cgx::resource::RUID m_current_resource = cgx::resource::k_invalid_id;
+
+        bool                        m_display_file_list;
+        std::string                 m_current_file;
+        std::vector<std::string>    m_file_list;
 
 
     }; // class ImGuiResourceManagerWindow

@@ -32,8 +32,6 @@ void Sandbox::Initialize()
 
     CGX_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "MSAA Framebuffer not complete."); 
     glBindFramebuffer(GL_FRAMEBUFFER, 0); CGX_CHECK_GL_ERROR;
-
-    
 }
 
 void Sandbox::Update()
@@ -98,8 +96,8 @@ void Sandbox::LoadAssets()
         "soccerball/ball.obj", 
         "light_cube/light_cube.obj", 
         "sponza/sponza.obj", 
-        "backpack/backpack.obj",
-        "holodeck/holodeck.obj"
+        // "backpack/backpack.obj",
+        // "holodeck/holodeck.obj"
     };
     shader_names = {"model", "lighting"};   // i.e. "model" -> fetches 'cgx/cgx/shaders/model.vs' and 'cgx/cgx/shaders/model.fs'
 
@@ -119,13 +117,13 @@ void Sandbox::LoadAssets()
     for (const auto& filename : model_filenames)
     {
         std::filesystem::path model_path = m_settings.asset_dir / filename;
-        cgx::resource::ResourceManager::getSingleton().importResource<cgx::resource::Model>(model_path);
+        cgx::resource::ResourceManager::getSingleton().ImportResource<cgx::resource::Model>(model_path);
     }
 
     for (const auto& name : shader_names)
     {
-        auto shader = std::make_shared<cgx::resource::Shader>(m_settings.shader_dir.string(), name);
-        cgx::resource::ResourceManager::getSingleton().loadResource<cgx::resource::Shader>(shader);
+        auto shader = std::make_shared<cgx::resource::Shader>((m_settings.shader_dir / name).string(), name);
+        cgx::resource::ResourceManager::getSingleton().RegisterResource<cgx::resource::Shader>(shader, false);
     }
 }
 

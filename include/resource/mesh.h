@@ -50,14 +50,8 @@ namespace cgx::resource
     {
     public:
 
-        Mesh(const std::string& source_path,
-             const std::string& derived_path,
-             const std::string& name,
-             const std::vector<Vertex>& vertices, 
-             const std::vector<uint32_t>& indices, 
-             const std::shared_ptr<Material>& material = nullptr);
-        
-        Mesh(const std::string& name,
+        Mesh(const std::string& path,
+             const std::string& tag,
              const std::vector<Vertex>& vertices, 
              const std::vector<uint32_t>& indices, 
              const std::shared_ptr<Material>& material = nullptr);
@@ -70,7 +64,7 @@ namespace cgx::resource
 
         void setMaterial(std::shared_ptr<Material> material) { m_material = material; }
 
-        virtual std::string getTypeName() const override { return "Mesh"; }
+        virtual ResourceType getType() const override { return ResourceType::Mesh; }
 
     private:
         void Setup();

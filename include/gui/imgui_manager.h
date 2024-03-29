@@ -29,8 +29,13 @@ namespace cgx::gui
 
         void RenderCoreMenu();
 
+        void EnableInput();
+        void DisableInput();
+
 
     private:
         std::vector<ImGuiWindow*> m_imgui_windows;
+
+        void ClearInputs(ImGuiIO& io);
     };
 }

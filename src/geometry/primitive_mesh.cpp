@@ -98,12 +98,13 @@ namespace cgx::geometry
         }
 
         auto mesh = std::make_shared<cgx::resource::Mesh>(
-            "primitive_plane",
+            "cgx::geometry::primitive::plane",
+            "plane",
             vertices,
             indices,
             nullptr
         );
-        cgx::resource::ResourceManager::getSingleton().loadResource<cgx::resource::Mesh>(mesh);
+        cgx::resource::ResourceManager::getSingleton().RegisterResource<cgx::resource::Mesh>(mesh, false);
     }
 
 
@@ -188,12 +189,13 @@ namespace cgx::geometry
         }
 
         auto mesh = std::make_shared<cgx::resource::Mesh>(
-            "primitive_plane",
+            "cgx::geometry::primitive::sphere",
+            "sphere",
             vertices,
             indices,
             nullptr
         );
-        cgx::resource::ResourceManager::getSingleton().loadResource<cgx::resource::Mesh>(mesh);
+        cgx::resource::ResourceManager::getSingleton().RegisterResource<cgx::resource::Mesh>(mesh, false);
     }
 
 } // namespace cgx::geometry

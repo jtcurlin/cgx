@@ -30,8 +30,6 @@ namespace cgx::gui
         void setMinSize(float width, float height); 
         void setMaxSize(float width, float height);
 
-        
-
     protected:
         std::string m_title                 = "Window";
         bool        m_is_visible            = true;
@@ -43,5 +41,10 @@ namespace cgx::gui
         float       m_aspect_ratio{1};
         float       m_min_size[2]{240.0f, 180.0f};      // minimum window size
         float       m_max_size[2]{1920.0f, 1080.0f};    // maximum window size
+
+
+    
+
+
     };
 }
