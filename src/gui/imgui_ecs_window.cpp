@@ -240,9 +240,9 @@ namespace cgx::gui
         {
             auto& component = m_ecs_manager->GetComponent<TransformComponent>(entity);
             
-            if (ImGui::SliderFloat3("Position##TransformComponentPosition", &component.position[0], -25.0f, 25.0f)); 
-            if (ImGui::SliderFloat3("Rotation##TransformComponentRotation", &component.rotation[0], -180.0f, 180.0f));
-            if (ImGui::SliderFloat3("Scale##TransformComponentScale", &component.scale[0], -10.0f, 10.0f)); 
+            ImGui::SliderFloat3("Position##TransformComponentPosition", &component.position[0], -25.0f, 25.0f); 
+            ImGui::SliderFloat3("Rotation##TransformComponentRotation", &component.rotation[0], -180.0f, 180.0f);
+            ImGui::SliderFloat3("Scale##TransformComponentScale", &component.scale[0], -10.0f, 10.0f); 
         }
 
         ImGui::Separator();

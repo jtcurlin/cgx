@@ -156,6 +156,7 @@ target_link_libraries(cgx PUBLIC
 
 set(SHADERS_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data/shaders/")
 set(ASSETS_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data/assets/")
+set(FONTS_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data/fonts/")
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/utility/paths.h.in
                ${CMAKE_CURRENT_SOURCE_DIR}/include/utility/paths.h
                @ONLY )
@@ -174,6 +175,14 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_CURRENT_SOURCE_DIR}/data/assets
         ${ASSETS_DIRECTORY}
+)
+
+# copy fonts to build directory
+add_custom_command(
+    TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${CMAKE_CURRENT_SOURCE_DIR}/data/fonts
+        ${FONTS_DIRECTORY}
 )
 
 add_subdirectory(examples)

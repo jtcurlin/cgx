@@ -58,6 +58,7 @@ namespace cgx::core {
 
         std::filesystem::path shader_dir = SHADERS_DIRECTORY;
         std::filesystem::path asset_dir = ASSETS_DIRECTORY;
+        std::filesystem::path font_dir = FONTS_DIRECTORY;
     };
 
     struct TimeData {

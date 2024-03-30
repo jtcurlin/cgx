@@ -32,6 +32,8 @@ namespace cgx::gui
         void EnableInput();
         void DisableInput();
 
+        void SetStyle(const char* font_path);
+
 
     private:
         std::vector<ImGuiWindow*> m_imgui_windows;

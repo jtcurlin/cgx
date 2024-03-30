@@ -4,3 +4,4 @@
 
 #define SHADERS_DIRECTORY "/Users/curlin/dev/cgx/build/data/shaders/"
 #define ASSETS_DIRECTORY "/Users/curlin/dev/cgx/build/data/assets/"
+#define FONTS_DIRECTORY "/Users/curlin/dev/cgx/build/data/fonts/"

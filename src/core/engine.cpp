@@ -92,6 +92,7 @@ namespace cgx::core {
 
         m_imgui_manager = std::make_unique<cgx::gui::ImGuiManager>();
         m_imgui_manager->Initialize(m_window_manager->getGLFWWindow());
+        m_imgui_manager->SetStyle((m_settings.font_dir / "SFPRODISPLAYMEDIUM.OTF").c_str());
 
         m_imgui_resource_manager_window = std::make_unique<cgx::gui::ImGuiResourceManagerWindow>(m_settings.asset_dir, m_resource_manager_adapter);
         m_imgui_manager->RegisterImGuiWindow(m_imgui_resource_manager_window.get());
