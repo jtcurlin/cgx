@@ -1,11 +1,13 @@
 // Copyright © 2024 Jacob Curlin
 
+/* unused
+
 #include "gui/imgui_ecs_window.h"
 
 #include "core/common.h"
-#include "ecs/components/transform_component.h"
-#include "ecs/components/render_component.h"
-#include "ecs/components/light_component.h"
+#include "ecs/components/transform.h"
+#include "ecs/components/render.h"
+#include "ecs/components/point_light.h"
 #include "ecs/components/rigid_body.h"
 #include "ecs/events/engine_events.h"
 #include "resource/resource.h"
@@ -111,7 +113,7 @@ namespace cgx::gui
 
     void ImGuiECSWindow::DisplayRenderComponentEditor(cgx::ecs::Entity entity)
     {
-        bool has_render_component = m_ecs_manager->HasComponent<RenderComponent>(entity);
+        bool has_render_component = m_ecs_manager->HasComponent<cgx::component::Render>(entity);
 
         const char* button_text = has_render_component ? "Remove" : "Add";
         float button_width = ImGui::CalcTextSize(button_text).x + ImGui::GetStyle().FramePadding.x * 2.0f;
@@ -127,7 +129,7 @@ namespace cgx::gui
         {
             if (ImGui::Button("Remove##RemoveRenderComponent"))
             {
-                m_ecs_manager->RemoveComponent<RenderComponent>(entity);
+                m_ecs_manager->RemoveComponent<cgx::component::Render>(entity);
                 has_render_component = false;
             }
         }
@@ -137,7 +139,7 @@ namespace cgx::gui
             {
                 m_ecs_manager->AddComponent(
                     entity,
-                    RenderComponent {
+                    cgx::component::Render{
                         .model = nullptr,
                         .shader = nullptr
                 });
@@ -147,7 +149,7 @@ namespace cgx::gui
 
         if (has_render_component)
         {
-            auto& render_component = m_ecs_manager->GetComponent<RenderComponent>(entity);
+            auto& render_component = m_ecs_manager->GetComponent<cgx::component::Render>(entity);
 
             if (ImGui::BeginCombo(
                 "Model##RenderComponentModel", 
@@ -201,7 +203,7 @@ namespace cgx::gui
 
     void ImGuiECSWindow::DisplayTransformComponentEditor(cgx::ecs::Entity entity)
     {
-        bool has_transform_component = m_ecs_manager->HasComponent<TransformComponent>(entity);
+        bool has_transform_component = m_ecs_manager->HasComponent<cgx::component::Transform>(entity);
 
         const char* button_text = has_transform_component ? "Remove" : "Add";
         float button_width = ImGui::CalcTextSize(button_text).x + ImGui::GetStyle().FramePadding.x * 2.0f;
@@ -217,7 +219,7 @@ namespace cgx::gui
         {
             if (ImGui::Button("Remove##RemoveTransformComponent"))
             {
-                m_ecs_manager->RemoveComponent<TransformComponent>(entity);
+                m_ecs_manager->RemoveComponent<cgx::component::Transform>(entity);
                 has_transform_component = false;
             }
         }
@@ -225,24 +227,27 @@ namespace cgx::gui
         {
             if (ImGui::Button("Add##AddTransformComponent"))
             {
-                m_ecs_manager->AddComponent(
-                    entity, 
-                    TransformComponent {
-                        .position = glm::vec3(0.0f, 0.0f, 0.0f),
-                        .rotation = glm::vec3(0.0f, 0.0f, 0.0f),
-                        .scale = glm::vec3(1.0f, 1.0f, 1.0f)
-                    });
+                m_ecs_manager->AddComponent(entity, cgx::component::Transform());
                 has_transform_component = true;
             }
         }
 
         if (has_transform_component)
         {
-            auto& component = m_ecs_manager->GetComponent<TransformComponent>(entity);
+            auto& component = m_ecs_manager->GetComponent<cgx::component::Transform>(entity);
             
-            ImGui::SliderFloat3("Position##TransformComponentPosition", &component.position[0], -25.0f, 25.0f); 
-            ImGui::SliderFloat3("Rotation##TransformComponentRotation", &component.rotation[0], -180.0f, 180.0f);
-            ImGui::SliderFloat3("Scale##TransformComponentScale", &component.scale[0], -10.0f, 10.0f); 
+            if (ImGui::SliderFloat3("Position##TransformComponentPosition", &component.local_position[0], -25.0f, 25.0f)) 
+            {
+                component.dirty = true;
+            }
+            if (ImGui::SliderFloat3("Rotation##TransformComponentRotation", &component.local_rotation[0], -180.0f, 180.0f))
+            {
+                component.dirty = true;
+            }
+            if (ImGui::SliderFloat3("Scale##TransformComponentScale", &component.local_scale[0], -10.0f, 10.0f)) 
+            {
+                component.dirty = true;
+            }
         }
 
         ImGui::Separator();
@@ -253,7 +258,7 @@ namespace cgx::gui
 
     void ImGuiECSWindow::DisplayRigidBodyEditor(cgx::ecs::Entity entity)
     {
-        bool has_rigid_body = m_ecs_manager->HasComponent<RigidBody>(entity);  
+        bool has_rigid_body = m_ecs_manager->HasComponent<cgx::component::RigidBody>(entity);  
 
         const char* button_text = has_rigid_body ? "Remove" : "Add";
 
@@ -270,7 +275,7 @@ namespace cgx::gui
         {
             if (ImGui::Button("Remove##RemoveRigidBody"))
             {
-                m_ecs_manager->RemoveComponent<RigidBody>(entity);
+                m_ecs_manager->RemoveComponent<cgx::component::RigidBody>(entity);
                 has_rigid_body = false;
             }
         }
@@ -280,7 +285,7 @@ namespace cgx::gui
             {
                 m_ecs_manager->AddComponent(
                     entity,
-                    RigidBody {
+                    cgx::component::RigidBody {
                         .velocity = glm::vec3(0.0f, 0.0f, 0.0f),
                         .acceleration = glm::vec3(0.0f, 0.0f, 0.0f),
                 });
@@ -290,9 +295,9 @@ namespace cgx::gui
 
         if (has_rigid_body)
         {
-            auto& component = m_ecs_manager->GetComponent<RigidBody>(entity);
-            if (ImGui::SliderFloat3("Velocity##RigidBodyPosition", &component.velocity[0], -100.0f, 100.0f));
-            if (ImGui::SliderFloat3("Acceleration##RigidBodyAcceleration", &component.acceleration[0], 0.0f, 1.0f));
+            auto& component = m_ecs_manager->GetComponent<cgx::component::RigidBody>(entity);
+            ImGui::SliderFloat3("Velocity##RigidBodyPosition", &component.velocity[0], -100.0f, 100.0f);
+            ImGui::SliderFloat3("Acceleration##RigidBodyAcceleration", &component.acceleration[0], 0.0f, 1.0f);
         }
 
         ImGui::Separator();
@@ -302,7 +307,7 @@ namespace cgx::gui
 
     void ImGuiECSWindow::DisplayLightComponentEditor(cgx::ecs::Entity entity)
     {
-        bool has_light_component = m_ecs_manager->HasComponent<LightComponent>(entity);
+        bool has_light_component = m_ecs_manager->HasComponent<cgx::component::PointLight>(entity);
 
         const char* button_text = has_light_component ? "Remove" : "Add";
         float button_width = ImGui::CalcTextSize(button_text).x + ImGui::GetStyle().FramePadding.x * 2.0f;
@@ -318,7 +323,7 @@ namespace cgx::gui
         {
             if (ImGui::Button("Remove##RemoveLightComponent"))
             {
-                m_ecs_manager->RemoveComponent<LightComponent>(entity);
+                m_ecs_manager->RemoveComponent<cgx::component::PointLight>(entity);
                 has_light_component = false;
             }
         }
@@ -328,7 +333,7 @@ namespace cgx::gui
             {
                 m_ecs_manager->AddComponent(
                     entity,
-                    LightComponent {
+                    cgx::component::PointLight {
                         .position = glm::vec3(0.0f, 0.0f, 0.0f),
                         .color = glm::vec3(0.0f, 0.0f, 0.0f),
                         .intensity = 1.0f
@@ -339,7 +344,7 @@ namespace cgx::gui
 
         if (has_light_component)
         {
-            auto& component = m_ecs_manager->GetComponent<LightComponent>(entity);
+            auto& component = m_ecs_manager->GetComponent<cgx::component::PointLight>(entity);
             ImGui::SliderFloat3("Position##LightPosition", &component.position[0], -100.0f, 100.0f);
             ImGui::SliderFloat3("Color##LightColor", &component.color[0], 0.0f, 1.0f);
             ImGui::SliderFloat("Intensity##LightIntensity", &component.intensity, 0.0f, 100.0f);
@@ -351,3 +356,5 @@ namespace cgx::gui
     }
 
 }
+
+*/

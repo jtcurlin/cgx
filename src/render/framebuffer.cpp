@@ -6,7 +6,6 @@
 
 namespace cgx::render
 {
-
     Framebuffer::Framebuffer(uint32_t width, uint32_t height)
         : m_FBO(0)
         , m_texture_id(0)

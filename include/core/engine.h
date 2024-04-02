@@ -11,15 +11,26 @@
 
 #include "input/input_manager.h"
 
-#include "ecs/ecs_manager.h"
-#include "ecs/components/transform_component.h"
+#include "ecs/entity_manager.h"
+#include "ecs/component_manager.h"
+#include "ecs/system_manager.h"
+
+// #include "ecs/ecs_manager.h"
+#include "ecs/components/transform.h"
 #include "ecs/components/rigid_body.h"
-#include "ecs/components/render_component.h"
-#include "ecs/components/light_component.h"
+#include "ecs/components/render.h"
+#include "ecs/components/point_light.h"
+#include "ecs/components/scene_node.h"
+
+#include "event/event.h"
+#include "event/event_handler.h"
+
+#include "scene/scene.h"
+#include "scene/scene_manager.h"
 
 #include "gui/imgui_manager.h"
 #include "gui/imgui_render_window.h"
-#include "gui/imgui_ecs_window.h"
+// #include "gui/imgui_ecs_window.h"
 #include "gui/imgui_performance_window.h"
 #include "gui/imgui_render_settings_window.h"
 #include "gui/imgui_resource_manager_window.h"
@@ -38,6 +49,7 @@
 
 #include "render/camera.h"
 #include "render/framebuffer.h"
+#include "render/render_system.h"
 
 #include "geometry/primitive_mesh.h"
 
@@ -83,6 +95,8 @@ namespace cgx::core {
 
         virtual void Shutdown();
 
+        void SetupECS();
+        void SetupGUI();
         void SetupEngineEvents();
 
     protected:
@@ -90,34 +104,28 @@ namespace cgx::core {
         TimeData m_time_data;
 
         Time m_time_system;
+        bool m_is_running;
 
-        // unique
+        std::shared_ptr<cgx::ecs::EntityManager>    m_entity_registry;
+        std::shared_ptr<cgx::ecs::ComponentManager> m_component_registry;
+        std::shared_ptr<cgx::ecs::SystemManager>    m_system_registry;
+
         std::shared_ptr<cgx::core::WindowManager> m_window_manager;
+        std::shared_ptr<cgx::event::EventHandler> m_event_handler;
         std::shared_ptr<cgx::input::InputManager> m_input_manager;
-        std::unique_ptr<cgx::render::Camera> m_camera;
 
-        std::shared_ptr<cgx::core::PhysicsSystem> m_physics_system;
+        std::shared_ptr<cgx::scene::SceneManager> m_scene_manager; 
+        std::shared_ptr<cgx::scene::Scene> m_curr_scene; 
 
-        std::shared_ptr<cgx::render::Framebuffer> m_framebuffer;
-
-        // shared
-        std::shared_ptr<cgx::ecs::ECSManager> m_ecs_manager;
+        std::shared_ptr<cgx::render::RenderSystem> m_render_system;
 
         std::unique_ptr<cgx::gui::ImGuiManager> m_imgui_manager;
-        std::unique_ptr<cgx::gui::ImGuiECSWindow> m_imgui_ecs_window;
+        // std::unique_ptr<cgx::gui::ImGuiECSWindow> m_imgui_ecs_window;
         std::unique_ptr<cgx::gui::ImGuiRenderWindow> m_imgui_render_window;
         std::unique_ptr<cgx::gui::ImGuiPerformanceWindow> m_imgui_performance_window;
         std::unique_ptr<cgx::gui::ImGuiRenderSettingsWindow> m_imgui_render_settings_window;
         std::unique_ptr<cgx::gui::ImGuiResourceManagerWindow> m_imgui_resource_manager_window;
         std::shared_ptr<cgx::gui::ResourceManagerAdapter> m_resource_manager_adapter;
-
-        std::shared_ptr<cgx::gui::RenderSettings> m_render_settings;
-
-        // std::shared_ptr<cgx::resource::Mesh> m_primitive_plane_mesh;
-        // std::shared_ptr<cgx::resource::Shader> m_primitive_shader;
-
-        bool m_is_running;
-        bool m_imgui_active;
     };
 
 }

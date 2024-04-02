@@ -1,11 +1,13 @@
 // Copyright © 2024 Jacob Curlin
 
+
+/* unused
+
 #pragma once
 
 #include "gui/imgui_window.h"
 #include "gui/resource_manager_adapter.h"
 
-#include "ecs/ecs_manager.h"
 #include "ecs/system.h"
 #include "ecs/common.h"
 
@@ -36,3 +38,4 @@ namespace cgx::gui
 
 } // namespace cgx::gui
 
+*/

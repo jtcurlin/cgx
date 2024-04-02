@@ -1,7 +1,14 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "gui/imgui_manager.h"
+
+#include "gui/imgui_ecs_window.h"
 #include "gui/imgui_performance_window.h"
+#include "gui/imgui_render_settings_window.h"
+#include "gui/imgui_render_window.h"
+#include "gui/imgui_resource_manager_window.h"
+#include "gui/resource_manager_adapter.h"
+
 #include <imgui/imgui.h>
 #include <imgui/backends/imgui_impl_glfw.h>
 #include <imgui/backends/imgui_impl_opengl3.h>

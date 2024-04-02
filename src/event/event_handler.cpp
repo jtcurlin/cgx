@@ -1,15 +1,15 @@
 // Copyright © 2024 Jacob Curlin
 
-#include "ecs/event_manager.h"
+#include "event/event_handler.h"
 
-namespace cgx::ecs
+namespace cgx::event
 {
-    void EventManager::AddListener(EventId event_id, std::function<void(Event&)> const& listener)
+    void EventHandler::AddListener(EventId event_id, std::function<void(Event&)> const& listener)
     {
         m_listeners[event_id].push_back(listener);
     }
 
-    void EventManager::SendEvent(Event& event)
+    void EventHandler::SendEvent(Event& event)
     {
         uint32_t type = event.getType();
 
@@ -19,7 +19,7 @@ namespace cgx::ecs
         }
     }
 
-    void EventManager::SendEvent(EventId event_id)
+    void EventHandler::SendEvent(EventId event_id)
     {
         Event event(event_id);
 
@@ -29,4 +29,4 @@ namespace cgx::ecs
         }
     }
 
-} // namespace cgx::ecs
+} // namespace cgx::event

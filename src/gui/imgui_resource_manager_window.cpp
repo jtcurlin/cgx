@@ -1,7 +1,7 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "gui/imgui_resource_manager_window.h"
-#include "ecs/events/engine_events.h"
+#include "event/events/engine_events.h"
 #include "resource/model.h"
 
 #include <filesystem>

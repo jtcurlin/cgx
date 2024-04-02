@@ -1,17 +1,17 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "input/input_manager.h"
-#include "ecs/events/engine_events.h"
+#include "event/events/engine_events.h"
 
 namespace cgx::input
 {
-    InputManager::InputManager(
-        std::shared_ptr<cgx::ecs::ECSManager> ecs_manager,
-        std::shared_ptr<cgx::core::WindowManager> window_manager
-    )
-        : m_ecs_manager(ecs_manager)
-        , m_window_manager(window_manager) 
+    void InputManager::Initialize(
+        std::shared_ptr<cgx::event::EventHandler> event_handler,
+        std::shared_ptr<cgx::core::WindowManager> window_manager)
     {
+        m_event_handler = event_handler;
+        m_window_manager = window_manager;
+
         m_window_manager->setKeyCallback([this](Key key, KeyAction action)
         {
             this->onKeyboardInput(key, action);
@@ -21,12 +21,12 @@ namespace cgx::input
         {
             this->onMouseButtonInput(key, action);
         });
+
+        
+        m_initialized = true;
     }
 
-    InputManager::~InputManager() {}
-
-
-    void InputManager::BindKeyInputEvent(Key key, KeyAction action, cgx::ecs::Event event)
+    void InputManager::BindKeyInputEvent(Key key, KeyAction action, cgx::event::Event event)
     {
         KeyInput key_input { key, action };
         m_event_bindings.emplace(key_input, event);
@@ -38,7 +38,7 @@ namespace cgx::input
         auto it = m_event_bindings.find(key_input);
         if (it != m_event_bindings.end())
         {
-            m_ecs_manager->SendEvent(it->second);
+            m_event_handler->SendEvent(it->second);
         }
     }
 
@@ -48,7 +48,7 @@ namespace cgx::input
         auto it = m_event_bindings.find(key_input);
         if (it != m_event_bindings.end())
         {
-            m_ecs_manager->SendEvent(it->second);
+            m_event_handler->SendEvent(it->second);
         }
     }
 

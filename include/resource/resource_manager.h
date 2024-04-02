@@ -6,8 +6,8 @@
 #include "resource/resource.h"
 #include "resource/import/resource_importer.h"
 
-#include "ecs/ecs_manager.h"
-#include "ecs/events/engine_events.h"
+#include "event/event_handler.h"
+#include "event/events/engine_events.h"
 
 #include <iomanip>
 #include <typeindex>
@@ -29,9 +29,9 @@ namespace cgx::resource
             return s_instance;
         }
 
-        void setECSManager(std::shared_ptr<cgx::ecs::ECSManager> ecs_manager)
+        void setEventHandler(std::shared_ptr<cgx::event::EventHandler> event_handler)
         {
-            m_ecs_manager = ecs_manager;
+            m_event_handler = event_handler;
         }
 
         template<typename ResourceType>
@@ -149,12 +149,12 @@ namespace cgx::resource
                 m_tag_to_id[resource->getTag()].push_back(resource->getID());
             }
 
-            cgx::ecs::Event event(cgx::events::resource::RESOURCE_REGISTERED);
+            cgx::event::Event event(cgx::events::resource::RESOURCE_REGISTERED);
             event.SetParam(cgx::events::resource::RESOURCE_UID, resource->getID());
             event.SetParam(cgx::events::resource::RESOURCE_PATH, resource->getPath());
             event.SetParam(cgx::events::resource::RESOURCE_TAG, resource->getTag());
             event.SetParam(cgx::events::resource::RESOURCE_TYPE, resource->getType());
-            m_ecs_manager->SendEvent(event);
+            m_event_handler->SendEvent(event);
 
             return id;
         }
@@ -187,9 +187,9 @@ namespace cgx::resource
                 m_resources.erase(id); // remove resource (remove id->resource mapping)
                 resource->setID(k_invalid_id); // set resource's id to invalid_id 
 
-                cgx::ecs::Event event(cgx::events::resource::RESOURCE_UNREGISTERED);
+                cgx::event::Event event(cgx::events::resource::RESOURCE_UNREGISTERED);
                 event.SetParam(cgx::events::resource::RESOURCE_UID, id);
-                m_ecs_manager->SendEvent(event);
+                m_event_handler->SendEvent(event);
 
                 return true;
             }
@@ -313,7 +313,7 @@ namespace cgx::resource
             return s_next_id++;
         }
 
-        std::shared_ptr<cgx::ecs::ECSManager> m_ecs_manager;
+        std::shared_ptr<cgx::event::EventHandler> m_event_handler;
 
         std::unordered_map<RUID, std::shared_ptr<Resource>> m_resources;
         std::recursive_mutex m_resources_mutex;

@@ -1,12 +1,12 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "gui/resource_manager_adapter.h"
-#include "ecs/events/engine_events.h"
+#include "event/events/engine_events.h"
 
 namespace cgx::gui
 {
-    ResourceManagerAdapter::ResourceManagerAdapter(std::shared_ptr<cgx::ecs::ECSManager> ecs_manager)
-        : m_ecs_manager(ecs_manager)
+    ResourceManagerAdapter::ResourceManagerAdapter(std::shared_ptr<cgx::event::EventHandler> event_handler)
+        : m_event_handler(event_handler)
     {
         RegisterEventListeners();
     }
@@ -18,7 +18,7 @@ namespace cgx::gui
 
     void ResourceManagerAdapter::RegisterEventListeners()
     {
-        m_ecs_manager->AddEventListener(cgx::events::resource::RESOURCE_REGISTERED, [this](cgx::ecs::Event& event) 
+        m_event_handler->AddListener(cgx::events::resource::RESOURCE_REGISTERED, [this](cgx::event::Event& event) 
         { 
             cgx::resource::ResourceEntry entry {
                 event.GetParam<cgx::resource::RUID>(cgx::events::resource::RESOURCE_UID),
@@ -27,7 +27,7 @@ namespace cgx::gui
             m_resources[event.GetParam<cgx::resource::ResourceType>(cgx::events::resource::RESOURCE_TYPE)].push_back(entry);
         });
 
-        m_ecs_manager->AddEventListener(cgx::events::resource::RESOURCE_UNREGISTERED, [this](cgx::ecs::Event& event)
+        m_event_handler->AddListener(cgx::events::resource::RESOURCE_UNREGISTERED, [this](cgx::event::Event& event)
         {
             cgx::resource::RUID ruid = event.GetParam<cgx::resource::RUID>(cgx::events::resource::RESOURCE_UID);
             auto& resource_entries = m_resources[event.GetParam<cgx::resource::ResourceType>(cgx::events::resource::RESOURCE_TYPE)];

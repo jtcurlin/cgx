@@ -2,12 +2,14 @@
 
 #pragma once
 
-#include "ecs/common.h"
 #include <any>
 #include <unordered_map>
 
-namespace cgx::ecs
+namespace cgx::event
 {
+    using EventId = std::uint32_t;
+    using ParamId = std::uint32_t;
+
     class Event
     {
     public:
@@ -36,4 +38,4 @@ namespace cgx::ecs
 
     }; // class Event
 
-} // namespace cgx::ecs
+} // namespace cgx::event

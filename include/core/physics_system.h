@@ -3,19 +3,23 @@
 #pragma once
 
 #include "ecs/system.h"
-#include "ecs/ecs_manager.h"
+#include "scene/scene.h"
+
+namespace cgx::ecs { class ComponentManager; }
 
 namespace cgx::core
 {
+
     class PhysicsSystem : public cgx::ecs::System
     {
     public:
-        void Initialize(std::shared_ptr<cgx::ecs::ECSManager> ecs_manager);
+        PhysicsSystem(std::shared_ptr<cgx::ecs::ComponentManager> component_registry);
 
-        void Update(float dt);
+        void Update(float dt) override;
 
     private:
-        std::shared_ptr<cgx::ecs::ECSManager> m_ecs_manager;
+        std::shared_ptr<cgx::scene::Scene> m_scene;
+
     }; // class PhysicsSystem
 
 } // namespace cgx::core

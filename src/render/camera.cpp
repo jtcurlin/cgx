@@ -1,14 +1,14 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "render/camera.h"
-#include "ecs/events/engine_events.h"
+#include "event/events/engine_events.h"
+
+#include "input/input_manager.h"
 
 namespace cgx::render
 {
-
-    Camera::Camera(std::shared_ptr<cgx::input::InputManager> input_manager, glm::vec3 position, glm::vec3 up, float yaw, float pitch)
-        : m_input_manager(input_manager)
-        , m_position(position)
+    Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch)
+        : m_position(position)
         , m_up(up)
         , m_yaw(yaw)
         , m_pitch(pitch)
@@ -20,14 +20,16 @@ namespace cgx::render
     {
         if (m_manual_control_enabled)
         {
+            auto& input_manager = cgx::input::InputManager::GetSingleton();
+
             double x_offset, y_offset;
-            m_input_manager->getMouseOffset(x_offset, y_offset);
+            input_manager.getMouseOffset(x_offset, y_offset);
             Look(x_offset, y_offset, true);
-            
-            if (m_input_manager->isKeyPressed(cgx::input::Key::key_w)) { Translate(kForward, dt);  }
-            if (m_input_manager->isKeyPressed(cgx::input::Key::key_s)) { Translate(kBackward, dt); }
-            if (m_input_manager->isKeyPressed(cgx::input::Key::key_a)) { Translate(kLeft, dt);     }
-            if (m_input_manager->isKeyPressed(cgx::input::Key::key_d)) { Translate(kRight, dt);    }
+
+            if (input_manager.isKeyPressed(cgx::input::Key::key_w)) { Translate(kForward, dt);  }
+            if (input_manager.isKeyPressed(cgx::input::Key::key_s)) { Translate(kBackward, dt); }
+            if (input_manager.isKeyPressed(cgx::input::Key::key_a)) { Translate(kLeft, dt);     }
+            if (input_manager.isKeyPressed(cgx::input::Key::key_d)) { Translate(kRight, dt);    }
         }
         updateCameraVectors();
     }
@@ -84,11 +86,13 @@ namespace cgx::render
     void Camera::EnableManualControl()
     {
         m_manual_control_enabled = true;
+        
+        auto& input_manager = cgx::input::InputManager::GetSingleton();
 
         // extra pre-call to getMouseOffset to 'reset' the current offset created by mouse movements
         // while camera control disabled
         double x_offset, y_offset;
-        m_input_manager->getMouseOffset(x_offset, y_offset); 
+        input_manager.getMouseOffset(x_offset, y_offset); 
     }
 
     void Camera::DisableManualControl()

@@ -2,7 +2,10 @@
 
 #pragma once
 
+/* (unused)
+
 // Implements an interface for managing entities and their associated components. 
+
 
 #include "ecs/entity_manager.h"
 #include "ecs/event_manager.h"
@@ -113,3 +116,5 @@ namespace cgx::ecs
         std::unique_ptr<EventManager> m_event_manager;
     };
 }
+
+*/

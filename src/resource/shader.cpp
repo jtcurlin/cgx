@@ -16,8 +16,11 @@ namespace cgx::resource
 
         std::string base_shader_filename = shader_root_path.filename().string();
 
-        m_vert_path = shader_root_path / (base_shader_filename + ".vs");
-        m_frag_path = shader_root_path / (base_shader_filename + ".fs");
+        fs::path temp_vpath = shader_root_path / (base_shader_filename + ".vs"); // generate vertex shader's full path
+        fs::path temp_fpath = shader_root_path / (base_shader_filename + ".fs"); // generate fragment shader's full path
+
+        m_vert_path = temp_vpath.string();  // explicitly convert path to std::string
+        m_frag_path = temp_fpath.string();  // explicitly convert path to std::string
 
         if (!fs::exists(m_vert_path))
         {

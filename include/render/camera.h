@@ -33,8 +33,7 @@ namespace cgx::render
     public:
         
         explicit Camera(
-            std::shared_ptr<cgx::input::InputManager> input_manager,
-            glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f),
+            glm::vec3 position = glm::vec3(0.0f, 0.0f, 3.0f),
             glm::vec3 up = glm::vec3(0.0f, 1.0f, 0.0f),
             float yaw = kYaw,
             float pitch = kPitch
@@ -55,10 +54,7 @@ namespace cgx::render
         void DisableManualControl();
 
     private:
-
         void updateCameraVectors();
-
-        std::shared_ptr<cgx::input::InputManager> m_input_manager;
 
         bool m_manual_control_enabled = false;
 

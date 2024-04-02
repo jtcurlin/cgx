@@ -1,14 +1,14 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "core/engine.h"
-#include "ecs/events/engine_events.h"
+#include "event/events/engine_events.h"
 
 #include <iostream>
 
 namespace cgx::core {
 
     Engine::Engine()
-            : m_time_data{0.0, 0.0}, m_is_running(false), m_imgui_active(false) {}
+            : m_time_data{0.0, 0.0}, m_is_running(false) {}
 
     // main game loop
     void Engine::Run() {
@@ -28,8 +28,8 @@ namespace cgx::core {
             Render();
 
             m_window_manager->Update();
-
         }
+
         Shutdown();
     }
 
@@ -40,80 +40,55 @@ namespace cgx::core {
         m_time_system = Time();
         m_time_system.Start();
 
-        m_ecs_manager = std::make_shared<cgx::ecs::ECSManager>();
-        m_ecs_manager->Initialize();
-        m_ecs_manager->RegisterComponent<TransformComponent>();
-        m_ecs_manager->RegisterComponent<RenderComponent>();
-        m_ecs_manager->RegisterComponent<LightComponent>();
-        m_ecs_manager->RegisterComponent<RigidBody>();
-
+        m_event_handler = std::make_shared<cgx::event::EventHandler>();
         m_window_manager= std::make_shared<cgx::core::WindowManager>();
         m_window_manager->Initialize(m_settings.window_width,
                                      m_settings.window_height,
                                      "CGX");
+        cgx::input::InputManager::GetSingleton().Initialize(m_event_handler, m_window_manager);
 
-        m_input_manager = std::make_shared<cgx::input::InputManager>(m_ecs_manager, m_window_manager);
-
-        // check glad loaded
-        CGX_ASSERT(gladLoadGLLoader((GLADloadproc) glfwGetProcAddress), "Failed to initialize GLAD.");
-        if (!gladLoadGLLoader((GLADloadproc) glfwGetProcAddress)) { exit(1); }
-
-        glEnable(GL_DEPTH_TEST); CGX_CHECK_GL_ERROR;
-
-        m_framebuffer = std::make_shared<cgx::render::Framebuffer>(m_settings.render_width, m_settings.render_height);
-        m_framebuffer->setClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-
-        m_camera = std::make_unique<cgx::render::Camera>(m_input_manager, glm::vec3(0.0f, 0.0f, 3.0f));
-
-        SetupEngineEvents();
-
-        m_physics_system = m_ecs_manager->RegisterSystem<PhysicsSystem>();
+        
+        SetupECS(); // setup ECS registries and register standard components
+        
+        // setup main scene
+        m_scene_manager = std::make_shared<cgx::scene::SceneManager>();
+        auto scene = m_scene_manager->AddScene("main_scene",
+                                               m_entity_registry,
+                                               m_component_registry,
+                                               m_system_registry,
+                                               m_event_handler);
+        
+        // setup / register physics system
+        auto physics_system = m_system_registry->RegisterSystem<cgx::core::PhysicsSystem>();
         {
             cgx::ecs::Signature signature;
-            signature.set(m_ecs_manager->GetComponentType<RigidBody>());
-            signature.set(m_ecs_manager->GetComponentType<TransformComponent>());
-            m_ecs_manager->SetSystemSignature<PhysicsSystem>(signature);
+            signature.set(m_component_registry->GetComponentType<cgx::component::RigidBody>());
+            signature.set(m_component_registry->GetComponentType<cgx::component::Transform>());
+            m_system_registry->SetSignature<cgx::core::PhysicsSystem>(signature);
         }
-        m_physics_system->Initialize(m_ecs_manager);
 
-        m_resource_manager_adapter = std::make_shared<cgx::gui::ResourceManagerAdapter>(m_ecs_manager);
+        // retup / register rendering system
+        m_render_system = m_system_registry->RegisterSystem<cgx::render::RenderSystem>();
+        {
+            cgx::ecs::Signature signature;
+            signature.set(m_component_registry->GetComponentType<cgx::component::Render>());
+            signature.set(m_component_registry->GetComponentType<cgx::component::Transform>());
+            m_system_registry->SetSignature<cgx::render::RenderSystem>(signature);
+        }
+        m_render_system->Initialize();
+
+        SetupEngineEvents();        // setup default engine event callbacks etc.
+        SetupGUI();                 // setup imgui menus
 
         auto model_importer = std::make_shared<cgx::resource::ResourceImporterOBJ>();
         auto image_importer = std::make_shared<cgx::resource::ResourceImporterImage>();
 
         auto& resource_manager = cgx::resource::ResourceManager::getSingleton();
-        resource_manager.setECSManager(m_ecs_manager);
+        resource_manager.setEventHandler(m_event_handler);
 
         resource_manager.RegisterImporter<cgx::resource::Model>(model_importer);
         resource_manager.RegisterImporter<cgx::resource::Texture>(image_importer);
 
-        // ----- IMGUI ------
-
-
-        m_imgui_manager = std::make_unique<cgx::gui::ImGuiManager>();
-        m_imgui_manager->Initialize(m_window_manager->getGLFWWindow());
-        m_imgui_manager->SetStyle((m_settings.font_dir / "SFPRODISPLAYMEDIUM.OTF").c_str());
-
-        m_imgui_resource_manager_window = std::make_unique<cgx::gui::ImGuiResourceManagerWindow>(m_settings.asset_dir, m_resource_manager_adapter);
-        m_imgui_manager->RegisterImGuiWindow(m_imgui_resource_manager_window.get());
-
-        m_imgui_render_window = std::make_unique<cgx::gui::ImGuiRenderWindow>(m_framebuffer);
-        m_imgui_manager->RegisterImGuiWindow(m_imgui_render_window.get());
-
-        m_imgui_ecs_window = std::make_unique<cgx::gui::ImGuiECSWindow>(m_ecs_manager, m_resource_manager_adapter);
-        m_imgui_manager->RegisterImGuiWindow(m_imgui_ecs_window.get());
-
-        m_imgui_performance_window = std::make_unique<cgx::gui::ImGuiPerformanceWindow>(m_time_system);
-        m_imgui_manager->RegisterImGuiWindow(m_imgui_performance_window.get());
-
-        m_render_settings = std::make_shared<cgx::gui::RenderSettings>();
-        m_render_settings->msaa = false;
-        m_render_settings->skybox = false;
-        
-        m_imgui_render_settings_window = std::make_unique<cgx::gui::ImGuiRenderSettingsWindow>(m_render_settings);
-        m_imgui_manager->RegisterImGuiWindow(m_imgui_render_settings_window.get());
-
-                
         // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
         // glDepthMask(GL_TRUE);
         // glEnable(GL_DEPTH_TEST);
@@ -123,94 +98,94 @@ namespace cgx::core {
     void Engine::Update() {
         m_time_system.Update();
         TimeContext& update_time_data = m_time_system.getLastUpdate();
-        double& delta_time = update_time_data.frame_time;
-        
-        m_physics_system->Update(static_cast<float>(delta_time));
-        m_camera->Update(delta_time);
+        double& dt = update_time_data.frame_time;
+
+        m_system_registry->Update(dt);
     }
 
     void Engine::Render() {
-        // model, view, projection matrices
-        glm::mat4 view_mat = m_camera->getViewMatrix();
-        glm::mat4 proj_mat = glm::perspective(
-                glm::radians(m_camera->getZoom()),
-                (float) m_settings.render_width / (float) m_settings.render_height,
-                0.1f, 100.0f
-        );
 
-        // iterate through active entities present in the ecs manager
-        for (auto &entity: m_ecs_manager->getActiveEntities()) {
-            glm::mat4 model_mat(1.0f);
+        glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-            // skip rendering of entity if it has no RenderComponent
-            if (!m_ecs_manager->HasComponent<RenderComponent>(entity)) { continue; }
+        m_render_system->Render();
+        m_imgui_manager->Render();
 
-            std::shared_ptr<cgx::resource::Model> model = m_ecs_manager->GetComponent<RenderComponent>(entity).model;
-            std::shared_ptr<cgx::resource::Shader> shader = m_ecs_manager->GetComponent<RenderComponent>(entity).shader;
-
-            // skip rendering of entity if either RenderComponent.model or RenderComponent.shader uninitialized
-            if (!(model && shader)) { continue; }
-
-            // if entity has a TransformComponent, apply transformations to model matrix
-            if (m_ecs_manager->HasComponent<TransformComponent>(entity)) {
-                auto &transform = m_ecs_manager->GetComponent<TransformComponent>(entity);
-
-                // apply rotations transformations around each axis
-                model_mat = glm::rotate(model_mat, glm::radians(transform.rotation.x),
-                                        glm::vec3(1.0f, 0.0f, 0.0f)); // X-axis
-                model_mat = glm::rotate(model_mat, glm::radians(transform.rotation.y),
-                                        glm::vec3(0.0f, 1.0f, 0.0f)); // Y-axis
-                model_mat = glm::rotate(model_mat, glm::radians(transform.rotation.z),
-                                        glm::vec3(0.0f, 0.0f, 1.0f)); // Z-axis
-
-                model_mat = glm::translate(model_mat, transform.position);  // apply position transformation
-
-                model_mat = glm::scale(model_mat, transform.scale); // apply scale transformation
-            }
-
-            // activate shader program, set shader data, draw
-            shader->Use();
-
-            // shader->setVec3("light.position", (m_ecsHandler->GetComponent<TransformComponent>(light))) /TODO
-            shader->setVec3("light.position", 1.0f, 1.0f, 1.0f);
-            shader->setVec3("light.ambient", 0.2f, 0.2f, 0.2f);
-            shader->setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
-            shader->setVec3("light.specular", 1.0f, 1.0f, 1.0f);
-
-            shader->setMat4("proj", proj_mat);
-            shader->setMat4("view", view_mat);
-            shader->setMat4("model", model_mat);
-
-            model->Draw(*shader);
-        }
     }
 
     void Engine::SetupEngineEvents()
     {
+        auto& input_manager = cgx::input::InputManager::GetSingleton();
+
         // 'esc' : quit engine & close window
-        cgx::ecs::Event quit_event(cgx::events::engine::QUIT);
-        m_input_manager->BindKeyInputEvent(cgx::input::Key::key_escape, cgx::input::KeyAction::press, quit_event);
-        m_ecs_manager->AddEventListener(cgx::events::engine::QUIT, [this](cgx::ecs::Event& event) {
+        cgx::event::Event quit_event(cgx::events::engine::QUIT);
+        input_manager.BindKeyInputEvent(cgx::input::Key::key_escape, cgx::input::KeyAction::press, quit_event);
+        m_event_handler->AddListener(cgx::events::engine::QUIT, [this](cgx::event::Event& event) {
             this->m_is_running = false;
         });
 
         // 'm' : activate manual camera control (look/move around)
-        cgx::ecs::Event enable_camera_control_event(cgx::events::engine::ENABLE_CAMERA_CONTROL);
-        m_input_manager->BindKeyInputEvent(cgx::input::Key::key_m, cgx::input::KeyAction::press, enable_camera_control_event);
-        m_ecs_manager->AddEventListener(cgx::events::engine::ENABLE_CAMERA_CONTROL, [this](cgx::ecs::Event& event) {
-            this->m_camera->EnableManualControl();
+        cgx::event::Event enable_camera_control_event(cgx::events::engine::ENABLE_CAMERA_CONTROL);
+        input_manager.BindKeyInputEvent(cgx::input::Key::key_m, cgx::input::KeyAction::press, enable_camera_control_event);
+        m_event_handler->AddListener(cgx::events::engine::ENABLE_CAMERA_CONTROL, [this](cgx::event::Event& event) {
             this->m_window_manager->DisableCursor();
             this->m_imgui_manager->DisableInput();
         });
 
         // 'g' : activate GUI control (normal cursor operation, fixed camera)
-        cgx::ecs::Event disable_camera_control_event(cgx::events::engine::DISABLE_CAMERA_CONTROL);
-        m_input_manager->BindKeyInputEvent(cgx::input::Key::key_g, cgx::input::KeyAction::press, disable_camera_control_event);
-        m_ecs_manager->AddEventListener(cgx::events::engine::DISABLE_CAMERA_CONTROL, [this](cgx::ecs::Event& event) {
-            this->m_camera->DisableManualControl();
+        cgx::event::Event disable_camera_control_event(cgx::events::engine::DISABLE_CAMERA_CONTROL);
+        input_manager.BindKeyInputEvent(cgx::input::Key::key_g, cgx::input::KeyAction::press, disable_camera_control_event);
+        m_event_handler->AddListener(cgx::events::engine::DISABLE_CAMERA_CONTROL, [this](cgx::event::Event& event) {
             this->m_window_manager->EnableCursor();
             this->m_imgui_manager->EnableInput();
         });
+    }
+
+    void Engine::SetupGUI()
+    {
+        // imgui manager
+        m_imgui_manager = std::make_unique<cgx::gui::ImGuiManager>();
+        m_imgui_manager->Initialize(m_window_manager->getGLFWWindow());
+        m_imgui_manager->SetStyle((m_settings.font_dir / "SFPRODISPLAYMEDIUM.OTF").c_str());
+
+        // imgui resource manager menu
+        m_resource_manager_adapter = std::make_shared<cgx::gui::ResourceManagerAdapter>(m_event_handler);
+        m_imgui_resource_manager_window = std::make_unique<cgx::gui::ImGuiResourceManagerWindow>(m_settings.asset_dir, m_resource_manager_adapter);
+        m_imgui_manager->RegisterImGuiWindow(m_imgui_resource_manager_window.get());
+
+        // imgui render viewport window
+        m_imgui_render_window = std::make_unique<cgx::gui::ImGuiRenderWindow>(m_render_system->getFramebuffer());
+        m_imgui_manager->RegisterImGuiWindow(m_imgui_render_window.get());
+
+        // imgui ecs menu
+        // m_imgui_ecs_window = std::make_unique<cgx::gui::ImGuiECSWindow>(m_ecs_manager, m_resource_manager_adapter);
+        // m_imgui_manager->RegisterImGuiWindow(m_imgui_ecs_window.get());
+
+        // imgui performance statistics window
+        m_imgui_performance_window = std::make_unique<cgx::gui::ImGuiPerformanceWindow>(m_time_system);
+        m_imgui_manager->RegisterImGuiWindow(m_imgui_performance_window.get());
+
+        // (todo: remove/move to renderer class) render settings setup
+        // m_render_settings = std::make_shared<cgx::gui::RenderSettings>();
+        // m_render_settings->msaa = false;
+        // m_render_settings->skybox = false;
+
+        // imgui render settings window
+        // m_imgui_render_settings_window = std::make_unique<cgx::gui::ImGuiRenderSettingsWindow>(m_render_settings);
+        // m_imgui_manager->RegisterImGuiWindow(m_imgui_render_settings_window.get());
+    }
+
+    void Engine::SetupECS()
+    {
+        m_entity_registry = std::make_shared<cgx::ecs::EntityManager>();
+        m_component_registry = std::make_shared<cgx::ecs::ComponentManager>();
+        m_system_registry = std::make_shared<cgx::ecs::SystemManager>(m_component_registry);
+
+        // register components
+        m_component_registry->RegisterComponent<cgx::component::Transform>();
+        m_component_registry->RegisterComponent<cgx::component::RigidBody>();
+        m_component_registry->RegisterComponent<cgx::component::Render>();
+        m_component_registry->RegisterComponent<cgx::component::PointLight>();
     }
 
     void Engine::Shutdown() {}

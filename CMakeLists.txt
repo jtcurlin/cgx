@@ -46,34 +46,39 @@ target_sources(cgx
         ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs/component_manager.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs/entity_manager.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs/system_manager.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs/ecs_manager.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs/event.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs/event_manager.h
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ecs/component_manager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ecs/entity_manager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/ecs/system_manager.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/ecs/ecs_manager.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/ecs/event_manager.cpp
 
     # components
     PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs/components/transform_component.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs/components/render_component.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs/components/point_light.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs/components/render.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs/components/rigid_body.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs/components/light_component.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs/components/scene_node.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs/components/transform.h
+
+    # event
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/event/event.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/event/event_handler.h
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/event/event_handler.cpp
 
     # events
     PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs/events/engine_events.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/event/events/engine_events.h
 
     # render
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include/render/camera.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/render/framebuffer.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/render/render_system.h
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/render/camera.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/render/framebuffer.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/render/render_system.cpp
 
     #resource
     PUBLIC
@@ -121,6 +126,16 @@ target_sources(cgx
         ${CMAKE_CURRENT_SOURCE_DIR}/include/geometry/primitive_mesh.h
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/geometry/primitive_mesh.cpp
+
+    # scene
+    PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/scene/node.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/scene/scene.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/scene/scene_manager.h
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/scene/node.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/scene/scene.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/scene/scene_manager.cpp
 
     # utility
     PUBLIC

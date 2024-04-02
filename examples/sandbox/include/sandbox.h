@@ -28,20 +28,13 @@ protected:
     void Render() override;
     void Shutdown() override;
 
-    void ImguiRender();
     void LoadAssets();
     void SkyboxRender();
 
-    std::string message;
 private:
 
     std::vector<std::string> model_filenames;
-
     std::vector<std::string> shader_names;
 
     std::unique_ptr<cgx::render::CubeMap> m_skybox;
-
-    unsigned int m_msaa_framebuffer;
-    bool m_msaa_enabled = false;
-    bool m_skybox_enabled = false;
 };

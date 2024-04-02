@@ -5,7 +5,6 @@
 #include "gui/imgui_window.h"
 #include "gui/resource_manager_adapter.h"
 
-#include "ecs/ecs_manager.h"
 #include "resource/resource.h"
 #include "resource/resource_manager.h"
 

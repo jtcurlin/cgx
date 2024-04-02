@@ -4,7 +4,6 @@
 #include "core/window_manager.h"
 
 #include "ecs/common.h"
-#include "ecs/event.h"
 
 #include <iostream>
 

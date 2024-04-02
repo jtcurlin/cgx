@@ -1,10 +1,12 @@
 // Copyright © 2024 Jacob Curlin
 
-#include "core/common.h"
 #include "ecs/system_manager.h"
 
 namespace cgx::ecs
 {
+    SystemManager::SystemManager(std::shared_ptr<cgx::ecs::ComponentManager> component_registry)
+        : m_component_registry(component_registry) {}
+
     void SystemManager::EntityDestroyed(Entity entity)
     {
         CGX_TRACE("SystemManager :: EntityDestroyed Called.");

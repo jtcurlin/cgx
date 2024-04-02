@@ -3,24 +3,37 @@
 #pragma once
 
 #include "input/input_types.h"
+#include "event/event.h"
+#include "event/event_handler.h"
 
 #include "core/common.h"
 #include "core/window_manager.h"
-#include "ecs/ecs_manager.h"
 
 namespace cgx::input
 {
+    // ! SINGLETON
+
     class InputManager
     {
     public:
-        InputManager(
-            std::shared_ptr<cgx::ecs::ECSManager> ecs_manager,
+        InputManager(const InputManager&) = delete;
+        InputManager& operator=(const InputManager&) = delete;
+
+        ~InputManager() = default;
+
+        static InputManager& GetSingleton()
+        {
+            static InputManager s_instance;
+            return s_instance;
+        }
+
+        void Initialize(
+            std::shared_ptr<cgx::event::EventHandler> event_handler,
             std::shared_ptr<cgx::core::WindowManager> window_manager
         );
-        ~InputManager();
 
         // bind an event to a specific input
-        void BindKeyInputEvent(Key key, KeyAction action, cgx::ecs::Event event);
+        void BindKeyInputEvent(Key key, KeyAction action, cgx::event::Event event);
 
         // for glfw to call
         void onKeyboardInput(Key key, KeyAction action);
@@ -39,10 +52,14 @@ namespace cgx::input
         void getMouseOffset(double &x_offset, double &y_offset);
 
     private:
-        std::shared_ptr<cgx::ecs::ECSManager> m_ecs_manager;
+        InputManager() = default;   // default constructor (singleton)
+
+        bool m_initialized { false };
+
+        std::shared_ptr<cgx::event::EventHandler> m_event_handler;
         std::shared_ptr<cgx::core::WindowManager> m_window_manager;
 
-        std::unordered_map<KeyInput, cgx::ecs::Event, KeyInputHash> m_event_bindings;
+        std::unordered_map<KeyInput, cgx::event::Event, KeyInputHash> m_event_bindings;
 
         double  m_mouse_x       = 0.0;
         double  m_mouse_y       = 0.0;

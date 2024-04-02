@@ -11,27 +11,6 @@ void Sandbox::Initialize()
 {
     Engine::Initialize();
     LoadAssets();   // load models / textures etc. 
-
-    // setup MSAA frame buffer object
-    glGenFramebuffers(1, &m_msaa_framebuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, m_msaa_framebuffer);
-
-    unsigned int msaa_tex_color_buf;
-    glGenTextures(1, &msaa_tex_color_buf); CGX_CHECK_GL_ERROR;
-    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msaa_tex_color_buf); CGX_CHECK_GL_ERROR;
-    glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, 4, GL_RGB, m_settings.render_width, m_settings.render_height, GL_TRUE); CGX_CHECK_GL_ERROR;
-    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0); CGX_CHECK_GL_ERROR;
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, msaa_tex_color_buf, 0); CGX_CHECK_GL_ERROR;
-
-    unsigned int msaa_rbo;
-    glGenRenderbuffers(1, &msaa_rbo); CGX_CHECK_GL_ERROR;
-    glBindRenderbuffer(GL_RENDERBUFFER, msaa_rbo); CGX_CHECK_GL_ERROR;
-    glRenderbufferStorageMultisample(GL_RENDERBUFFER, 4, GL_DEPTH24_STENCIL8, m_settings.render_width, m_settings.render_height); CGX_CHECK_GL_ERROR;
-    glBindRenderbuffer(GL_RENDERBUFFER, 0); CGX_CHECK_GL_ERROR;
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, msaa_rbo); CGX_CHECK_GL_ERROR;
-
-    CGX_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "MSAA Framebuffer not complete."); 
-    glBindFramebuffer(GL_FRAMEBUFFER, 0); CGX_CHECK_GL_ERROR;
 }
 
 void Sandbox::Update()
@@ -41,54 +20,9 @@ void Sandbox::Update()
 
 void Sandbox::Render()
 {
-    float r, g, b, a;
-    m_framebuffer->getClearColor(r, g, b, a);
-    glDisable(GL_CULL_FACE);
-    glClearColor(r, g, b, a);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    if (m_render_settings->msaa)
-    {
-        glBindFramebuffer(GL_FRAMEBUFFER, m_msaa_framebuffer);
-    }
-    else // msaa disabled
-    { 
-        glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer->getFBO()); 
-    }
-
-    // glEnable(GL_DEPTH_TEST);
-
-    glViewport(0, 0, m_settings.render_width, m_settings.render_height);
-    glClearColor(r, g, b, a);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
     Engine::Render();
-    if (m_render_settings->skybox) { SkyboxRender(); }
-    
-    if (m_render_settings->msaa)
-    {
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, m_msaa_framebuffer);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_framebuffer->getFBO());
-        glBlitFramebuffer(0, 0, m_settings.render_width, m_settings.render_height,
-                        0, 0, m_settings.render_width, m_settings.render_height, 
-                        GL_COLOR_BUFFER_BIT, GL_NEAREST);
-    }
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    glViewport(0, 0, m_settings.window_width, m_settings.window_height);
-
-    // if (m_imgui_active)
-    Sandbox::ImguiRender();
 }
 
-void Sandbox::ImguiRender()
-{
-    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    m_imgui_manager->Render();
-}
 
 void Sandbox::LoadAssets()
 {
@@ -127,6 +61,7 @@ void Sandbox::LoadAssets()
     }
 }
 
+/* fuck this 
 void Sandbox::SkyboxRender()
 {
     glm::mat4 view = m_camera->getViewMatrix();
@@ -137,6 +72,7 @@ void Sandbox::SkyboxRender()
     );
     m_skybox->Draw(view, projection);
 }
+*/
 
 void Sandbox::Shutdown() 
 {
