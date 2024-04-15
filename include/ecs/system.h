@@ -3,33 +3,31 @@
 #pragma once
 
 #include "ecs/common.h"
+#include "ecs/component_registry.h"
 #include <set>
 
-#include "ecs/component_manager.h"
 
 namespace cgx::ecs
 {
-    class System
+class System
+{
+public:
+    explicit System(const std::shared_ptr<ComponentRegistry>& component_registry)
+        : m_component_registry(component_registry) {}
+
+    virtual ~System() = default;
+
+    virtual void update(float dt) = 0;
+
+    template<typename T>
+    T& GetComponent(const Entity entity)
     {
-    public:
-        System(std::shared_ptr<cgx::ecs::ComponentManager> component_registry)
-            : m_component_registry(component_registry) {}
+        return m_component_registry->get_component<T>(entity);
+    }
 
-        virtual ~System() = default;
+    std::set<Entity> m_entities;
 
-        virtual void Update(float dt) = 0;
-
-        template<typename T>
-        T& GetComponent(Entity entity)
-        {
-            return m_component_registry->GetComponent<T>(entity);
-        }
-
-        // system manager updates this vector with entities possessing components
-        // that this sytem is registered for
-        std::set<Entity> m_entities; 
-    protected:
-        std::shared_ptr<cgx::ecs::ComponentManager> m_component_registry;
-
-    };
+protected:
+    std::shared_ptr<ComponentRegistry> m_component_registry;
+};
 }

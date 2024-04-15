@@ -2,41 +2,70 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
-#include <vector>
+#include "core/hierarchy.h"
+
+namespace cgx::ecs
+{
+using Entity = std::uint32_t;
+}
 
 namespace cgx::scene
 {
-    class Node : public std::enable_shared_from_this<Node>
-    {
-    public:
-        Node(std::string label);
-        virtual ~Node() = default;
+using NodeID = std::size_t;
+constexpr NodeID k_invalid_id = core::k_invalid_id;
 
-        std::string getLabel() const;
-        void setLabel(const std::string& label);
+enum class NodeType
+{
+    Entity,
+    Camera,
+    Light,
+    Unknown
+};
 
-        const std::string& getPath() const;
+std::string get_node_typename();
 
-        std::shared_ptr<Node> getParent() const;
-        void setParent(const std::shared_ptr<Node>& parent);
+class Node : public core::Hierarchy
+{
+public:
+    explicit Node(NodeType type, const std::string &tag = "");
+    ~Node() override;
 
-        void addChild(std::unique_ptr<Node> child);
-        bool removeChild(const std::string& label);
+    const NodeType&    get_node_type() const;
+    const std::string& get_node_typename() const;
 
-        std::vector<Node*> getChildren() const;
+    std::string get_path_prefix() const override;
 
-    protected:
-        std::string m_label;
-        std::string m_path;
+private:
+    const NodeType node_type;
+    const std::string m_node_typename;
+};
 
-        std::weak_ptr<Node>                m_parent{};
-        std::vector<std::unique_ptr<Node>> m_children{};
+class EntityNode final : public Node
+{
+public:
+    EntityNode(ecs::Entity entity_id, const std::string &tag);
+    ~EntityNode() override;
 
-        void UpdatePath();
+    const ecs::Entity& get_entity() const;
 
-    }; // class SceneNode
+private:
+    ecs::Entity m_entity;
+};
 
-} // namespace cgx::ecs
+class CameraNode final : public Node
+{
+public:
+    explicit CameraNode(const std::string &tag);
+    ~CameraNode() override;
+};
 
+class LightNode final : public Node
+{
+public:
+    explicit LightNode(const std::string &tag);
+    ~LightNode() override;
+};
+
+
+
+}

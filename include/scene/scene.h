@@ -5,107 +5,94 @@
 #include "scene/node.h"
 #include "ecs/common.h"
 
-#include "ecs/entity_manager.h"
-#include "ecs/component_manager.h"
-#include "ecs/system_manager.h"
+#include "ecs/entity_registry.h"
+#include "ecs/component_registry.h"
+#include "ecs/system_registry.h"
 
 #include "event/event_handler.h"
 
 #include <string>
-#include <memory>
 
 namespace cgx::render
 {
-    class Renderer;
+class Renderer;
 }
 
 namespace cgx::scene
 {
-    class SceneNode : public Node
+class Scene
+{
+public:
+    Scene(
+        std::string                                    label,
+        const std::shared_ptr<ecs::EntityRegistry>&    entity_registry,
+        const std::shared_ptr<ecs::ComponentRegistry>& component_registry,
+        const std::shared_ptr<ecs::SystemRegistry>&    system_registry);
+    ~Scene();
+
+    [[nodiscard]] const std::shared_ptr<Node>& get_root() const;
+
+    void add_node(const std::string& tag, NodeType node_type, Node* parent = nullptr) const;
+
+    void add_entity_node(const std::string& name) const;
+    void add_entity_node(const std::string& name, Node* parent) const;
+
+    // void remove_node(Node* node);
+
+    template<typename T>
+    void add_component(EntityNode* node, const T& component)
     {
-    public:
-        SceneNode(std::string label, cgx::ecs::Entity entity_id);
+        const auto entity = node->get_entity();
+        m_component_registry->add_component<T>(entity, component);
+        CGX_INFO("Scene: Added Component to entity {}", entity);
 
-        const cgx::ecs::Entity getEntity() { return m_entity; }
+        auto signature = m_entity_registry->get_signature(entity);
+        signature.set(m_component_registry->get_component_type<T>(), true);
+        m_entity_registry->set_signature(entity, signature);
 
-    private:
-        cgx::ecs::Entity m_entity;
+        m_system_registry->entity_signature_changed(entity, signature);
+    }
 
-    }; // class SceneNode
-
-    class Scene
+    template<typename T>
+    void remove_component(EntityNode* node) const
     {
-    public:
-        Scene(std::string label);
-        ~Scene() = default;
+        const auto entity = node->get_entity();
+        m_component_registry->remove_component<T>(entity);
 
-        void Initialize(
-            std::shared_ptr<cgx::ecs::EntityManager> entity_registry,
-            std::shared_ptr<cgx::ecs::ComponentManager> component_registry,
-            std::shared_ptr<cgx::ecs::SystemManager> system_registry,
-            std::shared_ptr<cgx::event::EventHandler> event_handler
-        );
+        auto signature = m_entity_registry->get_signature(entity);
+        signature.set(m_component_registry->get_component_type<T>(), false);
+        m_entity_registry->set_signature(entity, signature);
 
-        SceneNode* AddNode(const std::string& label);
-        void RemoveNode(SceneNode* node);
+        m_system_registry->entity_signature_changed(entity, signature);
+    }
 
-        template<typename T>
-        void AddComponent(SceneNode* node, const T& component)
-        {
-            auto entity = node->getEntity();
-            m_component_registry->AddComponent<T>(entity, component);
+    template<typename T>
+    T& get_component(EntityNode* node)
+    {
+        const auto entity = node->get_entity();
+        return m_component_registry->get_component<T>(entity);
+    }
 
-            auto signature = m_entity_registry->GetSignature(entity);
-            signature.set(m_component_registry->GetComponentType<T>(), true);
-            m_entity_registry->SetSignature(entity, signature);
+    template<typename T>
+    [[nodiscard]] ecs::ComponentType get_component_type() const
+    {
+        return m_component_registry->get_component_type<T>();
+    }
 
-            m_system_registry->EntitySignatureChanged(entity, signature);
-        }
+    template<typename T>
+    bool has_component(EntityNode* node) const
+    {
+        const auto entity    = node->get_entity();
+        const auto signature = m_entity_registry->get_signature(entity);
+        return signature.test(m_component_registry->get_component_type<T>());
+    }
 
-        template<typename T>
-        void RemoveComponent(SceneNode* node)
-        {
-            auto entity = node->getEntity();
-            m_component_registry->RemoveComponent<T>(entity);
+private:
+    std::string           m_label;
+    std::shared_ptr<Node> m_root{};
 
-            auto signature = m_entity_registry->GetSignature(entity);
-            signature.set(m_component_registry->GetComponentType<T>(), false);
-            m_entity_registry->SetSignature(entity, signature);
-
-            m_system_registry->EntitySignatureChanged(entity, signature);
-        }
-
-        template<typename T>
-        T& GetComponent(SceneNode* node, T component)
-        {
-            auto entity = node->getEntity();
-            return m_component_registry->GetComponent<T>(entity);
-        }
-
-        template<typename T>
-        cgx::ecs::ComponentType GetComponentType()
-        {
-            return m_component_registry->GetComponentType<T>();
-        }
-
-        template<typename T>
-        bool HasComponent(SceneNode* node)
-        {
-            auto entity = node->getEntity();
-            auto signature = m_entity_registry->GetSignature(entity);
-            return signature.test(m_component_registry->GetComponentType<T>());
-        }
-
-    private:
-        std::string                                  m_label;
-        std::vector<std::unique_ptr<SceneNode>>      m_nodes;
-
-        std::shared_ptr<cgx::ecs::EntityManager>    m_entity_registry;
-        std::shared_ptr<cgx::ecs::ComponentManager> m_component_registry;
-        std::shared_ptr<cgx::ecs::SystemManager>    m_system_registry;
-
-        std::shared_ptr<cgx::event::EventHandler>   m_event_handler;
-
-    }; // class Scene
-
-} // namespace cgx::scene
+    std::shared_ptr<ecs::EntityRegistry>    m_entity_registry;
+    std::shared_ptr<ecs::ComponentRegistry> m_component_registry;
+    std::shared_ptr<ecs::SystemRegistry>    m_system_registry;
+}; // class Scene
+}  // namespace cgx::scene

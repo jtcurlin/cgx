@@ -17,18 +17,24 @@ add_subdirectory(external)
 # cgx Static Library Creation
 add_library(cgx STATIC "")
 
+set(INCLUDE_DIRECTORIES include)
+
 target_sources(cgx
     # core
     PUBLIC
         ${CMAKE_CURRENT_SOURCE_DIR}/include/core/common.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/core/engine.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/core/hierarchy.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/core/item.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/core/window_manager.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/core/time.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/core/time_system.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/core/physics_system.h
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/src/core/engine.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/core/hierarchy.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/core/item.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/core/window_manager.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/core/time.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/core/time_system.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/core/physics_system.cpp
 
     #input
@@ -43,13 +49,13 @@ target_sources(cgx
         ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs/common.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs/system.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs/component_array.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs/component_manager.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs/entity_manager.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs/system_manager.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs/component_registry.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs/entity_registry.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/ecs/system_registry.h
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/ecs/component_manager.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/ecs/entity_manager.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/ecs/system_manager.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ecs/component_registry.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ecs/entity_registry.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/ecs/system_registry.cpp
 
     # components
     PUBLIC
@@ -64,6 +70,7 @@ target_sources(cgx
         ${CMAKE_CURRENT_SOURCE_DIR}/include/event/event.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/event/event_handler.h
     PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/event/event.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/event/event_handler.cpp
 
     # events
@@ -80,46 +87,54 @@ target_sources(cgx
         ${CMAKE_CURRENT_SOURCE_DIR}/src/render/framebuffer.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/render/render_system.cpp
 
-    #resource
+    # asset
     PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/resource/resource_manager.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/resource/material.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/resource/mesh.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/resource/model.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/resource/shader.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/resource/texture.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/resource/import/resource_importer.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/resource/import/resource_importer_image.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/resource/import/resource_importer_obj.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/asset/asset.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/asset/material.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/asset/mesh.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/asset/model.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/asset/shader.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/asset/texture.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/asset/cubemap.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/asset/asset_manager.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/asset/import/asset_importer.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/asset/import/asset_importer_image.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/asset/import/asset_importer_obj.h
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/resource/resource_manager.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/resource/material.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/resource/mesh.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/resource/model.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/resource/shader.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/resource/texture.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/resource/import/resource_importer_image.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/resource/import/resource_importer_obj.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/asset/asset.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/asset/material.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/asset/mesh.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/asset/model.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/asset/shader.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/asset/texture.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/asset/cubemap.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/asset/asset_manager.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/asset/import/asset_importer.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/asset/import/asset_importer_image.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/asset/import/asset_importer_obj.cpp
 
     # gui
     PUBLIC
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gui/gui_context.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/gui/imgui_manager.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/gui/imgui_render_window.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/gui/imgui_window.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/gui/imgui_performance_window.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/gui/imgui_ecs_window.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/gui/imgui_render_settings_window.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/gui/imgui_resource_manager_window.h
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/gui/resource_manager_adapter.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gui/imgui_panel.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gui/panels/profiler_panel.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gui/panels/render_settings_panel.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gui/panels/asset_panel.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gui/panels/scene_panel.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gui/panels/viewport_panel.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/gui/panels/properties_panel.h
+
     PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/gui_context.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/imgui_manager.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/imgui_render_window.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/imgui_window.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/imgui_performance_window.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/imgui_ecs_window.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/imgui_render_settings_window.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/imgui_resource_manager_window.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/resource_manager_adapter.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/imgui_panel.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/panels/profiler_panel.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/panels/render_settings_panel.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/panels/asset_panel.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/panels/scene_panel.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/panels/viewport_panel.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/gui/panels/properties_panel.cpp
 
     # geometry
     PUBLIC
@@ -129,13 +144,13 @@ target_sources(cgx
 
     # scene
     PUBLIC
-        ${CMAKE_CURRENT_SOURCE_DIR}/include/scene/node.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/scene/scene.h
         ${CMAKE_CURRENT_SOURCE_DIR}/include/scene/scene_manager.h
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/scene/node.h
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/src/scene/node.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/scene/scene.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/src/scene/scene_manager.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/scene/node.cpp
 
     # utility
     PUBLIC

@@ -3,40 +3,41 @@
 #pragma once
 
 #include "core/common.h"
-#include "gui/imgui_window.h"
+#include "gui/imgui_panel.h"
+#include "gui/gui_context.h"
 
 #include <imgui/imgui.h>
 
-#include <GLFW/glfw3.h>
-
 namespace cgx::gui
 {
-    class ImGuiManager
-    {
-    public:
-        ImGuiManager() = default;
-        ~ImGuiManager() = default;
+class ImGuiManager
+{
+public:
+    explicit ImGuiManager (std::shared_ptr<GUIContext> context);
+    ~ImGuiManager ();
 
-        void Initialize(GLFWwindow* window);
-        void Shutdown();
+    void initialize ();
+    void shutdown ();
 
-        void RegisterImGuiWindow(ImGuiWindow* window);
-        void UnregisterImGuiWindow(ImGuiWindow* window);
+    void register_panel (std::unique_ptr<ImGuiPanel> panel);
 
-        void Render();
-        void BeginRender();
-        void EndRender();
+    void render ();
+    void begin_render ();
+    void end_render ();
 
-        void RenderCoreMenu();
+    void render_core_menu ();
 
-        void EnableInput();
-        void DisableInput();
+    void load_fonts();
 
-        void SetStyle(const char* font_path);
+    void enable_input ();
+    void disable_input ();
 
-    private:
-        std::vector<ImGuiWindow*> m_imgui_windows;
+    void set_style (const char* font_path);
 
-        void ClearInputs(ImGuiIO& io);
-    };
+private:
+    std::shared_ptr<GUIContext>              m_context;
+    std::vector<std::unique_ptr<ImGuiPanel>> m_imgui_panels;
+
+    void clear_inputs (ImGuiIO& io);
+};
 }

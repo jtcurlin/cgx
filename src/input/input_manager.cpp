@@ -2,98 +2,94 @@
 
 #include "input/input_manager.h"
 #include "event/events/engine_events.h"
+#include "event/event_handler.h"
+
+#include "core/window_manager.h"
 
 namespace cgx::input
 {
-    void InputManager::Initialize(
-        std::shared_ptr<cgx::event::EventHandler> event_handler,
-        std::shared_ptr<cgx::core::WindowManager> window_manager)
-    {
-        m_event_handler = event_handler;
-        m_window_manager = window_manager;
+InputManager::InputManager()  = default;
+InputManager::~InputManager() = default;
 
-        m_window_manager->setKeyCallback([this](Key key, KeyAction action)
-        {
-            this->onKeyboardInput(key, action);
+void InputManager::initialize(const std::shared_ptr<core::WindowManager>& window_manager)
+{
+    m_window_manager = window_manager;
+
+    m_window_manager->set_key_callback(
+        [this](const Key key, const KeyAction action) {
+            this->on_keyboard_input(key, action);
         });
 
-        m_window_manager->setMouseButtonCallback([this](Key key, KeyAction action)
-        {
-            this->onMouseButtonInput(key, action);
+    m_window_manager->set_mouse_button_callback(
+        [this](const Key key, const KeyAction action) {
+            this->on_mouse_button_input(key, action);
         });
 
-        
-        m_initialized = true;
+    m_initialized = true;
+}
+
+void InputManager::bind_key_input_event(const Key key, const KeyAction action, event::Event event)
+{
+    KeyInput key_input{key, action};
+    m_event_bindings.emplace(key_input, event);
+}
+
+void InputManager::on_keyboard_input(const Key key, const KeyAction action)
+{
+    const KeyInput key_input{key, action};
+    if (const auto it = m_event_bindings.find(key_input) ; it != m_event_bindings.end()) {
+        event::EventHandler::get_instance().SendEvent(it->second);
+    }
+}
+
+void InputManager::on_mouse_button_input(const Key key, const KeyAction action)
+{
+    const KeyInput key_input{key, action};
+    if (const auto it = m_event_bindings.find(key_input) ; it != m_event_bindings.end()) {
+        event::EventHandler::get_instance().SendEvent(it->second);
+    }
+}
+
+bool InputManager::is_key_pressed(const Key key) const
+{
+    return m_window_manager->is_key_pressed(key);
+}
+
+bool InputManager::is_key_released(const Key key) const
+{
+    return m_window_manager->is_key_released(key);
+}
+
+bool InputManager::is_mouse_button_pressed(const Key button) const
+{
+    return m_window_manager->is_mouse_button_pressed(button);
+}
+
+bool InputManager::is_mouse_button_released(const Key button) const
+{
+    return m_window_manager->is_mouse_button_released(button);
+}
+
+void InputManager::get_mouse_position(double& x_pos, double& y_pos) const
+{
+    m_window_manager->get_mouse_position(x_pos, y_pos);
+}
+
+void InputManager::get_mouse_offset(double& x_offset, double& y_offset)
+{
+    double x_pos, y_pos;
+    get_mouse_position(x_pos, y_pos);
+
+    if (m_first_mouse) {
+        m_mouse_x     = x_pos;
+        m_mouse_y     = y_pos;
+        m_first_mouse = false;
     }
 
-    void InputManager::BindKeyInputEvent(Key key, KeyAction action, cgx::event::Event event)
-    {
-        KeyInput key_input { key, action };
-        m_event_bindings.emplace(key_input, event);
-    }
+    x_offset = x_pos - m_mouse_x;
+    y_offset = m_mouse_y - y_pos;
 
-    void InputManager::onKeyboardInput(Key key, KeyAction action) 
-    {
-        KeyInput key_input { key, action };
-        auto it = m_event_bindings.find(key_input);
-        if (it != m_event_bindings.end())
-        {
-            m_event_handler->SendEvent(it->second);
-        }
-    }
-
-    void InputManager::onMouseButtonInput(Key key, KeyAction action)
-    {
-        KeyInput key_input { key, action };
-        auto it = m_event_bindings.find(key_input);
-        if (it != m_event_bindings.end())
-        {
-            m_event_handler->SendEvent(it->second);
-        }
-    }
-
-    bool InputManager::isKeyPressed(Key key) const
-    {
-        return m_window_manager->isKeyPressed(key);
-    }
-
-    bool InputManager::isKeyReleased(Key key) const
-    {
-        return m_window_manager->isKeyReleased(key);
-    }
-
-    bool InputManager::isMouseButtonPressed(Key button) const
-    {
-        return m_window_manager->isMouseButtonPressed(button);
-    }
-
-    bool InputManager::isMouseButtonReleased(Key button) const
-    {
-        return m_window_manager->isMouseButtonReleased(button);
-    }
-
-    void InputManager::getMousePosition(double &x_pos, double &y_pos)
-    {
-        m_window_manager->getMousePosition(x_pos, y_pos);
-    }
-
-    void InputManager::getMouseOffset(double &x_offset, double &y_offset)
-    {
-        double x_pos, y_pos;
-        getMousePosition(x_pos, y_pos);
-
-        if (m_first_mouse)
-        {
-            m_mouse_x = x_pos;
-            m_mouse_y = y_pos;
-            m_first_mouse = false;
-        }
-
-        x_offset = x_pos - m_mouse_x;
-        y_offset = m_mouse_y - y_pos;
-
-        m_mouse_x = x_pos;
-        m_mouse_y = y_pos;
-    }
-
-} // namespace cgx::input
+    m_mouse_x = x_pos;
+    m_mouse_y = y_pos;
+}
+}

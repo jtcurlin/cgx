@@ -2,89 +2,69 @@
 
 #include "scene/node.h"
 
-#include <algorithm>
-
 namespace cgx::scene
 {
-    Node::Node(std::string label)
-        : m_label(label)
-    { 
-        UpdatePath();
+
+std::string translate_node_typename(const NodeType node_type)
+{
+    switch (node_type) {
+        case NodeType::Entity: return "Entity";
+        case NodeType::Camera: return "Camera";
+        case NodeType::Light: return "Light";
+        default:
+            return "unknown_node_type";
     }
+}
 
-    std::string Node::getLabel() const
-    {
-        return m_label;
-    }
+Node::Node(const NodeType type, const std::string &tag)
+    : Hierarchy(core::ItemType::Node, tag)
+    , node_type(type)
+    , m_node_typename(translate_node_typename(type))
+{
+}
 
-    void Node::setLabel(const std::string& label)
-    {
-        m_label = label;
-        UpdatePath();
-    }
+Node::~Node() = default;
 
-    const std::string& Node::getPath() const 
-    {
-        return m_path;
-    }
+const NodeType& Node::get_node_type() const
+{
+    return node_type;
+}
 
-    std::shared_ptr<Node> Node::getParent() const
-    {
-        return m_parent.lock();
-    }
-    
-    void Node::setParent(const std::shared_ptr<Node>& parent)
-    {
-        m_parent = parent;
-        UpdatePath();
-    }
+const std::string& Node::get_node_typename() const
+{
+    return m_node_typename;
+}
 
-    void Node::addChild(std::unique_ptr<Node> child)
-    {
-        child->setParent(shared_from_this());
-        m_children.push_back(std::move(child));
-    }
+std::string Node::get_path_prefix() const
+{
+    return Hierarchy::get_path_prefix() + get_node_typename() + "/";
+}
 
-    std::vector<Node*> Node::getChildren() const
-    {
-        std::vector<Node*> raw_children;
-        for (const auto& child : m_children)
-        {
-            raw_children.push_back(child.get());
-        }
-        return raw_children;
-    }
+// entity node
 
-    bool Node::removeChild(const std::string& label)
-    {
-        auto it = std::remove_if(m_children.begin(), m_children.end(),
-                                [&label](const std::unique_ptr<Node>& child) 
-                                 { return child->getLabel() == label; });
-        
-        if (it != m_children.end())
-        {
-            m_children.erase(it, m_children.end());
-            return true;
-        }
-        return false;
-    }
+EntityNode::EntityNode(const ecs::Entity entity_id, const std::string &tag)
+    : Node(NodeType::Entity, tag), m_entity(entity_id)
+{}
+EntityNode::~EntityNode() = default;
 
-    void Node::UpdatePath()
-    {
-        if (auto p = m_parent.lock())
-        {
-            m_path = p->getPath() + "/" + m_label;
-        }
-        else
-        {
-            m_path = m_label;
-        }
+const ecs::Entity& EntityNode::get_entity() const
+{
+    return m_entity;
+}
 
-        for (auto& child : m_children)
-        {
-            child->UpdatePath();
-        }
-    }
+// camera node
+
+CameraNode::CameraNode(const std::string& tag)
+    : Node(NodeType::Camera, tag)
+{}
+CameraNode::~CameraNode() = default;
+
+// light node
+
+LightNode::LightNode(const std::string& tag)
+    : Node(NodeType::Light, tag)
+{}
+LightNode::~LightNode() = default;
 
 
-} // namespace cgx::scene
+}

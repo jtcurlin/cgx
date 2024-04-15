@@ -3,15 +3,14 @@
 #pragma once
 
 #include "core/common.h"
-#include "resource/model.h"
-#include "resource/shader.h"
+#include "asset/model.h"
+#include "asset/shader.h"
 
 namespace cgx::component
 {
-    struct Render
-    {
-        std::shared_ptr<cgx::resource::Model> model;
-        std::shared_ptr<cgx::resource::Shader> shader;
-    };
- 
-} // namespace cgx::component
+struct Render
+{
+    std::shared_ptr<asset::Model>  model;
+    std::shared_ptr<asset::Shader> shader;
+};
+}

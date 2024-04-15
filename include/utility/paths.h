@@ -2,6 +2,6 @@
 
 #pragma once
 
-#define SHADERS_DIRECTORY "/Users/curlin/dev/cgx/build/data/shaders/"
-#define ASSETS_DIRECTORY "/Users/curlin/dev/cgx/build/data/assets/"
-#define FONTS_DIRECTORY "/Users/curlin/dev/cgx/build/data/fonts/"
+#define SHADERS_DIRECTORY "/Users/curlin/dev/cgx/build/cgx_debug/data/shaders/"
+#define ASSETS_DIRECTORY "/Users/curlin/dev/cgx/build/cgx_debug/data/assets/"
+#define FONTS_DIRECTORY "/Users/curlin/dev/cgx/build/cgx_debug/data/fonts/"

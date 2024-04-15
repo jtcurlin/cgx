@@ -1,30 +1,29 @@
 // Copyright © 2024 Jacob Curlin
 
-#ifndef LOGGING_H
-#define LOGGING_H
+#pragma once
 
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
-#include <vector>
-#include <memory>
 
-namespace cgx::utility
+namespace cgx::util
 {
-    class LoggingHandler {
+class LoggingHandler
+{
+public:
+    LoggingHandler();
+    ~LoggingHandler();
 
-    public:
-        static void Initialize();
-        static void Shutdown();
+    static void initialize();
+    static void shutdown();
 
-        inline static std::shared_ptr<spdlog::logger>& GetCoreLogger() { return s_CoreLogger; }
-        inline static std::shared_ptr<spdlog::logger>& GetClientLogger() { return s_ClientLogger; }
+    static std::shared_ptr<spdlog::logger>& get_core_logger();
+    static std::shared_ptr<spdlog::logger>& get_client_logger();
 
-    private:
-        static std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> s_ConsoleSink;
-        static std::shared_ptr<spdlog::logger> s_CoreLogger;
-        static std::shared_ptr<spdlog::logger> s_ClientLogger;
-
-    };
+private:
+    static std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> s_console_sink;
+    static std::shared_ptr<spdlog::logger>                      s_core_logger;
+    static std::shared_ptr<spdlog::logger>                      s_client_logger;
+};
 }
 
 #define CGX_DEFAULT_LOGGER_NAME "core"
@@ -36,8 +35,40 @@ namespace cgx::utility
 #define CGX_ERROR(...)      if (spdlog::get(CGX_DEFAULT_LOGGER_NAME) != nullptr) {spdlog::get(CGX_DEFAULT_LOGGER_NAME)->error(__VA_ARGS__);}
 #define CGX_CRITICAL(...)   if (spdlog::get(CGX_DEFAULT_LOGGER_NAME) != nullptr) {spdlog::get(CGX_DEFAULT_LOGGER_NAME)->critical(__VA_ARGS__);}
 
-// x : condition being asserted  |  msg : message to print upon failure of assertion
-//  {} : (do nothing)   |  
-#define CGX_ASSERT(x, msg) if ((x)) {} else {CGX_CRITICAL("ASSERT - {}\n\t{}\n\tin file: {}\n\ton line: {}", #x, msg, __FILE__, __LINE__); }  
+#if __cplusplus >= 202002L
+#include <source_location>
+#endif
 
-#endif // LOGGING_H
+// platform/compiler detection for abort 
+#if defined(_MSC_VER) // MSVC
+    #define CGX_DEBUG_BREAK() __debugbreak()
+#elif defined(__GNUC__) || defined(__clang__) // GCC or Clang
+#if defined(__APPLE__) || defined(__linux__)
+#include <signal.h>
+#define CGX_DEBUG_BREAK() raise(SIGTRAP)
+#else
+        #define CGX_DEBUG_BREAK() __builtin_trap()
+#endif
+#else
+    #define CGX_DEBUG_BREAK() std::abort() // Fallback for other compilers
+#endif
+
+// CGX_FATAL macro conditional on support of std::source_location
+#if __cplusplus >= 202002L && defined(__cpp_lib_source_location)
+#define CGX_FATAL(format, ...) do { \
+        auto location = std::source_location::current(); \
+        printf("%s:%u " format "\n", location.file_name(), location.line(), ##__VA_ARGS__); \
+        CGX_DEBUG_BREAK(); \
+        std::abort(); \
+    } while (0)
+#else
+    #define CGX_FATAL(format, ...) do { \
+        printf("%s:%d " format "\n", __FILE__, __LINE__, ##__VA_ARGS__); \
+        CGX_DEBUG_BREAK(); \
+        std::abort(); \
+    } while (0)
+#endif
+
+#define CGX_ASSERT(x, msg) do { if (!(x)) { CGX_FATAL("assert failed: %s\nmessage: %s", #x, msg); } } while (0)
+#define CGX_VERIFY(x) do { if (!(x)) { CGX_FATAL("assert failed: %s", #x); } } while (0)
+

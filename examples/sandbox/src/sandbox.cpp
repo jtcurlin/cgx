@@ -1,87 +1,73 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "sandbox.h"
-#include <imgui.h>
 
-Sandbox::Sandbox() {}
+Sandbox::Sandbox() = default;
 
-Sandbox::~Sandbox() {}
+Sandbox::~Sandbox() = default;
 
-void Sandbox::Initialize()
+void Sandbox::initialize()
 {
-    Engine::Initialize();
-    LoadAssets();   // load models / textures etc. 
+    Engine::initialize();
+    load_assets();
 }
 
-void Sandbox::Update()
+void Sandbox::update()
 {
-    Engine::Update();
+    Engine::update();
 }
 
-void Sandbox::Render()
+void Sandbox::render()
 {
-    Engine::Render();
+    Engine::render();
 }
 
-
-void Sandbox::LoadAssets()
+void Sandbox::load_assets() const
 {
-    model_filenames = {
-        "soccerball/ball.obj", 
-        "light_cube/light_cube.obj", 
-        "sponza/sponza.obj", 
+    // load models
+    const std::vector<std::string> model_filenames{
+        "soccerball/ball.obj", "light_cube/light_cube.obj", "sponza/sponza.obj",
         // "backpack/backpack.obj",
         // "holodeck/holodeck.obj"
     };
-    shader_names = {"model", "lighting"};   // i.e. "model" -> fetches 'cgx/cgx/shaders/model.vs' and 'cgx/cgx/shaders/model.fs'
-
-    /*
-    std::vector<std::string> face_paths = {
-        "/Users/curlin/dev/cgx/build/cgx_debug/data/assets/skybox_mountains/right.jpg",   // right
-        "/Users/curlin/dev/cgx/build/cgx_debug/data/assets/skybox_mountains/left.jpg",    // left
-        "/Users/curlin/dev/cgx/build/cgx_debug/data/assets/skybox_mountains/top.jpg",     // top
-        "/Users/curlin/dev/cgx/build/cgx_debug/data/assets/skybox_mountains/bottom.jpg",  // bottom
-        "/Users/curlin/dev/cgx/build/cgx_debug/data/assets/skybox_mountains/front.jpg",   // front
-        "/Users/curlin/dev/cgx/build/cgx_debug/data/assets/skybox_mountains/back.jpg",    // back
-    };
-
-    m_skybox = std::make_unique<cgx::render::CubeMap>(face_paths, m_resource_manager->loadShader("skybox", m_settings.shader_dir.string()));
-    */
-
-    for (const auto& filename : model_filenames)
-    {
+    for (const auto& filename : model_filenames) {
         std::filesystem::path model_path = m_settings.asset_dir / filename;
-        cgx::resource::ResourceManager::getSingleton().ImportResource<cgx::resource::Model>(model_path);
+        m_asset_manager->import_asset(model_path.string());
     }
 
-    for (const auto& name : shader_names)
-    {
-        auto shader = std::make_shared<cgx::resource::Shader>((m_settings.shader_dir / name).string(), name);
-        cgx::resource::ResourceManager::getSingleton().RegisterResource<cgx::resource::Shader>(shader, false);
+    // load model, lighting shaders
+    const std::vector<std::string> shader_names = {"model", "lighting"};
+    for (const auto& name : shader_names) {
+        std::filesystem::path shader_path = m_settings.shader_dir / name;
+        auto                  shader      = std::make_shared<cgx::asset::Shader>(shader_path, name);
+        m_asset_manager->add_asset(shader);
     }
-}
 
-/* fuck this 
-void Sandbox::SkyboxRender()
-{
-    glm::mat4 view = m_camera->getViewMatrix();
-    glm::mat4 projection = glm::perspective(
-        glm::radians(m_camera->getZoom()), 
-        (float)m_settings.render_width / (float)m_settings.render_height, 
-        0.1f, 100.0f
-    );
-    m_skybox->Draw(view, projection);
-}
-*/
+    // load skybox 1
+    const std::vector<std::string> skybox_1_face_paths = {
+        (m_settings.asset_dir / "skybox_mountains/right.jpg").string(),
+        (m_settings.asset_dir / "skybox_mountains/left.jpg").string(),
+        (m_settings.asset_dir / "skybox_mountains/top.jpg").string(),
+        (m_settings.asset_dir / "skybox_mountains/bottom.jpg").string(),
+        (m_settings.asset_dir / "skybox_mountains/back.jpg").string(),
+        (m_settings.asset_dir / "skybox_mountains/front.jpg").string()
+    };
+    m_asset_manager->add_asset(
+        std::make_shared<cgx::asset::Cubemap>("cgx://asset/cubemap/skybox01", "skybox01", skybox_1_face_paths));
 
-void Sandbox::Shutdown() 
-{
-    Engine::Shutdown();
+    // load skybox 2
+    const std::vector<std::string> skybox_2_face_paths = {
+        (m_settings.asset_dir / "skybox_2/px.png").string(), (m_settings.asset_dir / "skybox_2/nx.png").string(),
+        (m_settings.asset_dir / "skybox_2/py.png").string(), (m_settings.asset_dir / "skybox_2/ny.png").string(),
+        (m_settings.asset_dir / "skybox_2/pz.png").string(), (m_settings.asset_dir / "skybox_2/nz.png").string()
+    };
+    m_asset_manager->add_asset(
+        std::make_shared<cgx::asset::Cubemap>("cgx://asset/cubemap/skybox02", "skybox02", skybox_2_face_paths));
 }
 
 int main()
 {
     Sandbox app;
-    app.Run();
+    app.run();
     return 0;
 }

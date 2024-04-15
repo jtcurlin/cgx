@@ -4,68 +4,62 @@
 
 #include "input/input_types.h"
 #include "event/event.h"
-#include "event/event_handler.h"
 
 #include "core/common.h"
-#include "core/window_manager.h"
+
+namespace cgx::core
+{
+class WindowManager;
+}
 
 namespace cgx::input
 {
-    // ! SINGLETON
+// ! SINGLETON
 
-    class InputManager
+class InputManager
+{
+public:
+    InputManager(const InputManager &) = delete;
+    InputManager& operator=(const InputManager &) = delete;
+
+    static InputManager& GetSingleton()
     {
-    public:
-        InputManager(const InputManager&) = delete;
-        InputManager& operator=(const InputManager&) = delete;
+        static InputManager s_instance;
+        return s_instance;
+    }
 
-        ~InputManager() = default;
+    void initialize(const std::shared_ptr<core::WindowManager>& window_manager);
 
-        static InputManager& GetSingleton()
-        {
-            static InputManager s_instance;
-            return s_instance;
-        }
+    // bind an event to a specific input
+    void bind_key_input_event(Key key, KeyAction action, event::Event event);
 
-        void Initialize(
-            std::shared_ptr<cgx::event::EventHandler> event_handler,
-            std::shared_ptr<cgx::core::WindowManager> window_manager
-        );
+    // for glfw to call
+    void on_keyboard_input(Key key, KeyAction action);
+    void on_mouse_button_input(Key key, KeyAction action);
 
-        // bind an event to a specific input
-        void BindKeyInputEvent(Key key, KeyAction action, cgx::event::Event event);
+    // keyboard polling
+    [[nodiscard]] bool is_key_pressed(Key key) const;
+    [[nodiscard]] bool is_key_released(Key key) const;
 
-        // for glfw to call
-        void onKeyboardInput(Key key, KeyAction action);
-        void onMouseButtonInput(Key key, KeyAction action);
+    // mouse button polling
+    [[nodiscard]] bool is_mouse_button_pressed(Key button) const;
+    [[nodiscard]] bool is_mouse_button_released(Key button) const;
 
-        // keyboard polling
-        bool isKeyPressed(Key key) const;
-        bool isKeyReleased(Key key) const;
-        
-        // mouse button polling
-        bool isMouseButtonPressed(Key key) const;
-        bool isMouseButtonReleased(Key key) const;
+    // mouse movement polling
+    void get_mouse_position(double &x_pos, double &y_pos) const;
+    void get_mouse_offset(double &x_offset, double &y_offset);
 
-        // mouse movement polling
-        void getMousePosition(double &x_pos, double &y_pos);
-        void getMouseOffset(double &x_offset, double &y_offset);
+private:
+    InputManager(); // default constructor (singleton)
+    ~InputManager();
 
-    private:
-        InputManager() = default;   // default constructor (singleton)
+    bool m_initialized{false};
 
-        bool m_initialized { false };
+    std::shared_ptr<core::WindowManager>                     m_window_manager{};
+    std::unordered_map<KeyInput, event::Event, KeyInputHash> m_event_bindings{};
 
-        std::shared_ptr<cgx::event::EventHandler> m_event_handler;
-        std::shared_ptr<cgx::core::WindowManager> m_window_manager;
-
-        std::unordered_map<KeyInput, cgx::event::Event, KeyInputHash> m_event_bindings;
-
-        double  m_mouse_x       = 0.0;
-        double  m_mouse_y       = 0.0;
-        bool    m_first_mouse   = true;
-
-    }; // class InputManager
-
-} // namespace cgx::input
-
+    double m_mouse_x{0.0};
+    double m_mouse_y{0.0};
+    bool   m_first_mouse{true};
+};
+}
