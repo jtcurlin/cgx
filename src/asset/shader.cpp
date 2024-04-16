@@ -57,7 +57,7 @@ Shader::Shader (const std::string& source_path, const std::string& tag)
 }
 
 Shader::Shader(const std::string& tag, std::string vertex_code, std::string fragment_code)
-    : Asset("cgx/asset/shader/" + tag, tag, AssetType::Shader)
+    : Asset("cgx://asset/shader/" + tag, tag, AssetType::Shader)
     , m_vert_code{std::move(vertex_code)}, m_frag_code{std::move(fragment_code)}
 
 {

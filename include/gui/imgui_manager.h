@@ -32,7 +32,7 @@ public:
     void enable_input ();
     void disable_input ();
 
-    void set_style (const char* font_path);
+    void set_style ();
 
 private:
     std::shared_ptr<GUIContext>              m_context;

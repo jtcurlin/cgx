@@ -160,7 +160,6 @@ void Engine::setup_gui()
     );
 
     m_imgui_manager = std::make_unique<gui::ImGuiManager>(m_gui_context);
-    m_imgui_manager->set_style((m_settings.font_dir / "SFPRODISPLAYMEDIUM.OTF").c_str());
     m_imgui_manager->initialize();
 }
 

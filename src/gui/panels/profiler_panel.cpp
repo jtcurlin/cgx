@@ -38,7 +38,7 @@ void ProfilerPanel::update()
         m_frame_times.push_back(frame_time);
     }
     else {
-        m_frame_times[m_frame_time_count & m_max_frame_time_samples] = frame_time;
+        m_frame_times[m_frame_time_count % m_max_frame_time_samples] = frame_time;
     }
     m_frame_time_count++;
 

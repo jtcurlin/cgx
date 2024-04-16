@@ -39,7 +39,7 @@ void Sandbox::load_assets() const
     const std::vector<std::string> shader_names = {"model", "lighting"};
     for (const auto& name : shader_names) {
         std::filesystem::path shader_path = m_settings.shader_dir / name;
-        auto                  shader      = std::make_shared<cgx::asset::Shader>(shader_path, name);
+        auto                  shader      = std::make_shared<cgx::asset::Shader>(shader_path.string(), name);
         m_asset_manager->add_asset(shader);
     }
 

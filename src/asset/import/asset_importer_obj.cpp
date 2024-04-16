@@ -31,7 +31,7 @@ AssetID AssetImporterOBJ::import(const std::string& path)
     const std::filesystem::path source_path   = get_absolute_path(path);
 
     tinyobj::ObjReaderConfig config;
-    config.mtl_search_path = source_path.parent_path();
+    config.mtl_search_path = source_path.parent_path().string();
     if (!m_tinyobj_reader.ParseFromFile(source_path.string(), config)) {
         CGX_ERROR(
             "AssetImporterOBJ: Initialization Failed. (tinyobjreader " "failed to parse file at path [{}]",

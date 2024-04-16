@@ -41,6 +41,7 @@ ImGuiManager::ImGuiManager(std::shared_ptr<GUIContext> context)
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
     load_fonts();
+    set_style();
 
     const auto window_manager = m_context->get_window_manager();
     ImGui_ImplGlfw_InitForOpenGL(window_manager->get_glfw_window(), true);
@@ -241,14 +242,9 @@ void ImGuiManager::clear_inputs(ImGuiIO& io)
     io.InputQueueCharacters.clear();
 }
 
-void ImGuiManager::set_style(const char* font_path)
+void ImGuiManager::set_style()
 {
-    // ImGuiIO& io        = ImGui::GetIO();
-    // float    font_size = 16.0f;
-
-    // io.Fonts->AddFontFromFileTTF(font_path, font_size);
-
-    ImGuiStyle& style                   = ImGui::GetStyle();
+	ImGuiStyle& style                   = ImGui::GetStyle();
     style.Colors[ImGuiCol_Text]         = ImVec4(0.8313725590705872f, 0.8470588326454163f, 0.8784313797950745f, 1.0f);
     style.Colors[ImGuiCol_TextDisabled] = ImVec4(
         0.8313725590705872f,

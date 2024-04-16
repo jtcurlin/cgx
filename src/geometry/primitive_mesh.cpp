@@ -1,10 +1,7 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "geometry/primitive_mesh.h"
-
-#include "asset/asset.h"
 #include "asset/mesh.h"
-
 #include "utility/math.h"
 
 
@@ -99,9 +96,7 @@ std::shared_ptr<asset::Mesh> create_plane(
         }
     }
 
-    auto mesh = std::make_shared<asset::Mesh>("cgx::geometry::primitive::plane", "plane", vertices, indices, nullptr);
-    //cgx::resource::AssetManager::getSingleton().RegisterResource<cgx::resource::Mesh>(mesh, false);
-    CGX_INFO("create plane currently implemented pending integration with new asset manager")
+    return std::make_shared<asset::Mesh>("cgx://asset/mesh/primitive_plane", "primitive_plane", vertices, indices, nullptr);
 }
 
 
@@ -180,9 +175,7 @@ std::shared_ptr<asset::Mesh> create_sphere(const uint32_t sector_count, const ui
         }
     }
 
-    auto mesh = std::make_shared<asset::Mesh>("cgx::geometry::primitive::sphere", "sphere", vertices, indices, nullptr);
-    // cgx::resource::AssetManager::getSingleton().RegisterResource<cgx::resource::Mesh>(mesh, false);
-    CGX_INFO("create sphere currently implemented pending integration with new asset manager")
+    return std::make_shared<asset::Mesh>("cgx:://asset/mesh/primitive_sphere", "primitive_sphere", vertices, indices, nullptr);
 }
 
 std::shared_ptr<asset::Mesh> create_cube(

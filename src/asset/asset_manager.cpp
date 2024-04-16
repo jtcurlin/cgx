@@ -52,7 +52,7 @@ AssetID AssetManager::import_asset(const std::string& path)
     if (const auto ext_it = m_extension_to_importer_map.find(fs_path.extension().string()) ;
         ext_it != m_extension_to_importer_map.end()) {
         if (const auto importer = ext_it->second.lock()) {
-            return importer->import(fs_path);
+            return importer->import(fs_path.string());
         }
         CGX_ERROR("AssetManager: Failed to acquire importer for specified path extension [{}]", fs_path.string());
     }

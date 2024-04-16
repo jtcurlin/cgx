@@ -26,7 +26,7 @@ AssetID AssetImporterImage::import(const std::string& path)
 
     stbi_uc* data = nullptr;
     int      width, height, num_channels;
-    data = stbi_load(source_path.c_str(), &width, &height, &num_channels, 0);
+    data = stbi_load(source_path.string().c_str(), &width, &height, &num_channels, 0);
 
     GLenum format = 0;
     if (data) {

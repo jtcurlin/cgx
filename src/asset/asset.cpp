@@ -5,12 +5,12 @@
 namespace cgx::asset
 {
 Asset::Asset (const std::string& source_path, const std::string& tag, const AssetType asset_type)
-    : Item(core::ItemType::Asset, tag, Asset::get_path_prefix() + tag)
+    : Item(core::ItemType::Asset, tag)
     , m_asset_type(asset_type)
     , m_asset_typename(translate_asset_typename(asset_type))
     , m_source_path(source_path)
 {
-    set_path(source_path);
+    set_path(get_path_prefix() + tag);
 }
 
 const std::string& Asset::get_source_path () const
