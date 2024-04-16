@@ -12,7 +12,8 @@ namespace cgx::asset
 Cubemap::Cubemap(const std::string& path, const std::string& tag, const std::vector<std::string>& face_texture_paths)
     : Asset(path, tag, AssetType::Cubemap)
     , m_mesh(geometry::create_cube())
-    , m_shader(std::make_shared<Shader>("skybox", std::string(SKYBOX_VERT_SHADER_CODE), std::string(SKYBOX_FRAG_SHADER_CODE)))
+    , m_shader(
+        std::make_shared<Shader>("skybox", std::string(SKYBOX_VERT_SHADER_CODE), std::string(SKYBOX_FRAG_SHADER_CODE)))
 {
     CGX_ASSERT(face_texture_paths.size() == 6, "cubemap constructed w/ num texture image paths != 6");
 
@@ -70,8 +71,10 @@ Cubemap::~Cubemap() = default;
 void Cubemap::draw() const
 {
     m_shader->use();
-    glActiveTexture(GL_TEXTURE0); CGX_CHECK_GL_ERROR;
-    glBindTexture(GL_TEXTURE_CUBE_MAP, m_texture_id); CGX_CHECK_GL_ERROR;
+    glActiveTexture(GL_TEXTURE0);
+    CGX_CHECK_GL_ERROR;
+    glBindTexture(GL_TEXTURE_CUBE_MAP, m_texture_id);
+    CGX_CHECK_GL_ERROR;
     m_mesh->draw(*(m_shader));
 }
 

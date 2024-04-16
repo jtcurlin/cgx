@@ -6,19 +6,14 @@
 
 #include <bitset>
 #include <cstdint>
-#include <limits>
-#include <memory>
-#include <vector>
 
 namespace cgx::ecs
 {
-    // ecs
-    using Entity = std::uint32_t;
-    static const Entity MAX_ENTITIES = 5000;
+using Entity        = std::uint32_t;
+using ComponentType = std::uint8_t;
 
-    using ComponentType = std::uint8_t;
-    static const ComponentType MAX_COMPONENTS = 32;
+static const Entity        MAX_ENTITIES   = 5000;
+static const ComponentType MAX_COMPONENTS = 32;
 
-    using Signature = std::bitset<MAX_COMPONENTS>;
-
-} // namespace cgx::ecs 
+using Signature = std::bitset<MAX_COMPONENTS>;
+}

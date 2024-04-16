@@ -8,8 +8,8 @@ namespace cgx::gui
 
 size_t ScenePanel::s_node_counter = 0;
 
-ScenePanel::ScenePanel(const std::shared_ptr<GUIContext>& context)
-    : ImGuiPanel("Scene", context)
+ScenePanel::ScenePanel(const std::shared_ptr<GUIContext>& context, const std::shared_ptr<ImGuiManager>& manager)
+    : ImGuiPanel("Scene", context, manager)
 {
     m_root = m_context->get_scene_manager()->get_active_scene()->get_root();
 }
@@ -24,7 +24,7 @@ void ScenePanel::render()
     ImGui::SetWindowFontScale(1.0f);
     if (ImGui::Button("\uf0fe  Add Root Node")) {
         m_new_node_parent = m_root.get();
-        m_adding_node = true;
+        m_adding_node     = true;
     }
     ImGui::SetWindowFontScale(1.0f);
 
@@ -93,7 +93,7 @@ void ScenePanel::draw_node_context_menu(scene::Node* node)
         }
         if (ImGui::MenuItem("Add Child")) {
             m_new_node_parent = node;
-            m_adding_node = true;
+            m_adding_node     = true;
             ImGui::CloseCurrentPopup();
         }
 
@@ -119,19 +119,19 @@ void ScenePanel::draw_new_node_menu()
         // Display buttons for each type of node
         if (ImGui::MenuItem("\uf6cf  Entity Node")) {
             add_node(scene::NodeType::Entity, m_new_node_parent);
-            m_adding_node = false;
+            m_adding_node     = false;
             m_new_node_parent = nullptr;
             ImGui::CloseCurrentPopup();
         }
         if (ImGui::MenuItem("\uf03d  Camera Node")) {
             add_node(scene::NodeType::Camera, m_new_node_parent);
-            m_adding_node = false;
+            m_adding_node     = false;
             m_new_node_parent = nullptr;
             ImGui::CloseCurrentPopup();
         }
         if (ImGui::MenuItem("\uf4a1  Light Node")) {
             add_node(scene::NodeType::Light, m_new_node_parent);
-            m_adding_node = false;
+            m_adding_node     = false;
             m_new_node_parent = nullptr;
             ImGui::CloseCurrentPopup();
         }
@@ -143,6 +143,4 @@ void ScenePanel::draw_new_node_menu()
         ImGui::EndPopup();
     }
 }
-
-
 }

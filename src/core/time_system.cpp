@@ -29,7 +29,7 @@ void TimeSystem::frame_update(const double limit)
         new_time = std::chrono::steady_clock::now();
     }
 
-    m_frame_time = std::chrono::duration<double>(new_time - m_current_time).count();
+    m_frame_time   = std::chrono::duration<double>(new_time - m_current_time).count();
     m_current_time = new_time;
     m_frame_number++;
 }
@@ -55,5 +55,4 @@ uint64_t TimeSystem::get_frame_number() const
 {
     return m_frame_number;
 }
-
 }

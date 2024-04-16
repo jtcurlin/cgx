@@ -23,19 +23,19 @@ Texture::Texture(
     , m_filter(TextureFilter::Linear)
 {
     glGenTextures(1, &m_texture_id);
-        CGX_CHECK_GL_ERROR;
-        glBindTexture(GL_TEXTURE_2D, m_texture_id);
-        CGX_CHECK_GL_ERROR;
-        glTexImage2D(
-            GL_TEXTURE_2D,
-            0,
-            m_format,
-            static_cast<GLsizei>(m_width),
-            static_cast<GLsizei>(m_height),
-            0,
-            m_format,
-            GL_UNSIGNED_BYTE,
-            m_pixels);
+    CGX_CHECK_GL_ERROR;
+    glBindTexture(GL_TEXTURE_2D, m_texture_id);
+    CGX_CHECK_GL_ERROR;
+    glTexImage2D(
+        GL_TEXTURE_2D,
+        0,
+        m_format,
+        static_cast<GLsizei>(m_width),
+        static_cast<GLsizei>(m_height),
+        0,
+        m_format,
+        GL_UNSIGNED_BYTE,
+        m_pixels);
     CGX_CHECK_GL_ERROR;
 
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -108,6 +108,6 @@ void Texture::set_texture_filter(const TextureFilter filter)
             break;
     }
     glBindTexture(GL_TEXTURE_2D, 0);
-    CGX_CHECK_GL_ERROR; // unbind texture
+    CGX_CHECK_GL_ERROR;
 }
 }

@@ -4,7 +4,6 @@
 
 namespace cgx::scene
 {
-
 std::string translate_node_typename(const NodeType node_type)
 {
     switch (node_type) {
@@ -16,12 +15,10 @@ std::string translate_node_typename(const NodeType node_type)
     }
 }
 
-Node::Node(const NodeType type, const std::string &tag)
+Node::Node(const NodeType type, const std::string& tag)
     : Hierarchy(core::ItemType::Node, tag)
     , node_type(type)
-    , m_node_typename(translate_node_typename(type))
-{
-}
+    , m_node_typename(translate_node_typename(type)) {}
 
 Node::~Node() = default;
 
@@ -40,11 +37,10 @@ std::string Node::get_path_prefix() const
     return Hierarchy::get_path_prefix() + get_node_typename() + "/";
 }
 
-// entity node
+EntityNode::EntityNode(const ecs::Entity entity_id, const std::string& tag)
+    : Node(NodeType::Entity, tag)
+    , m_entity(entity_id) {}
 
-EntityNode::EntityNode(const ecs::Entity entity_id, const std::string &tag)
-    : Node(NodeType::Entity, tag), m_entity(entity_id)
-{}
 EntityNode::~EntityNode() = default;
 
 const ecs::Entity& EntityNode::get_entity() const
@@ -52,19 +48,13 @@ const ecs::Entity& EntityNode::get_entity() const
     return m_entity;
 }
 
-// camera node
-
 CameraNode::CameraNode(const std::string& tag)
-    : Node(NodeType::Camera, tag)
-{}
+    : Node(NodeType::Camera, tag) {}
+
 CameraNode::~CameraNode() = default;
 
-// light node
-
 LightNode::LightNode(const std::string& tag)
-    : Node(NodeType::Light, tag)
-{}
+    : Node(NodeType::Light, tag) {}
+
 LightNode::~LightNode() = default;
-
-
 }

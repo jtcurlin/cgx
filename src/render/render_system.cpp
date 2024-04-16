@@ -167,7 +167,7 @@ void RenderSystem::render()
     CGX_CHECK_GL_ERROR;
 }
 
-void RenderSystem::draw_skybox()
+void RenderSystem::draw_skybox() const
 {
     if (m_skybox_cubemap) {
         // todo: check skybox model's material is cubemap
@@ -181,7 +181,8 @@ void RenderSystem::draw_skybox()
     }
 }
 
-const std::shared_ptr<Framebuffer>& RenderSystem::getFramebuffer() {
+const std::shared_ptr<Framebuffer>& RenderSystem::getFramebuffer()
+{
     return m_framebuffer;
 }
 

@@ -17,7 +17,7 @@ struct NodeState
 class ScenePanel final : public ImGuiPanel
 {
 public:
-    explicit ScenePanel(const std::shared_ptr<GUIContext>& context);
+    explicit ScenePanel(const std::shared_ptr<GUIContext>& context, const std::shared_ptr<ImGuiManager>& manager);
     ~ScenePanel() override;
 
     void render() override;
@@ -37,26 +37,9 @@ private:
 
     size_t m_current_node_id;
 
-    bool m_adding_node{false};
+    bool         m_adding_node{false};
     scene::Node* m_new_node_parent{};
 
     bool is_renaming;
 };
 }
-
-
-// U+26BD - soccer ball
-// U+F204 - toggle off
-// U+F205 - toggle off
-// U+1F4A1 - light bulb
-// U+F085 - gears
-// U+1F441 - eye (visibility)
-// U+F070 - eye crossed out (visibility)
-// U+1F527 - wrench
-// U+F1F8 - trash can
-// U+E47B -
-// U+F6CF - dice (20 sided)
-// U+F6D1 - dice (6 sided)
-// U+F03D - video camera
-// U+F03e - image
-// u_2704

@@ -4,3 +4,4 @@ cmake-build-debug/
 .vs/
 out/
 imgui.ini
+include/utility/paths.h

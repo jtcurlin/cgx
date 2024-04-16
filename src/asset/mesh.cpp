@@ -145,4 +145,4 @@ void Mesh::log() const
     }
     CGX_DEBUG("m_vao = {}", m_vao);
 }
-} // namespace cgx::render
+}

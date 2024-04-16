@@ -9,43 +9,63 @@
 namespace cgx::render
 {
 Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch)
-    : m_position(position), m_up(up), m_yaw(yaw), m_pitch(pitch)
+    : m_position(position)
+    , m_up(up)
+    , m_yaw(yaw)
+    , m_pitch(pitch)
 {
     updateCameraVectors();
 
     auto& event_handler = event::EventHandler::get_instance();
     event_handler.AddListener(
         events::engine::ENABLE_CAMERA_CONTROL,
-        [this](event::Event &event) {
+        [this](event::Event& event) {
             this->m_manual_control_enabled = true;
-    });
+        });
     event_handler.AddListener(
         events::engine::DISABLE_CAMERA_CONTROL,
-        [this](event::Event &event) {
+        [this](event::Event& event) {
             this->m_manual_control_enabled = false;
-    });
+        });
 }
 
-void Camera::Update(double dt)
+void Camera::Update(const double dt)
 {
     if (m_manual_control_enabled) {
-        auto &input_manager = input::InputManager::GetSingleton();
+        auto& input_manager = input::InputManager::GetSingleton();
 
         double x_offset, y_offset;
         input_manager.get_mouse_offset(x_offset, y_offset);
         Look(x_offset, y_offset, true);
 
-        if (input_manager.is_key_pressed(input::Key::key_w)) { Translate(kForward, dt); }
-        if (input_manager.is_key_pressed(input::Key::key_s)) { Translate(kBackward, dt); }
-        if (input_manager.is_key_pressed(input::Key::key_a)) { Translate(kLeft, dt); }
-        if (input_manager.is_key_pressed(input::Key::key_d)) { Translate(kRight, dt); }
+        if (input_manager.is_key_pressed(input::Key::key_w)) {
+            Translate(kForward, dt);
+        }
+        if (input_manager.is_key_pressed(input::Key::key_s)) {
+            Translate(kBackward, dt);
+        }
+        if (input_manager.is_key_pressed(input::Key::key_a)) {
+            Translate(kLeft, dt);
+        }
+        if (input_manager.is_key_pressed(input::Key::key_d)) {
+            Translate(kRight, dt);
+        }
     }
     updateCameraVectors();
 }
 
+glm::mat4 Camera::getViewMatrix() const
+{
+    return glm::lookAt(m_position, m_position + m_front, m_up);
+}
+
+float Camera::getZoom() const
+{
+    return m_zoom;
+}
+
 void Camera::Translate(const TranslateDirection dir, const double dt)
 {
-    // CGX_TRACE("Camera::Translate [dir={}] [dt={}]", dir, dt);
     const float velocity = m_movement_speed * static_cast<float>(dt);
     switch (dir) {
         case kForward:
@@ -71,10 +91,8 @@ void Camera::Look(double x_offset, double y_offset, GLboolean constrain_pitch = 
     m_pitch += static_cast<float>(y_offset * m_mouse_sensitivity);
 
     if (constrain_pitch) {
-        if (m_pitch > 89.0f)
-            m_pitch = 89.0f;
-        if (m_pitch < -89.0f)
-            m_pitch = -89.0f;
+        if (m_pitch > 89.0f) m_pitch = 89.0f;
+        if (m_pitch < -89.0f) m_pitch = -89.0f;
     }
 }
 
@@ -87,14 +105,14 @@ void Camera::updateCameraVectors()
     m_front = glm::normalize(front);
 
     m_right = glm::normalize(glm::cross(m_front, m_world_up));
-    m_up = glm::normalize(glm::cross(m_right, m_front));
+    m_up    = glm::normalize(glm::cross(m_right, m_front));
 }
 
 void Camera::EnableManualControl()
 {
     m_manual_control_enabled = true;
 
-    auto &input_manager = cgx::input::InputManager::GetSingleton();
+    auto& input_manager = input::InputManager::GetSingleton();
 
     // extra pre-call to getMouseOffset to 'reset' the current offset created by mouse movements
     // while camera control disabled

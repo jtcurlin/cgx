@@ -17,7 +17,6 @@
 
 #include <filesystem>
 
-
 namespace cgx::gui
 {
 ImGuiManager::ImGuiManager(std::shared_ptr<GUIContext> context)
@@ -52,12 +51,12 @@ ImGuiManager::~ImGuiManager() = default;
 
 void ImGuiManager::initialize()
 {
-    register_panel(std::make_unique<AssetPanel>(m_context));
-    register_panel(std::make_unique<ProfilerPanel>(m_context));
-    register_panel(std::make_unique<RenderSettingsPanel>(m_context));
-    register_panel(std::make_unique<ViewportPanel>(m_context));
-    register_panel(std::make_unique<ScenePanel>(m_context));
-    register_panel(std::make_unique<PropertiesPanel>(m_context));
+    register_panel(std::make_unique<AssetPanel>(m_context, shared_from_this()));
+    register_panel(std::make_unique<ProfilerPanel>(m_context, shared_from_this()));
+    register_panel(std::make_unique<RenderSettingsPanel>(m_context, shared_from_this()));
+    register_panel(std::make_unique<ViewportPanel>(m_context, shared_from_this()));
+    register_panel(std::make_unique<ScenePanel>(m_context, shared_from_this()));
+    register_panel(std::make_unique<PropertiesPanel>(m_context, shared_from_this()));
 }
 
 void ImGuiManager::shutdown()
@@ -108,7 +107,7 @@ void ImGuiManager::render()
 
     render_core_menu();
 
-    for (auto& window : m_imgui_panels) {
+    for (const auto& window : m_imgui_panels) {
         if (window->is_visible()) {
             window->Begin();
             window->render();
@@ -145,9 +144,8 @@ void ImGuiManager::begin_render()
     ImGui::PopStyleVar(3);
 
     // DockSpace
-    ImGuiIO& io = ImGui::GetIO();
-    if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
-        ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
+    if (const ImGuiIO& io = ImGui::GetIO() ; io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
+        const ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
         ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
     }
 
@@ -157,9 +155,9 @@ void ImGuiManager::begin_render()
 void ImGuiManager::end_render()
 {
     ImGui::Render();
-    ImGuiIO& io = ImGui::GetIO();
-    (void) io;
-    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+    // ImGuiIO& io = ImGui::GetIO();
+    // (void) io;
+    if (ImGuiIO& io = ImGui::GetIO() ; io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
         GLFWwindow* backup_current_context = glfwGetCurrentContext();
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
@@ -168,11 +166,11 @@ void ImGuiManager::end_render()
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-void ImGuiManager::render_core_menu()
+void ImGuiManager::render_core_menu() const
 {
     if (ImGui::BeginMainMenuBar()) {
-        if (ImGui::BeginMenu("CGX_GUI_CORE")) {
-            for (auto& window : m_imgui_panels) {
+        if (ImGui::BeginMenu("Engine")) {
+            for (const auto& window : m_imgui_panels) {
                 if (ImGui::MenuItem(window->get_title().c_str(), "", window->is_visible())) {
                     window->show();
                 }
@@ -185,21 +183,43 @@ void ImGuiManager::render_core_menu()
 
 void ImGuiManager::load_fonts()
 {
-    const ImGuiIO&  io        = ImGui::GetIO();
-    ImFontConfig config;
-    config.MergeMode = true;
-    config.PixelSnapH = true;
-
-    constexpr float font_size = 16.0f;
+    const ImGuiIO&              io              = ImGui::GetIO();
     const std::filesystem::path fonts_directory = FONTS_DIRECTORY;
 
-    const std::string primary_font_path = (fonts_directory / "SFPRODISPLAYMEDIUM.OTF").string();
-    const std::string icons_font_path   = (fonts_directory / "font_awesome_01.otf").string();
+    const std::string regular_text_path  = (fonts_directory / "sf_pro_display_regular.otf").string();
+    const std::string bold_text_path     = (fonts_directory / "sf_pro_display_bold.otf").string();
+    const std::string regular_icons_path = (fonts_directory / "font_awesome_regular.otf").string();
+    const std::string bold_icons_path    = (fonts_directory / "font_awesome_bold.otf").string();
 
-    io.Fonts->AddFontFromFileTTF(primary_font_path.c_str(), font_size);
-    static constexpr ImWchar icon_ranges[] = {0xf000, 0xffff, 0 };
-    constexpr float icon_font_size = 14.0f;
-    io.Fonts->AddFontFromFileTTF(icons_font_path.c_str(), icon_font_size, &config, icon_ranges);
+    static constexpr ImWchar icon_ranges[] = {0xf000, 0xffff, 0};
+
+    // body font
+    ImFontConfig body_config;
+    body_config.MergeMode = false;
+    m_body_font      = io.Fonts->AddFontFromFileTTF(regular_text_path.c_str(), 16.0f, &body_config);
+    body_config.MergeMode = true;
+    io.Fonts->AddFontFromFileTTF(bold_icons_path.c_str(), 16.0f, &body_config, icon_ranges);
+
+    // header font
+    ImFontConfig header_config;
+    header_config.MergeMode = false;
+    m_header_font    = io.Fonts->AddFontFromFileTTF(bold_text_path.c_str(), 17.0f, &header_config);
+    header_config.MergeMode = true;
+    io.Fonts->AddFontFromFileTTF(bold_icons_path.c_str(), 17.0f, &header_config, icon_ranges);
+
+    // title font
+    ImFontConfig title_config;
+    title_config.MergeMode = false;
+    m_title_font     = io.Fonts->AddFontFromFileTTF(bold_text_path.c_str(), 20.0f, &title_config);
+    title_config.MergeMode = true;
+    io.Fonts->AddFontFromFileTTF(bold_icons_path.c_str(), 20.0f, &title_config, icon_ranges);
+
+    // small font
+    ImFontConfig small_config;
+    small_config.MergeMode = false;
+    m_small_font     = io.Fonts->AddFontFromFileTTF(regular_text_path.c_str(), 14.0f, &small_config);
+    small_config.MergeMode = true;
+    io.Fonts->AddFontFromFileTTF(bold_icons_path.c_str(), 14.0f, &small_config, icon_ranges);
 
     io.Fonts->Build();
 }
@@ -210,7 +230,6 @@ void ImGuiManager::enable_input()
 
     io.ConfigFlags &= ~ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags &= ~ImGuiConfigFlags_NoMouse;
-
     // io.MouseDrawCursor = true;
 }
 
@@ -220,7 +239,6 @@ void ImGuiManager::disable_input()
 
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_NoMouse;
-
     // io.MouseDrawCursor = false;
 
     clear_inputs(io);
@@ -244,7 +262,7 @@ void ImGuiManager::clear_inputs(ImGuiIO& io)
 
 void ImGuiManager::set_style()
 {
-	ImGuiStyle& style                   = ImGui::GetStyle();
+    ImGuiStyle& style                   = ImGui::GetStyle();
     style.Colors[ImGuiCol_Text]         = ImVec4(0.8313725590705872f, 0.8470588326454163f, 0.8784313797950745f, 1.0f);
     style.Colors[ImGuiCol_TextDisabled] = ImVec4(
         0.8313725590705872f,

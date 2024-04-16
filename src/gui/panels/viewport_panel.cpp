@@ -1,17 +1,18 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "gui/panels/viewport_panel.h"
+#include "utility/error.h"
 
 namespace cgx::gui
 {
-ViewportPanel::ViewportPanel(const std::shared_ptr<GUIContext> &context)
-    : ImGuiPanel("Viewport", context)
+ViewportPanel::ViewportPanel(const std::shared_ptr<GUIContext>& context, const std::shared_ptr<ImGuiManager>& manager)
+    : ImGuiPanel("Viewport", context, manager)
 {
     m_enforce_aspect_ratio = true;
     m_window_flags |= ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 
     const auto framebuffer = context->get_render_system()->getFramebuffer();
-    uint32_t width, height;
+    uint32_t   width, height;
     framebuffer->getSize(width, height);
     CGX_ASSERT(glIsTexture(framebuffer->getTextureID()), "Invalid Texture ID in Render Framebuffer");
     set_texture(width, height, framebuffer->getTextureID());
@@ -21,11 +22,9 @@ ViewportPanel::~ViewportPanel() = default;
 
 void ViewportPanel::set_texture(const uint32_t width, const uint32_t height, const uint32_t texture_id)
 {
-    m_tex_width = static_cast<float>(width);
-    m_tex_height = static_cast<float>(height);
-    m_aspect_ratio = m_tex_height != 0
-                         ? m_tex_width / m_tex_height
-                         : 1.0f;
+    m_tex_width    = static_cast<float>(width);
+    m_tex_height   = static_cast<float>(height);
+    m_aspect_ratio = m_tex_height != 0 ? m_tex_width / m_tex_height : 1.0f;
 
     m_texture_id = texture_id;
 }
@@ -46,7 +45,7 @@ void ViewportPanel::render()
     const ImVec2 window_size = ImGui::GetContentRegionAvail();
 
     const float desired_aspect_ratio = m_tex_width / m_tex_height;
-    const float window_aspect_ratio = window_size.x / window_size.y;
+    const float window_aspect_ratio  = window_size.x / window_size.y;
 
     ImVec2 render_size;
     if (window_aspect_ratio > desired_aspect_ratio) {
@@ -68,11 +67,6 @@ void ViewportPanel::render()
 
     ImGui::SetCursorPos(ImVec2(offset_x, offset_y));
 
-    ImGui::Image(
-        (void *) (intptr_t) m_texture_id,
-        render_size,
-        ImVec2(0, 1),
-        ImVec2(1, 0)
-    );
+    ImGui::Image((void*) (intptr_t) m_texture_id, render_size, ImVec2(0, 1), ImVec2(1, 0));
 }
 }

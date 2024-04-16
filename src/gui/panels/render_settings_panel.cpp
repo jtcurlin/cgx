@@ -8,8 +8,10 @@
 
 namespace cgx::gui
 {
-RenderSettingsPanel::RenderSettingsPanel(const std::shared_ptr<GUIContext>& context)
-    : ImGuiPanel("Render Settings", context) {}
+RenderSettingsPanel::RenderSettingsPanel(
+    const std::shared_ptr<GUIContext>&   context,
+    const std::shared_ptr<ImGuiManager>& manager)
+    : ImGuiPanel("Render Settings", context, manager) {}
 
 RenderSettingsPanel::~RenderSettingsPanel() = default;
 
@@ -22,7 +24,7 @@ void RenderSettingsPanel::render()
     ImGui::Checkbox("Enable Rendering Test", &render_settings.m_render_test_enabled);
 }
 
-void RenderSettingsPanel::draw_skybox_menu()
+void RenderSettingsPanel::draw_skybox_menu() const
 {
     const auto render_system   = m_context->get_render_system();
     auto&      render_settings = render_system->get_render_settings();
@@ -33,7 +35,6 @@ void RenderSettingsPanel::draw_skybox_menu()
     const float button_width = ImGui::CalcTextSize("\uf1de").x + ImGui::GetStyle().ItemInnerSpacing.x * 2;
     ImGui::SameLine(ImGui::GetWindowWidth() - button_width - ImGui::GetStyle().WindowPadding.x);
 
-    // static constexpr const char* asset_names[] = {"Unimplemented (1)", "Unimplemented[2]", "Unimplemented[3]"}; // todo
     if (ImGui::Button("\uf1de")) {
         ImGui::OpenPopup("Skybox Settings");
     }
@@ -49,7 +50,7 @@ void RenderSettingsPanel::draw_skybox_menu()
         if (ImGui::BeginCombo("Cubemap", preview_text.c_str())) {
             auto& cubemap_ids = asset_manager->getAllIDs(asset::AssetType::Cubemap);
             for (const auto& cubemap_id : cubemap_ids) {
-                auto cubemap        = asset_manager->get_asset(cubemap_id);
+                auto       cubemap     = asset_manager->get_asset(cubemap_id);
                 const bool is_selected = cubemap != nullptr ? (cubemap->get_id() == cubemap_id) : false;
                 if (ImGui::Selectable(cubemap->get_tag().c_str(), is_selected)) {
                     render_system->set_skybox_cubemap(dynamic_pointer_cast<asset::Cubemap>(cubemap));
@@ -64,5 +65,4 @@ void RenderSettingsPanel::draw_skybox_menu()
         ImGui::EndPopup();
     }
 }
-
 }

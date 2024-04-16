@@ -6,7 +6,6 @@
 #include "ecs/component_registry.h"
 #include <set>
 
-
 namespace cgx::ecs
 {
 class System

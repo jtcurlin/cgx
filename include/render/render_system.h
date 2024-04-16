@@ -55,7 +55,7 @@ public:
 
     void update(float dt) override;
 
-    void draw_skybox();
+    void draw_skybox() const;
 
     const std::shared_ptr<Framebuffer>& getFramebuffer();
 
@@ -70,15 +70,14 @@ private:
     std::unique_ptr<Camera>      m_camera;
     std::shared_ptr<Framebuffer> m_framebuffer;
 
-    glm::mat4 m_view_mat;
-    glm::mat4 m_proj_mat;
+    glm::mat4 m_view_mat{};
+    glm::mat4 m_proj_mat{};
 
-    std::shared_ptr<asset::Cubemap>  m_skybox_cubemap{};
+    std::shared_ptr<asset::Cubemap> m_skybox_cubemap{};
 
     RenderSettings m_settings;
 
     unsigned int m_msaa_framebuffer{0};
     void         init_msaa();
 };
-
 }

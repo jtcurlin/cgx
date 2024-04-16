@@ -1,42 +1,48 @@
 // Copyright © 2024 Jacob Curlin
 
 #pragma once
-
 #include "gui/gui_context.h"
+
 #include <imgui.h>
 #include <string>
 
 namespace cgx::gui
 {
+class ImGuiManager;
+
 class ImGuiPanel
 {
 public:
-    explicit ImGuiPanel (const std::string& title, const std::shared_ptr<GUIContext>& context);
-    virtual  ~ImGuiPanel () = default;
+    explicit ImGuiPanel(
+        std::string                          title,
+        const std::shared_ptr<GUIContext>&   context,
+        const std::shared_ptr<ImGuiManager>& manager);
+    virtual ~ImGuiPanel() = default;
 
-    void Begin (); // ImGui::Begin() called (start actual ImGui window)
-    void End ();   // ImGui::End() called (end actual ImGui window)
+    void Begin(); // ImGui::Begin() called (start actual ImGui window)
+    void End();   // ImGui::End() called (end actual ImGui window)
 
-    virtual void render () = 0; // child-defined, actual ImGui window UI logic
-    virtual void on_begin ();   // child-defined operations before Begin() calls ImGui::Begin()
-    virtual void on_end ();     // child-defined operations before End() calls ImGui::End()
+    virtual void render() = 0; // child-defined, actual ImGui window UI logic
+    virtual void on_begin();   // child-defined operations before Begin() calls ImGui::Begin()
+    virtual void on_end();     // child-defined operations before End() calls ImGui::End()
 
-    void show ();
-    void hide ();
+    void show();
+    void hide();
 
-    [[nodiscard]] const std::string& get_title ();
-    [[nodiscard]] bool               is_visible ();
+    [[nodiscard]] const std::string& get_title();
+    [[nodiscard]] bool               is_visible() const;
 
-    void set_min_size (float width, float height);
-    void set_max_size (float width, float height);
+    void set_min_size(float width, float height);
+    void set_max_size(float width, float height);
 
 protected:
+    std::string                 m_title{"Window"};
     std::shared_ptr<GUIContext> m_context;
+    std::weak_ptr<ImGuiManager> m_manager;
 
-    std::string m_title{"Window"};
-    bool        m_is_visible{true};
-    bool        m_is_hovered{false};
-    bool        m_enforce_aspect_ratio{false};
+    bool m_is_visible{true};
+    bool m_is_hovered{false};
+    bool m_enforce_aspect_ratio{false};
 
     ImGuiWindowFlags m_window_flags;
 

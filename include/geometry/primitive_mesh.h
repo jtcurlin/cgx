@@ -37,5 +37,4 @@ std::shared_ptr<asset::Mesh> create_cube(
     glm::vec3 offset  = glm::vec3(0.0f),
     glm::vec2 u_range = {0.0f, 1.0f},
     glm::vec2 v_range = {0.0f, 1.0f});
-
 }

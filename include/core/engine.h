@@ -108,6 +108,6 @@ protected:
     std::shared_ptr<asset::AssetManager> m_asset_manager;
 
     std::shared_ptr<gui::GUIContext>   m_gui_context;
-    std::unique_ptr<gui::ImGuiManager> m_imgui_manager;
+    std::shared_ptr<gui::ImGuiManager> m_imgui_manager;
 };
 }

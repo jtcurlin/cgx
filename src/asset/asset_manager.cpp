@@ -71,8 +71,7 @@ AssetID AssetManager::add_asset(const std::shared_ptr<Asset>& asset)
         return k_invalid_id;
     }
 
-    auto source_path = asset->get_source_path();
-    auto path_fs = clean_path(source_path);
+    const auto path_fs = clean_path(asset->get_source_path());
 
     if (path_fs.string().empty()) {
         CGX_ERROR("AssetManager:: failed to add asset. (no path assigned)");
@@ -90,7 +89,7 @@ AssetID AssetManager::add_asset(const std::shared_ptr<Asset>& asset)
         CGX_ERROR("AssetManager:: failed to add asset. duplicate UID. [{}]", path_fs.string())
     }
 
-    asset->set_path(asset->get_path_prefix() + asset->get_tag());
+    asset->set_internal_path(asset->get_path_prefix() + asset->get_tag());
 
     m_type_to_id[asset->get_asset_type()].push_back(asset->get_id());
     m_source_path_to_id[path_fs.string()] = asset->get_id();
@@ -101,7 +100,7 @@ AssetID AssetManager::add_asset(const std::shared_ptr<Asset>& asset)
     event::Event event(events::asset::ASSET_ADDED);
     event.set_param(events::asset::ASSET_ID, asset->get_id());
     event.set_param(events::asset::ASSET_NAME, asset->get_tag());
-    event.set_param(events::asset::ASSET_PATH, asset->get_path());
+    event.set_param(events::asset::ASSET_PATH, asset->get_internal_path());
     event.set_param(events::asset::ASSET_TYPE, asset->get_asset_type());
     event_handler.SendEvent(event);
 
@@ -130,7 +129,7 @@ bool AssetManager::remove_asset(AssetID asset_id)
         }
 
         // remove asset's entry from path->id map if present
-        m_source_path_to_id.erase(asset->get_path());
+        m_source_path_to_id.erase(asset->get_internal_path());
 
         // remove resource (remove id->resource mapping)
         m_assets.erase(asset_id);
@@ -161,7 +160,6 @@ AssetID AssetManager::get_id_by_path(const std::string& path)
     if (const auto asset_it = m_source_path_to_id.find(path) ; asset_it != m_source_path_to_id.end()) {
         return asset_it->second; // return id
     }
-    // CGX_WARN("AssetManager: failed to get ID(s) for specified path. (path [{}] not registered)", path);
     return k_invalid_id;
 }
 
@@ -191,8 +189,8 @@ const std::vector<std::shared_ptr<AssetImporter>>& AssetManager::get_importers()
 
 bool AssetManager::is_path_supported(const std::string& path) const
 {
-    std::filesystem::path fs_path   = clean_path(path);
-    std::string           extension = fs_path.extension().string();
+    const std::filesystem::path fs_path   = clean_path(path);
+    std::string                 extension = fs_path.extension().string();
 
     std::transform(
         extension.begin(),
@@ -207,12 +205,6 @@ bool AssetManager::is_path_supported(const std::string& path) const
         return true;
     }
     return false;
-}
-
-bool AssetManager::is_path_loaded(const std::string& path) const
-{
-    // check std::unordered_map<std::string, AssetID> to see if path exists as a key. if so, return true, else false.
-    return m_source_path_to_id.find(path) != m_source_path_to_id.end();
 }
 
 std::filesystem::path AssetManager::clean_path(std::string path)

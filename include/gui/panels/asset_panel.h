@@ -20,7 +20,7 @@ namespace cgx::gui
 class AssetPanel final : public ImGuiPanel
 {
 public:
-    explicit AssetPanel(const std::shared_ptr<GUIContext>& context);
+    explicit AssetPanel(const std::shared_ptr<GUIContext>& context, const std::shared_ptr<ImGuiManager>& manager);
     ~AssetPanel() override;
 
     void render() override;

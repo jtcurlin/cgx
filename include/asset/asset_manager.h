@@ -44,7 +44,6 @@ public:
     const std::vector<std::shared_ptr<AssetImporter>>&         get_importers() const;
 
     bool is_path_supported(const std::string& path) const;
-    bool is_path_loaded(const std::string& path) const;
 
 private:
     PathConfig m_path_config;

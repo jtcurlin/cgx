@@ -45,7 +45,7 @@ public:
         }
     }
 
-    void entity_destroyed(Entity entity);
+    void entity_destroyed(Entity entity) const;
     void entity_signature_changed(Entity entity, Signature entitySignature);
 
 private:

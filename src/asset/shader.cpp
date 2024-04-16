@@ -11,7 +11,7 @@ namespace fs = std::filesystem;
 
 namespace cgx::asset
 {
-Shader::Shader (const std::string& source_path, const std::string& tag)
+Shader::Shader(const std::string& source_path, const std::string& tag)
     : Asset(source_path, tag, AssetType::Shader)
 {
     const fs::path    shader_root_path{source_path};
@@ -58,19 +58,20 @@ Shader::Shader (const std::string& source_path, const std::string& tag)
 
 Shader::Shader(const std::string& tag, std::string vertex_code, std::string fragment_code)
     : Asset("cgx://asset/shader/" + tag, tag, AssetType::Shader)
-    , m_vert_code{std::move(vertex_code)}, m_frag_code{std::move(fragment_code)}
+    , m_vert_code{std::move(vertex_code)}
+    , m_frag_code{std::move(fragment_code)}
 
 {
     m_initialized = init();
 }
 
-Shader::~Shader ()
+Shader::~Shader()
 {
     glDeleteShader(m_program_id);
     CGX_CHECK_GL_ERROR;
 }
 
-bool Shader::init ()
+bool Shader::init()
 {
     bool success = true;
 
@@ -121,13 +122,13 @@ bool Shader::init ()
     return success;
 }
 
-void Shader::use () const
+void Shader::use() const
 {
     glUseProgram(m_program_id);
     CGX_CHECK_GL_ERROR;
 }
 
-bool Shader::check_compile_errors (const unsigned int shader, const std::string& type)
+bool Shader::check_compile_errors(const unsigned int shader, const std::string& type)
 {
     int  success;
     char info_log[1024];
@@ -150,79 +151,79 @@ bool Shader::check_compile_errors (const unsigned int shader, const std::string&
     return true;
 }
 
-void Shader::set_bool (const std::string& name, const bool value) const
+void Shader::set_bool(const std::string& name, const bool value) const
 {
     glUniform1i(glGetUniformLocation(m_program_id, name.c_str()), static_cast<GLint>(value));
     CGX_CHECK_GL_ERROR;
 }
 
-void Shader::set_int (const std::string& name, const int value) const
+void Shader::set_int(const std::string& name, const int value) const
 {
     glUniform1i(glGetUniformLocation(m_program_id, name.c_str()), value);
     CGX_CHECK_GL_ERROR;
 }
 
-void Shader::set_float (const std::string& name, const float value) const
+void Shader::set_float(const std::string& name, const float value) const
 {
     glUniform1f(glGetUniformLocation(m_program_id, name.c_str()), value);
     CGX_CHECK_GL_ERROR;
 }
 
-void Shader::set_vec2 (const std::string& name, const glm::vec2& value) const
+void Shader::set_vec2(const std::string& name, const glm::vec2& value) const
 {
     glUniform2fv(glGetUniformLocation(m_program_id, name.c_str()), 1, &value[0]);
     CGX_CHECK_GL_ERROR;
 }
 
-void Shader::set_vec2 (const std::string& name, const float x, const float y) const
+void Shader::set_vec2(const std::string& name, const float x, const float y) const
 {
     glUniform2f(glGetUniformLocation(m_program_id, name.c_str()), x, y);
     CGX_CHECK_GL_ERROR;
 }
 
-void Shader::set_vec3 (const std::string& name, const glm::vec3& value) const
+void Shader::set_vec3(const std::string& name, const glm::vec3& value) const
 {
     glUniform3fv(glGetUniformLocation(m_program_id, name.c_str()), 1, &value[0]);
     CGX_CHECK_GL_ERROR;
 }
 
-void Shader::set_vec3 (const std::string& name, const float x, const float y, const float z) const
+void Shader::set_vec3(const std::string& name, const float x, const float y, const float z) const
 {
     glUniform3f(glGetUniformLocation(m_program_id, name.c_str()), x, y, z);
     CGX_CHECK_GL_ERROR;
 }
 
-void Shader::set_vec4 (const std::string& name, const glm::vec4& value) const
+void Shader::set_vec4(const std::string& name, const glm::vec4& value) const
 {
     glUniform4fv(glGetUniformLocation(m_program_id, name.c_str()), 1, &value[0]);
     CGX_CHECK_GL_ERROR;
 }
 
-void Shader::set_vec4 (const std::string& name, const float x, const float y, const float z, const float w) const
+void Shader::set_vec4(const std::string& name, const float x, const float y, const float z, const float w) const
 {
     glUniform4f(glGetUniformLocation(m_program_id, name.c_str()), x, y, z, w);
     CGX_CHECK_GL_ERROR;
 }
 
-void Shader::set_mat2 (const std::string& name, const glm::mat2& mat) const
+void Shader::set_mat2(const std::string& name, const glm::mat2& mat) const
 {
     glUniformMatrix2fv(glGetUniformLocation(m_program_id, name.c_str()), 1, GL_FALSE, &mat[0][0]);
     CGX_CHECK_GL_ERROR;
 }
 
-void Shader::set_mat3 (const std::string& name, const glm::mat3& mat) const
+void Shader::set_mat3(const std::string& name, const glm::mat3& mat) const
 {
     glUniformMatrix3fv(glGetUniformLocation(m_program_id, name.c_str()), 1, GL_FALSE, &mat[0][0]);
     CGX_CHECK_GL_ERROR;
 }
 
-void Shader::set_mat4 (const std::string& name, const glm::mat4& mat) const
+void Shader::set_mat4(const std::string& name, const glm::mat4& mat) const
 {
     glUniformMatrix4fv(glGetUniformLocation(m_program_id, name.c_str()), 1, GL_FALSE, &mat[0][0]);
     CGX_CHECK_GL_ERROR;
 }
 
-void Shader::log () const
+void Shader::log() const
 {
     CGX_DEBUG("Shader {}: m_vert_path = {}", get_tag(), m_vert_path);
     CGX_DEBUG("Shader {}: m_frag_path = {}", get_tag(), m_frag_path);

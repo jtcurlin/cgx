@@ -71,4 +71,3 @@ private:
 
 #define CGX_ASSERT(x, msg) do { if (!(x)) { CGX_FATAL("assert failed: %s\nmessage: %s", #x, msg); } } while (0)
 #define CGX_VERIFY(x) do { if (!(x)) { CGX_FATAL("assert failed: %s", #x); } } while (0)
-

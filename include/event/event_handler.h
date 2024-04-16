@@ -29,7 +29,6 @@ private:
 
     std::unordered_map<EventId, std::list<std::function<void(Event&)>>> m_listeners;
 };
-
 }
 
 #define METHOD_LISTENER(EventType, Listener) EventType, std::bind(&(Listener), this, std::placeholders::_1)

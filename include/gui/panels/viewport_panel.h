@@ -3,14 +3,14 @@
 #pragma once
 
 #include "gui/imgui_panel.h"
+#include "glad/glad.h"
 
 namespace cgx::gui
 {
-
 class ViewportPanel final : public ImGuiPanel
 {
 public:
-    explicit ViewportPanel(const std::shared_ptr<GUIContext>& context);
+    explicit ViewportPanel(const std::shared_ptr<GUIContext>& context, const std::shared_ptr<ImGuiManager>& manager);
     ~ViewportPanel() override;
 
     void set_texture(uint32_t width, uint32_t height, uint32_t texture_id);

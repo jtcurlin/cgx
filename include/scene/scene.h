@@ -9,8 +9,6 @@
 #include "ecs/component_registry.h"
 #include "ecs/system_registry.h"
 
-#include "event/event_handler.h"
-
 #include <string>
 
 namespace cgx::render
@@ -94,5 +92,5 @@ private:
     std::shared_ptr<ecs::EntityRegistry>    m_entity_registry;
     std::shared_ptr<ecs::ComponentRegistry> m_component_registry;
     std::shared_ptr<ecs::SystemRegistry>    m_system_registry;
-}; // class Scene
-}  // namespace cgx::scene
+};
+}

@@ -5,6 +5,11 @@
 #include "asset/asset.h"
 #include "glad/glad.h"
 
+namespace cgx::gui
+{
+class PropertiesPanel;
+}
+
 namespace cgx::asset
 {
 enum class TextureFilter
@@ -35,7 +40,7 @@ public:
     [[nodiscard]] GLenum         get_format() const;
     [[nodiscard]] TextureFilter  get_texture_filter() const;
 
-    void               set_texture_filter(TextureFilter filter);
+    void set_texture_filter(TextureFilter filter);
 
 private:
     uint32_t       m_texture_id;
@@ -46,5 +51,7 @@ private:
     unsigned char* m_pixels;
 
     TextureFilter m_filter;
+
+    friend class gui::PropertiesPanel;
 };
 }

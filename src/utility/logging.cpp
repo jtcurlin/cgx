@@ -8,7 +8,7 @@ std::shared_ptr<spdlog::sinks::stdout_color_sink_mt> LoggingHandler::s_console_s
 std::shared_ptr<spdlog::logger>                      LoggingHandler::s_core_logger;
 std::shared_ptr<spdlog::logger>                      LoggingHandler::s_client_logger;
 
-LoggingHandler::LoggingHandler() = default;
+LoggingHandler::LoggingHandler()  = default;
 LoggingHandler::~LoggingHandler() = default;
 
 void LoggingHandler::initialize()

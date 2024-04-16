@@ -4,19 +4,14 @@
 #include "asset/asset.h"
 
 #include "asset/model.h"
-#include "asset/material.h"
-#include "asset/mesh.h"
-#include "asset/texture.h"
 #include "asset/shader.h"
 
 #include <filesystem>
 
 namespace cgx::gui
 {
-AssetPanel::AssetPanel(const std::shared_ptr<GUIContext> &context)
-    : ImGuiPanel("Resource Management", context)
-{
-}
+AssetPanel::AssetPanel(const std::shared_ptr<GUIContext>& context, const std::shared_ptr<ImGuiManager>& manager)
+    : ImGuiPanel("Resource Management", context, manager) {}
 
 AssetPanel::~AssetPanel() = default;
 
@@ -32,8 +27,8 @@ void AssetPanel::render()
 
 void AssetPanel::render_importers_list()
 {
-    const auto& importers = m_context->get_asset_manager()->get_importers();
-    const std::string title = "Importers [" + std::to_string(importers.size()) + "]";
+    const auto&       importers = m_context->get_asset_manager()->get_importers();
+    const std::string title     = "Importers [" + std::to_string(importers.size()) + "]";
 
     ImGui::Text("%s", title.c_str());
     if (ImGui::BeginChild("RegisteredImportersList", ImVec2(0, 100), true)) {
@@ -64,17 +59,17 @@ void AssetPanel::render_importers_list()
 void AssetPanel::render_asset_list(const asset::AssetType asset_type)
 {
     auto& asset_ids = m_context->get_asset_manager()->getAllIDs(asset_type);
-    auto& assets = m_context->get_asset_manager()->get_assets();
+    auto& assets    = m_context->get_asset_manager()->get_assets();
 
-    std::string type_str = asset::translate_asset_typename(asset_type) + "s";
-    const std::string title = type_str + " [" + std::to_string(asset_ids.size()) + "]";
-    const std::string list_id = type_str + "##asset_list";
+    std::string       type_str = asset::translate_asset_typename(asset_type) + "s";
+    const std::string title    = type_str + " [" + std::to_string(asset_ids.size()) + "]";
+    const std::string list_id  = type_str + "##asset_list";
 
     ImGui::Text("%s", title.c_str());
     if (ImGui::BeginChild(list_id.c_str(), ImVec2(0, 150), true)) {
         for (auto& id : asset_ids) {
             auto& asset = assets.at(id);
-            auto& name = asset->get_tag();
+            auto& name  = asset->get_tag();
 
             if (ImGui::Selectable(name.c_str(), id == m_current_asset_id)) {
                 m_current_asset_id = id;
@@ -83,14 +78,14 @@ void AssetPanel::render_asset_list(const asset::AssetType asset_type)
             if (ImGui::BeginPopupContextItem()) {
                 m_current_asset_id = id;
 
-                auto& path = asset->get_path();
+                auto& path        = asset->get_internal_path();
                 auto& source_path = asset->get_source_path();
-                auto type = asset->get_asset_typename();
+                auto  type        = asset->get_asset_typename();
 
                 ImGui::Text("%s Asset", asset->get_asset_typename().c_str());
 
-                ImVec2 windowSize = ImGui::GetWindowSize();
-                float buttonWidth = ImGui::CalcTextSize("Inspect").x + ImGui::GetStyle().FramePadding.x * 2.0f;
+                ImVec2 windowSize  = ImGui::GetWindowSize();
+                float  buttonWidth = ImGui::CalcTextSize("Inspect").x + ImGui::GetStyle().FramePadding.x * 2.0f;
                 ImGui::SameLine(windowSize.x - buttonWidth - ImGui::GetStyle().WindowPadding.x);
 
                 if (ImGui::Button("Inspect")) {
@@ -110,13 +105,4 @@ void AssetPanel::render_asset_list(const asset::AssetType asset_type)
     }
     ImGui::EndChild();
 }
-
-	/*
-std::filesystem::path render_import_menu()
-{
-    // todo
-
-}
-*/
-
 }

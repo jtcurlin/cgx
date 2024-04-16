@@ -5,15 +5,15 @@
 
 namespace cgx::core
 {
-Hierarchy::Hierarchy (const ItemType item_type, const std::string& tag)
+Hierarchy::Hierarchy(const ItemType item_type, const std::string& tag)
     : Item(item_type, tag)
 {
-    set_path(Hierarchy::get_path_prefix() + tag);
+    set_internal_path(Hierarchy::get_path_prefix() + tag);
 }
 
-Hierarchy::~Hierarchy () = default;
+Hierarchy::~Hierarchy() = default;
 
-void Hierarchy::remove ()
+void Hierarchy::remove()
 {
     std::shared_ptr<Hierarchy> parent = m_parent.lock();
     while (!m_children.empty()) {
@@ -25,7 +25,7 @@ void Hierarchy::remove ()
     set_parent({});
 }
 
-void Hierarchy::recursive_remove ()
+void Hierarchy::recursive_remove()
 {
     while (!m_children.empty()) {
         m_children.back()->recursive_remove();
@@ -34,14 +34,14 @@ void Hierarchy::recursive_remove ()
     set_parent({});
 }
 
-void Hierarchy::recursive_remove_children ()
+void Hierarchy::recursive_remove_children()
 {
     while (!m_children.empty()) {
         m_children.back()->recursive_remove();
     }
 }
 
-void Hierarchy::on_add_child (const std::shared_ptr<Hierarchy>& child, std::size_t position)
+void Hierarchy::on_add_child(const std::shared_ptr<Hierarchy>& child, std::size_t position)
 {
     CGX_VERIFY(child.get() != this);
 
@@ -56,7 +56,7 @@ void Hierarchy::on_add_child (const std::shared_ptr<Hierarchy>& child, std::size
     update_path_recursive();
 }
 
-void Hierarchy::on_remove_child (Hierarchy* const child)
+void Hierarchy::on_remove_child(Hierarchy* const child)
 {
     CGX_VERIFY(child != nullptr);
 
@@ -75,12 +75,12 @@ void Hierarchy::on_remove_child (Hierarchy* const child)
     }
 }
 
-void Hierarchy::set_parent (const std::shared_ptr<Hierarchy>& parent)
+void Hierarchy::set_parent(const std::shared_ptr<Hierarchy>& parent)
 {
     set_parent(parent, std::numeric_limits<std::size_t>::max());
 }
 
-void Hierarchy::set_parent (const std::shared_ptr<Hierarchy>& new_parent, const std::size_t position)
+void Hierarchy::set_parent(const std::shared_ptr<Hierarchy>& new_parent, const std::size_t position)
 {
     CGX_VERIFY(new_parent.get() != this);
 
@@ -112,12 +112,12 @@ void Hierarchy::set_parent (const std::shared_ptr<Hierarchy>& new_parent, const 
     set_depth_recursive(new_parent ? new_parent->get_depth() + 1 : 0);
 }
 
-void Hierarchy::set_parent (Hierarchy* parent)
+void Hierarchy::set_parent(Hierarchy* parent)
 {
     set_parent(parent, std::numeric_limits<std::size_t>::max());
 }
 
-void Hierarchy::set_parent (Hierarchy* const parent, const std::size_t position)
+void Hierarchy::set_parent(Hierarchy* const parent, const std::size_t position)
 {
     CGX_VERIFY(parent != this);
     if (parent != nullptr) {
@@ -128,13 +128,13 @@ void Hierarchy::set_parent (Hierarchy* const parent, const std::size_t position)
     }
 }
 
-void Hierarchy::update_path_recursive ()
+void Hierarchy::update_path_recursive()
 {
     if (auto parent = m_parent.lock()) {
-        m_path = parent->get_path() + "/" + m_tag;
+        m_internal_path = parent->get_internal_path() + "/" + m_tag;
     }
     else {
-        m_path = Hierarchy::get_path_prefix() + m_tag;
+        m_internal_path = Hierarchy::get_path_prefix() + m_tag;
     }
 
     for (const auto& child : m_children) {
@@ -142,7 +142,7 @@ void Hierarchy::update_path_recursive ()
     }
 }
 
-void Hierarchy::set_depth_recursive (const std::size_t depth)
+void Hierarchy::set_depth_recursive(const std::size_t depth)
 {
     if (m_depth == depth) {
         return;
@@ -154,32 +154,32 @@ void Hierarchy::set_depth_recursive (const std::size_t depth)
     }
 }
 
-std::shared_ptr<Hierarchy> Hierarchy::get_shared ()
+std::shared_ptr<Hierarchy> Hierarchy::get_shared()
 {
     return std::static_pointer_cast<Hierarchy>(shared_from_this());
 }
 
-std::weak_ptr<Hierarchy> Hierarchy::get_parent () const
+std::weak_ptr<Hierarchy> Hierarchy::get_parent() const
 {
     return m_parent;
 }
 
-std::size_t Hierarchy::get_depth () const
+std::size_t Hierarchy::get_depth() const
 {
     return m_depth;
 }
 
-const std::vector<std::shared_ptr<Hierarchy>>& Hierarchy::get_children () const
+const std::vector<std::shared_ptr<Hierarchy>>& Hierarchy::get_children() const
 {
     return m_children;
 }
 
-std::vector<std::shared_ptr<Hierarchy>>& Hierarchy::get_mutable_children ()
+std::vector<std::shared_ptr<Hierarchy>>& Hierarchy::get_mutable_children()
 {
     return m_children;
 }
 
-std::weak_ptr<Hierarchy> Hierarchy::get_root ()
+std::weak_ptr<Hierarchy> Hierarchy::get_root()
 {
     const auto& parent = get_parent().lock();
     if (!parent) {
@@ -188,12 +188,12 @@ std::weak_ptr<Hierarchy> Hierarchy::get_root ()
     return parent->get_root();
 }
 
-std::size_t Hierarchy::get_child_count () const
+std::size_t Hierarchy::get_child_count() const
 {
     return m_children.size();
 }
 
-std::size_t Hierarchy::get_index_in_parent () const
+std::size_t Hierarchy::get_index_in_parent() const
 {
     if (auto parent = get_parent().lock()) {
         const auto idx = parent->get_index_of_child(this);
@@ -202,7 +202,7 @@ std::size_t Hierarchy::get_index_in_parent () const
     CGX_ASSERT(false, "todo");
 }
 
-std::optional<std::size_t> Hierarchy::get_index_of_child (const Hierarchy* child) const
+std::optional<std::size_t> Hierarchy::get_index_of_child(const Hierarchy* child) const
 {
     for (std::size_t i = 0, end = m_children.size() ; i < end ; ++i) {
         if (m_children[i].get() == child) {
@@ -212,7 +212,7 @@ std::optional<std::size_t> Hierarchy::get_index_of_child (const Hierarchy* child
     return {};
 }
 
-bool Hierarchy::is_ancestor (const Hierarchy* candidate) const
+bool Hierarchy::is_ancestor(const Hierarchy* candidate) const
 {
     const auto& parent = get_parent().lock();
 
@@ -227,7 +227,7 @@ bool Hierarchy::is_ancestor (const Hierarchy* candidate) const
 }
 
 
-void Hierarchy::for_each (const std::function<bool  (Hierarchy& hierarchy)>& func)
+void Hierarchy::for_each(const std::function<bool (Hierarchy& hierarchy)>& func)
 {
     if (!func(*this)) {
         return;
@@ -236,4 +236,4 @@ void Hierarchy::for_each (const std::function<bool  (Hierarchy& hierarchy)>& fun
         child->for_each(func);
     }
 }
-} // namespace cgx::core
+}

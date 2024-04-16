@@ -19,8 +19,8 @@ namespace cgx::input
 class InputManager
 {
 public:
-    InputManager(const InputManager &) = delete;
-    InputManager& operator=(const InputManager &) = delete;
+    InputManager(const InputManager&)            = delete;
+    InputManager& operator=(const InputManager&) = delete;
 
     static InputManager& GetSingleton()
     {
@@ -46,8 +46,8 @@ public:
     [[nodiscard]] bool is_mouse_button_released(Key button) const;
 
     // mouse movement polling
-    void get_mouse_position(double &x_pos, double &y_pos) const;
-    void get_mouse_offset(double &x_offset, double &y_offset);
+    void get_mouse_position(double& x_pos, double& y_pos) const;
+    void get_mouse_offset(double& x_offset, double& y_offset);
 
 private:
     InputManager(); // default constructor (singleton)

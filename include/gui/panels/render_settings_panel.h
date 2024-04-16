@@ -9,11 +9,11 @@ namespace cgx::gui
 class RenderSettingsPanel final : public ImGuiPanel
 {
 public:
-    explicit RenderSettingsPanel (const std::shared_ptr<GUIContext>& context);
-    ~RenderSettingsPanel () override;
+    explicit RenderSettingsPanel(const std::shared_ptr<GUIContext>& context, const std::shared_ptr<ImGuiManager>& manager);
+    ~RenderSettingsPanel() override;
 
-    void draw_skybox_menu();
+    void draw_skybox_menu() const;
 
-    void render () override;
+    void render() override;
 };
 }

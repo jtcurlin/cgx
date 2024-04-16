@@ -17,6 +17,16 @@ add_subdirectory(external)
 # cgx Static Library Creation
 add_library(cgx STATIC "")
 
+set(SHADERS_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data/shaders/")
+set(ASSETS_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data/assets/")
+set(FONTS_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data/fonts/")
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/utility/paths.h.in
+        ${CMAKE_CURRENT_SOURCE_DIR}/include/utility/paths.h
+        @ONLY )
+
+
+add_subdirectory(examples)
+
 set(INCLUDE_DIRECTORIES include)
 
 target_sources(cgx
@@ -184,35 +194,26 @@ target_link_libraries(cgx PUBLIC
     glm::glm-header-only
 )
 
-set(SHADERS_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data/shaders/")
-set(ASSETS_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data/assets/")
-set(FONTS_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data/fonts/")
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/utility/paths.h.in
-               ${CMAKE_CURRENT_SOURCE_DIR}/include/utility/paths.h
-               @ONLY )
-
 # copy assets to build directory
 add_custom_command(
-    TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_CURRENT_SOURCE_DIR}/data/shaders
         ${SHADERS_DIRECTORY}
 )
 
 # copy assets to build directory
 add_custom_command(
-    TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_CURRENT_SOURCE_DIR}/data/assets
         ${ASSETS_DIRECTORY}
 )
 
 # copy fonts to build directory
 add_custom_command(
-    TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        TARGET ${PROJECT_NAME} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
         ${CMAKE_CURRENT_SOURCE_DIR}/data/fonts
         ${FONTS_DIRECTORY}
 )
-
-add_subdirectory(examples)

@@ -4,7 +4,6 @@
 #include "asset/mesh.h"
 #include "utility/math.h"
 
-
 namespace cgx::geometry
 {
 std::shared_ptr<asset::Mesh> create_plane(
@@ -96,7 +95,12 @@ std::shared_ptr<asset::Mesh> create_plane(
         }
     }
 
-    return std::make_shared<asset::Mesh>("cgx://asset/mesh/primitive_plane", "primitive_plane", vertices, indices, nullptr);
+    return std::make_shared<asset::Mesh>(
+        "cgx://asset/mesh/primitive_plane",
+        "primitive_plane",
+        vertices,
+        indices,
+        nullptr);
 }
 
 
@@ -175,7 +179,12 @@ std::shared_ptr<asset::Mesh> create_sphere(const uint32_t sector_count, const ui
         }
     }
 
-    return std::make_shared<asset::Mesh>("cgx:://asset/mesh/primitive_sphere", "primitive_sphere", vertices, indices, nullptr);
+    return std::make_shared<asset::Mesh>(
+        "cgx:://asset/mesh/primitive_sphere",
+        "primitive_sphere",
+        vertices,
+        indices,
+        nullptr);
 }
 
 std::shared_ptr<asset::Mesh> create_cube(
@@ -233,38 +242,6 @@ std::shared_ptr<asset::Mesh> create_cube(
         0, 3, 5, 5, 4, 0  // Left face
     };
 
-    /* temp logging of results
-    CGX_INFO("Cubemap Vertices:")
-    for (int i = 0 ; i < vertices.size() ; ++i) {
-        auto& vert = vertices[i];
-        CGX_INFO(
-            "Vertex {}: [pos= {}, {}, {}] ; [norm={}, {}, {}], ; [uv={}, {}]",
-            i,
-            vert.position.x,
-            vert.position.y,
-            vert.position.z,
-            vert.normal.x,
-            vert.normal.y,
-            vert.normal.z,
-            vert.uv[0],
-            vert.uv[1])
-    }
-    CGX_INFO("Vertex Indices:");
-    for (int i = 0 ; i < 36 ; i+=6) {
-        CGX_INFO(
-            "face {}: {} {} {} {} {} {}",
-            i,
-            indices[i],
-            indices[i+1],
-            indices[i+2],
-            indices[i+3],
-            indices[i+4],
-            indices[i+5]);
-    }
-    */
-
     return std::make_shared<asset::Mesh>("primitive_cube", "cgx://asset/mesh/primitive_cube", vertices, indices);
 }
-
-
 }
