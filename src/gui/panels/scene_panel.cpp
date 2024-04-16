@@ -1,6 +1,8 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "gui/panels/scene_panel.h"
+
+#include "gui/imgui_manager.h"
 #include "scene/node.h"
 
 namespace cgx::gui
@@ -108,15 +110,18 @@ void ScenePanel::draw_node_context_menu(scene::Node* node)
 void ScenePanel::draw_new_node_menu()
 {
     if (m_adding_node) {
-        ImGui::OpenPopup("Add New Node");
+        ImGui::OpenPopup("Add Node ##NewNodeMenu");
     }
     // Define the size and position of the popup
     const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
     // Open a modal popup to block interactions with other UI elements
-    if (ImGui::BeginPopupModal("Add New Node", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+    ImGui::PushFont(m_manager.lock()->m_title_font);
+    if (ImGui::BeginPopupModal("Add Node ##NewNodeMenu", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         // Display buttons for each type of node
+
+        ImGui::PushFont(m_manager.lock()->m_header_font);
         if (ImGui::MenuItem("\uf6cf  Entity Node")) {
             add_node(scene::NodeType::Entity, m_new_node_parent);
             m_adding_node     = false;
@@ -137,10 +142,14 @@ void ScenePanel::draw_new_node_menu()
         }
         ImGui::Separator();
         if (ImGui::MenuItem("Cancel")) {
+            m_adding_node = false;
+            m_new_node_parent = nullptr;
             ImGui::CloseCurrentPopup();
         }
+        ImGui::PopFont();
 
         ImGui::EndPopup();
     }
+    ImGui::PopFont();
 }
 }

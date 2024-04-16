@@ -12,6 +12,11 @@
 #include <string>
 #include <vector>
 
+namespace cgx::gui
+{
+class PropertiesPanel;
+}
+
 namespace cgx::asset
 {
 struct Vertex
@@ -70,5 +75,7 @@ private:
     uint32_t m_vao{0};
     uint32_t m_vbo{0};
     uint32_t m_ebo{0};
+
+    friend class gui::PropertiesPanel;
 };
 }

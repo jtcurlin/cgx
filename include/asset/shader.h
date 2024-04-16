@@ -7,6 +7,12 @@
 #include <glm/glm.hpp>
 #include <string>
 
+namespace cgx::gui
+{
+class PropertiesPanel;
+}
+
+
 namespace cgx::asset
 {
 class Shader final : public Asset
@@ -49,5 +55,7 @@ public:
     void set_mat2(const std::string &name, const glm::mat2 &mat) const;
     void set_mat3(const std::string &name, const glm::mat3 &mat) const;
     void set_mat4(const std::string &name, const glm::mat4 &mat) const;
+
+    friend class gui::PropertiesPanel;
 };
 }

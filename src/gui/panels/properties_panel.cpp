@@ -16,7 +16,9 @@
 
 namespace cgx::gui
 {
-PropertiesPanel::PropertiesPanel(const std::shared_ptr<GUIContext>& context, const std::shared_ptr<ImGuiManager>& manager)
+PropertiesPanel::PropertiesPanel(
+    const std::shared_ptr<GUIContext>&   context,
+    const std::shared_ptr<ImGuiManager>& manager)
     : ImGuiPanel("Properties", context, manager) {}
 
 PropertiesPanel::~PropertiesPanel() = default;
@@ -50,7 +52,9 @@ void PropertiesPanel::render()
 
 void PropertiesPanel::draw_asset_properties(asset::Asset* asset)
 {
-    ImGui::Text("%s Asset", asset->get_asset_typename().c_str());
+    ImGui::PushFont(m_manager.lock()->m_title_font);
+    ImGui::Text("%s asset", asset->get_asset_typename().c_str());
+    ImGui::PopFont();
     ImGui::Separator();
     draw_asset_metadata(asset);
 
@@ -101,8 +105,8 @@ void PropertiesPanel::draw_asset_metadata(const asset::Asset* asset)
         ImGui::Text("Tag: %s", asset->get_tag().c_str());
         ImGui::Text("Path: %s", asset->get_internal_path().c_str());
         ImGui::Text("Type: %s", asset->get_asset_typename().c_str());
-        ImGui::PopFont();
         ImGui::Separator();
+        ImGui::PopFont();
     }
     ImGui::PopFont();
 }
@@ -209,7 +213,9 @@ void PropertiesPanel::draw_entity_node_properties(scene::EntityNode* entity_node
             draw_rigidbody_component_editor(entity_node, scene.get());
         }
     }
-    else { ImGui::PopFont(); }
+    else {
+        ImGui::PopFont();
+    }
 }
 
 void PropertiesPanel::draw_camera_node_properties(scene::CameraNode* camera_node)
@@ -323,48 +329,79 @@ void PropertiesPanel::draw_rigidbody_component_editor(scene::EntityNode* entity_
 
 void PropertiesPanel::draw_model_asset_editor(asset::Model* model)
 {
-    ImGui::Text("todo");
+    ImGui::PushFont(m_manager.lock()->m_header_font);
+    if (ImGui::CollapsingHeader("Model Details", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::Text("todo");
+    }
+    ImGui::PopFont();
+
 }
 
 void PropertiesPanel::draw_mesh_asset_editor(asset::Mesh* mesh)
 {
-    ImGui::Text("todo");
+    ImGui::PushFont(m_manager.lock()->m_header_font);
+    if (ImGui::CollapsingHeader("Mesh Details", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::PushFont(m_manager.lock()->m_body_font);
+        ImGui::Text("VAO ID: %zu", mesh->m_vao);
+        ImGui::Text("VBO ID: %zu", mesh->m_vbo);
+        ImGui::Text("EBO ID: %zu", mesh->m_ebo);
+
+        ImGui::Text("Vertex Count: %zu", mesh->m_vertices.size());
+        ImGui::Text("Index Count: %zu", mesh->m_indices.size());
+
+        draw_asset_selector(asset::AssetType::Material, mesh->m_material, "Material");
+        ImGui::PopFont();
+    }
+    ImGui::PopFont();
 }
 
 void PropertiesPanel::draw_material_asset_editor(asset::Material* material)
 {
-    ImGui::Text("Base Colors");
-    ImGui::ColorEdit3("Ambient Color", &material->m_ambient_color[0]);
-    ImGui::ColorEdit3("Diffuse Color", &material->m_diffuse_color[0]);
-    ImGui::ColorEdit3("Specular Color", &material->m_specular_color[0]);
-    ImGui::SliderFloat("Shininess", &material->m_shininess, 0.0f, 128.0f);
-    ImGui::Separator();
+    ImGui::PushFont(m_manager.lock()->m_header_font);
+    if (ImGui::CollapsingHeader("Material Details", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::PushFont(m_manager.lock()->m_body_font);
+        ImGui::Text("Base Colors");
+        ImGui::ColorEdit3("Ambient Color", &material->m_ambient_color[0]);
+        ImGui::ColorEdit3("Diffuse Color", &material->m_diffuse_color[0]);
+        ImGui::ColorEdit3("Specular Color", &material->m_specular_color[0]);
+        ImGui::SliderFloat("Shininess", &material->m_shininess, 0.0f, 128.0f);
+        ImGui::Separator();
 
-    ImGui::Text("Texture Maps");
-    draw_asset_selector<asset::Texture>(asset::AssetType::Texture, material->m_ambient_map, "Ambient Map");
-    draw_asset_selector<asset::Texture>(asset::AssetType::Texture, material->m_diffuse_map, "Diffuse Map");
-    draw_asset_selector<asset::Texture>(asset::AssetType::Texture, material->m_specular_map, "Specular Map");
-    draw_asset_selector<asset::Texture>(asset::AssetType::Texture, material->m_normal_map, "Normal Map");
-    ImGui::Separator();
-
+        ImGui::Text("Texture Maps");
+        draw_asset_selector<asset::Texture>(asset::AssetType::Texture, material->m_ambient_map, "Ambient Map");
+        draw_asset_selector<asset::Texture>(asset::AssetType::Texture, material->m_diffuse_map, "Diffuse Map");
+        draw_asset_selector<asset::Texture>(asset::AssetType::Texture, material->m_specular_map, "Specular Map");
+        draw_asset_selector<asset::Texture>(asset::AssetType::Texture, material->m_normal_map, "Normal Map");
+        ImGui::Separator();
+        ImGui::PopFont();
+    }
+    ImGui::PopFont();
 }
 
 void PropertiesPanel::draw_texture_asset_editor(asset::Texture* texture)
 {
-    if (ImGui::BeginChild("Details##TextureProperties")) {
+    ImGui::PushFont(m_manager.lock()->m_header_font);
+    if (ImGui::CollapsingHeader("Texture Details", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::PushFont(m_manager.lock()->m_body_font);
         ImGui::Text("Texture ID: %zu", texture->m_texture_id);
         ImGui::Text("Width: %zu", texture->m_width);
         ImGui::Text("Height: %zu", texture->m_height);
         ImGui::Text("Channels: %zu", texture->m_num_channels);
         ImGui::Text("GL Format: %zu", texture->m_format);
+        ImGui::PopFont();
     }
-    ImGui::EndChild();
-    ImGui::Text("todo");
+    ImGui::PopFont();
 }
 
 void PropertiesPanel::draw_shader_asset_editor(asset::Shader* shader)
 {
-    ImGui::Text("todo");
+    ImGui::PushFont(m_manager.lock()->m_header_font);
+    if (ImGui::CollapsingHeader("Shader Details", ImGuiTreeNodeFlags_DefaultOpen)) {
+        ImGui::PushFont(m_manager.lock()->m_body_font);
+        ImGui::Text("Vertex Shader: %s", shader->m_vert_path.c_str());
+        ImGui::Text("Fragment Shader: %s", shader->m_frag_path.c_str());
+        ImGui::PopFont();
+    }
+    ImGui::PopFont();
 }
-
 }
