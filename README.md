@@ -1,6 +1,6 @@
 # cgx : curlin graphics engine
 ## 3D OpenGL Rendering Engine
-![Demo_030124](./data/032924_demo.gif)
+![Demo_030124](./data/041524_demo.png)
  
 
 ## Design Goals
