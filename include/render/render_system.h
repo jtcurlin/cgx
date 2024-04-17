@@ -66,6 +66,9 @@ public:
 
     RenderSettings& get_render_settings();
 
+    Camera* get_camera() const;
+
+
 private:
     std::unique_ptr<Camera>      m_camera;
     std::shared_ptr<Framebuffer> m_framebuffer;

@@ -7,6 +7,11 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+namespace cgx::gui
+{
+class RenderSettingsPanel;
+}
+
 namespace cgx::render
 {
 enum TranslateDirection
@@ -14,7 +19,9 @@ enum TranslateDirection
     kForward,
     kBackward,
     kLeft,
-    kRight
+    kRight,
+    kUp,
+    kDown
 };
 
 constexpr float kYaw              = -90.0f;
@@ -64,5 +71,7 @@ private:
 
     float near_clip = 0.1f;
     float far_clip  = 100.0f;
+
+    friend class gui::RenderSettingsPanel;
 };
 }

@@ -50,6 +50,12 @@ void Camera::Update(const double dt)
         if (input_manager.is_key_pressed(input::Key::key_d)) {
             Translate(kRight, dt);
         }
+        if (input_manager.is_key_pressed(input::Key::key_space)) {
+            Translate(kUp, dt);
+        }
+        if (input_manager.is_key_pressed(input::Key::key_left_ctrl)) {
+            Translate(kDown, dt);
+        }
     }
     updateCameraVectors();
 }
@@ -79,6 +85,12 @@ void Camera::Translate(const TranslateDirection dir, const double dt)
             break;
         case kRight:
             m_position += m_right * velocity;
+            break;
+        case kUp:
+            m_position += m_up * velocity;
+            break;
+        case kDown:
+            m_position -= m_up * velocity;
             break;
         default:
             break;

@@ -269,6 +269,8 @@ input::Key WindowManager::translate_key_code_to_internal(const int glfw_key)
         case GLFW_KEY_Z:
             return input::Key::key_z;
 
+        case GLFW_KEY_SPACE:
+            return input::Key::key_space;
         case GLFW_KEY_ESCAPE:
             return input::Key::key_escape;
         case GLFW_KEY_ENTER:
@@ -331,6 +333,9 @@ input::Key WindowManager::translate_key_code_to_internal(const int glfw_key)
             return input::Key::key_f11;
         case GLFW_KEY_F12:
             return input::Key::key_f12;
+
+        case GLFW_KEY_LEFT_CONTROL:
+            return input::Key::key_left_ctrl;
 
         default:
             return input::Key::undefined_key;
@@ -450,6 +455,8 @@ int WindowManager::translate_key_code_to_glfw(const input::Key key)
         case input::Key::key_z:
             return GLFW_KEY_Z;
 
+        case input::Key::key_space:
+            return GLFW_KEY_SPACE;
         case input::Key::key_escape:
             return GLFW_KEY_ESCAPE;
         case input::Key::key_enter:
@@ -510,6 +517,8 @@ int WindowManager::translate_key_code_to_glfw(const input::Key key)
             return GLFW_KEY_F11;
         case input::Key::key_f12:
             return GLFW_KEY_F12;
+        case input::Key::key_left_ctrl:
+            return GLFW_KEY_LEFT_CONTROL;
 
         default: CGX_ERROR("Invalid GLFW key")
             return GLFW_KEY_0; //placeholder

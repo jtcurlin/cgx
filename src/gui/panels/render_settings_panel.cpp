@@ -22,6 +22,11 @@ void RenderSettingsPanel::render()
     draw_skybox_menu();
     ImGui::Checkbox("Enable MSAA", &render_settings.msaa_enabled);
     ImGui::Checkbox("Enable Rendering Test", &render_settings.m_render_test_enabled);
+
+    float label_width = ImGui::CalcTextSize("Camera Movement Speed").x;
+    float slider_width = ImGui::GetContentRegionAvail().x - label_width - ImGui::GetStyle().ItemInnerSpacing.x * 2; // Adjust spacing as necessary
+    ImGui::SetNextItemWidth(slider_width);
+    ImGui::SliderFloat("Camera Movement Speed", &m_context->get_render_system()->get_camera()->m_movement_speed, 0.0f, 10.0f);
 }
 
 void RenderSettingsPanel::draw_skybox_menu() const

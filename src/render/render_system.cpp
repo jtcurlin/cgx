@@ -310,4 +310,9 @@ RenderSettings& RenderSystem::get_render_settings()
 {
     return m_settings;
 }
+
+Camera* RenderSystem::get_camera() const
+{
+    return m_camera.get();
+}
 }
