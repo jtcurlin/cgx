@@ -1,6 +1,8 @@
 # Copyright © 2024 Jacob Curlin
 # cgx engine
 
+include(FetchContent)
+
 cmake_minimum_required(VERSION 3.6.0)
 project(cgx VERSION 0.1.0)
 
@@ -16,6 +18,13 @@ add_subdirectory(external)
 
 # cgx Static Library Creation
 add_library(cgx STATIC "")
+link_glad(cgx PUBLIC)
+link_glfw(cgx PUBLIC)
+link_glm(cgx PUBLIC)
+link_imgui(cgx PUBLIC)
+link_spdlog(cgx PUBLIC)
+link_stb_image(cgx PUBLIC)
+link_tinyobjloader(cgx PUBLIC)
 
 set(SHADERS_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data/shaders/")
 set(ASSETS_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/data/assets/")
@@ -26,8 +35,6 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/include/utility/paths.h.in
 
 
 add_subdirectory(examples)
-
-set(INCLUDE_DIRECTORIES include)
 
 target_sources(cgx
     # core
@@ -172,26 +179,30 @@ target_sources(cgx
 
     # glad
     PRIVATE
-        ${CMAKE_CURRENT_SOURCE_DIR}/external/glad/glad.c
+        # ${CMAKE_CURRENT_SOURCE_DIR}/external/glad/glad.c
 )
 
 target_include_directories(cgx 
     PUBLIC 
         include/
 
-    SYSTEM PUBLIC 
+    # SYSTEM
         external/
     
     PRIVATE 
         src/
 )
 
+get_target_property(TARGET_INCLUDES cgx INCLUDE_DIRECTORIES)
+message(STATUS "Include directories for cgx: ${TARGET_INCLUDES}")
+
+
 target_link_libraries(cgx PUBLIC
-    glfw
+    # glfw
     OpenGL::GL
-    imgui
-    spdlog::spdlog_header_only
-    glm::glm-header-only
+    # imgui
+    # spdlog::spdlog_header_only
+    # glm::glm-header-only
 )
 
 # copy assets to build directory

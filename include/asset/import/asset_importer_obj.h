@@ -4,7 +4,7 @@
 
 #include "asset/asset.h"
 #include "asset/import/asset_importer.h"
-#include "tinyobjloader/tiny_obj_loader.h"
+#include "tiny_obj_loader.h"
 
 #include <filesystem>
 

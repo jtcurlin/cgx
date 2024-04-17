@@ -7,8 +7,7 @@
 
 #include "core/common.h"
 #include "input/input_types.h"
-#include "glad/glad.h"
-#include <GLFW/glfw3.h>
+#include "GLFW/glfw3.h"
 
 namespace cgx::core
 {

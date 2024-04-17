@@ -3,6 +3,7 @@
 #include "core/window_manager.h"
 
 #include "ecs/common.h"
+#include "glad/glad.h"
 
 #include <iostream>
 

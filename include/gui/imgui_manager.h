@@ -4,7 +4,7 @@
 
 #include "gui/imgui_panel.h"
 #include "gui/gui_context.h"
-#include "imgui/imgui.h"
+#include "imgui.h"
 
 namespace cgx::gui
 {

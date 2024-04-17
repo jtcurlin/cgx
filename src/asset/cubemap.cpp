@@ -3,7 +3,7 @@
 #include "asset/cubemap.h"
 #include "asset/shader.h"
 
-#include <stb/stb_image.h>
+#include <stb_image.h>
 #include "geometry/primitive_mesh.h"
 #include "utility/error.h"
 

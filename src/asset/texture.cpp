@@ -1,7 +1,7 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "asset/texture.h"
-#include "stb/stb_image.h"
+#include "stb_image.h"
 #include "utility/error.h"
 
 namespace cgx::asset
