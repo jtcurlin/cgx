@@ -5,8 +5,7 @@
 
 namespace cgx::asset
 {
-AssetManager::AssetManager(PathConfig path_config)
-    : m_path_config(path_config) {}
+AssetManager::AssetManager() {}
 
 AssetManager::~AssetManager() = default;
 

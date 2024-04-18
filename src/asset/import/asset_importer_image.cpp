@@ -13,20 +13,17 @@
 namespace cgx::asset
 {
 AssetImporterImage::AssetImporterImage()
-    : AssetImporter("Image Importer", std::string(ASSETS_DIRECTORY), {".jpg", ".png", ".tga"}, {AssetType::Texture}) {}
+    : AssetImporter("Image Importer", {".jpg", ".png", ".tga"}, {AssetType::Texture}) {}
 
 AssetImporterImage::~AssetImporterImage() = default;
 
-AssetID AssetImporterImage::import(const std::string& path)
+AssetID AssetImporterImage::import(const std::string& source_path)
 {
-    const std::filesystem::path relative_path = get_relative_path(path);
-    const std::filesystem::path source_path = get_absolute_path(relative_path);
-
     stbi_set_flip_vertically_on_load(1);
 
     stbi_uc* data = nullptr;
     int      width, height, num_channels;
-    data = stbi_load(source_path.string().c_str(), &width, &height, &num_channels, 0);
+    data = stbi_load(source_path.c_str(), &width, &height, &num_channels, 0);
 
     GLenum format = 0;
     if (data) {
@@ -43,24 +40,19 @@ AssetID AssetImporterImage::import(const std::string& path)
         if (format == 0) {
             CGX_ERROR(
                 "AssetImporterImage: Failed to determine valid texture data " "format for specified path. [{}]",
-                source_path.string());
+                source_path);
             return k_invalid_id;
         }
     }
     if (!data) {
-        CGX_ERROR("AssetImporterImage: Failed to load texture resource at path {}", source_path.string());
+        CGX_ERROR("AssetImporterImage: Failed to load texture resource at path {}", source_path);
         return k_invalid_id;
     }
 
+    const std::filesystem::path fs_path(source_path);
+    const std::string           tag = fs_path.stem().string();
 
-    const auto texture = std::make_shared<Texture>(
-        source_path.string(),
-        relative_path.stem().string(),
-        width,
-        height,
-        num_channels,
-        format,
-        data);
+    const auto texture = std::make_shared<Texture>(source_path, tag, width, height, num_channels, format, data);
 
     // this class has an inherited member variable std::weak_ptr<AssetManager>  m_asset_manager
     // at the start of import, it should get this asset manager object / make sure its been initialized / still exists
@@ -71,5 +63,4 @@ AssetID AssetImporterImage::import(const std::string& path)
     }
     return asset_manager->add_asset(texture);
 }
-
-} // namespace cgx::resource
+}

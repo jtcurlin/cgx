@@ -1,5 +1,9 @@
 {
+    "cmake.configureOnOpen": true,
+    "cmake.useCMakePresets": "always",
     "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
     "explorer.excludeGitIgnore": false,
-    "explorer.fileNesting.enabled": false
+    "explorer.fileNesting.enabled": false,
+    "cmake.sourceDirectory": "${workspaceFolder}",
+    "cmake.buildDirectory": "${workspaceFolder}/build"
 }

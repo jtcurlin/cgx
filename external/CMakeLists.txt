@@ -1,10 +1,29 @@
 # Copyright © 2024 Jacob Curlin
 # setup external dependencies
 
-# =====================================================
+include(FetchContent)
 
+# =====================================================
 # glad
 
+macro(link_opengl TARGET ACCESS)
+    find_package(OpenGL REQUIRED)
+    if (OpenGL_FOUND)
+        target_include_directories(${TARGET} ${ACCESS} ${OPENGL_INCLUDE_DIR})
+
+        target_link_libraries(${TARGET} ${ACCESS} OpenGL::GL)
+
+        add_dependencies(${TARGET} OpenGL::GL)
+        message(STATUS " > [dependency] 'OpenGL' found and linked to ${TARGET} : ${OPENGL_INCLUDE_DIR}")
+   else()
+        message(FATAL_ERROR " > [build failure] OpenGL not found on this system")
+    endif()
+endmacro()
+
+# =====================================================
+# glad
+
+# glad config settings
 set(GLAD_OUT_DIR        "${CMAKE_CURRENT_BINARY_DIR}" CACHE STRING "Output directory" FORCE)
 set(GLAD_PROFILE        "core" CACHE STRING "OpenGL profile" FORCE)
 set(GLAD_API            "gl=3.3" CACHE STRING "API type/version pairs, like \"gl=3.2,gles=\", no version means latest" FORCE)
@@ -19,6 +38,8 @@ macro(link_glad TARGET ACCESS)
     FetchContent_Declare(
             glad
             GIT_REPOSITORY https://github.com/Dav1dde/glad.git
+            SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/glad"
+            BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/external/glad"
     )
 
     FetchContent_GetProperties(glad)
@@ -30,13 +51,12 @@ macro(link_glad TARGET ACCESS)
     target_include_directories(${TARGET} ${ACCESS} ${glad_SOURCE_DIR})
     target_link_libraries(${TARGET} ${ACCESS} glad)
 
-    message(STATUS "glad source directory: ${glad_SOURCE_DIR}")
 
     add_dependencies(${TARGET} glad)
+    message(STATUS " > [dependency] 'glad' loaded          : ${glad_SOURCE_DIR}")
 endmacro()
 
 # =====================================================
-
 #glm
 
 macro(link_glm TARGET ACCESS)
@@ -45,8 +65,9 @@ macro(link_glm TARGET ACCESS)
             glm
             GIT_REPOSITORY https://github.com/g-truc/glm.git
             GIT_TAG a2844eede81f92b7dfb327f831c0bc0dbb273078 # 1.0.2
+            SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/glm"
+            BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/external/glm"
     )
-
     FetchContent_GetProperties(glm)
 
     if (NOT glm_POPULATED)
@@ -54,13 +75,16 @@ macro(link_glm TARGET ACCESS)
     endif()
 
     target_include_directories(${TARGET} ${ACCESS} ${glm_SOURCE_DIR})
+    message(STATUS " > [dependency] 'glm' loaded           : ${glm_SOURCE_DIR}")
 endmacro()
 
-    # =====================================================
-
+# =====================================================
 # glfw
 
-#add_subdirectory(glfw)
+set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "build examples" FORCE)
+set(GLFW_BUILD_TESTS OFF CACHE BOOL "build tests" FORCE)
+set(GLFW_BUILD_DOCS OFF CACHE BOOL "build docs" FORCE)
+set(GLFW_INSTALL OFF CACHE BOOL "configure an install" FORCE)
 
 macro (link_glfw TARGET ACCESS)
 
@@ -68,27 +92,21 @@ macro (link_glfw TARGET ACCESS)
             glfw
             GIT_REPOSITORY https://github.com/glfw/glfw.git
             GIT_TAG b35641f4a3c62aa86a0b3c983d163bc0fe36026d # 04/12/24
+            SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/glfw"
+            BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/external/glfw"
     )
     FetchContent_GetProperties(glfw)
 
     if (NOT glfw_POPULATED)
         FetchContent_Populate(glfw)
-
-        set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "build examples" FORCE)
-        set(GLFW_BUILD_TESTS OFF CACHE BOOL "build tests" FORCE)
-        set(GLFW_BUILD_DOCS OFF CACHE BOOL "build docs" FORCE)
-        set(GLFW_INSTALL OFF CACHE BOOL "configure an install" FORCE)
-
         add_subdirectory(${glfw_SOURCE_DIR} ${glfw_BINARY_DIR} EXCLUDE_FROM_ALL)
-
-        # set_target_properties(glfw PROPERTIES FOLDER ${PROJECT_NAME}/external)
     endif()
-    message(STATUS "glfw source directory: ${glfw_SOURCE_DIR}")
 
     target_include_directories(${TARGET} ${ACCESS} ${glfw_SOURCE_DIR}/include)
     target_link_libraries(${TARGET} ${ACCESS} glfw)
 
     add_dependencies(${TARGET} glfw)
+    message(STATUS " > [dependency] 'glfw' loaded          : ${glfw_SOURCE_DIR}")
 endmacro()
 
 # =====================================================
@@ -100,29 +118,33 @@ macro(link_spdlog TARGET ACCESS)
             spdlog
             GIT_REPOSITORY https://github.com/gabime/spdlog.git
             GIT_TAG a2b4262090fd3f005c2315dcb5be2f0f1774a005
+            SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/spdlog"
+            BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/external/spdlog"
     )
 
     FetchContent_GetProperties(spdlog)
     if (NOT spdlog_POPULATED)
         FetchContent_Populate(spdlog)
-        add_subdirectory(${spdlog_SOURCE_DIR} ${spdlog_BINARY_DIR})
+        add_subdirectory(${spdlog_SOURCE_DIR} ${spdlog_BINARY_DIR} EXCLUDE_FROM_ALL)
     endif()
 
     target_include_directories(${TARGET} ${ACCESS} ${spdlog_SOURCE_DIR}/include)
     target_link_libraries(${TARGET} ${ACCESS} spdlog::spdlog_header_only)
 
     add_dependencies(${TARGET} spdlog)
+    message(STATUS " > [dependency] 'spdlog' loaded : ${spdlog_SOURCE_DIR}")
 endmacro()
 
 # =====================================================
-# ImGui
+# imgui
 
 macro(link_imgui TARGET ACCESS)
-
     FetchContent_Declare(
             imgui
             GIT_REPOSITORY https://github.com/ocornut/imgui.git
             GIT_TAG docking
+            SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/imgui"
+            BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/external/imgui"
     )
     FetchContent_GetProperties(imgui)
     if (NOT imgui_POPULATED)
@@ -139,43 +161,47 @@ macro(link_imgui TARGET ACCESS)
         add_library(imgui STATIC ${IMGUI_SOURCES})
     endif()
 
-    message(STATUS "ImGui source directory: ${imgui_SOURCE_DIR}")
-
     target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
     target_link_libraries(imgui PRIVATE glfw)
-
 
     target_include_directories(${TARGET} ${ACCESS} ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
     target_link_libraries(${TARGET} ${ACCESS} imgui)
 
     add_dependencies(${TARGET} imgui)
+    message(STATUS " > [dependency] 'imgui' loaded         : ${imgui_SOURCE_DIR}")
 endmacro()
 
 # =====================================================
+# stb (image)
 
-macro(link_stb_image TARGET ACCESS)
+macro(link_stb TARGET ACCESS)
     FetchContent_Declare(
-            stb_image
+            stb
             GIT_REPOSITORY https://github.com/nothings/stb.git
             GIT_TAG ae721c50eaf761660b4f90cc590453cdb0c2acd0
+            SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/stb"
+            BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/external/stb"
     )
-    FetchContent_GetProperties(stb_image)
+    FetchContent_GetProperties(stb)
 
-    if (NOT stb_image_POPULATED)
-        FetchContent_Populate(stb_image)
+    if (NOT stb_POPULATED)
+        FetchContent_Populate(stb)
     endif()
 
-    target_include_directories(${TARGET} ${ACCESS} ${stb_image_SOURCE_DIR})
+    target_include_directories(${TARGET} ${ACCESS} ${stb_SOURCE_DIR})
+    message(STATUS " > [dependency] 'stb' loaded           : ${stb_SOURCE_DIR}")
 
 endmacro()
-
 # =====================================================
+# tinyobjloader
 
 macro(link_tinyobjloader TARGET ACCESS)
     FetchContent_Declare(
             tinyobjloader
             GIT_REPOSITORY https://github.com/tinyobjloader/tinyobjloader.git
             GIT_TAG cab4ad7254cbf7eaaafdb73d272f99e92f166df8
+            SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/tinyobjloader"
+            BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/external/tinyobjloader"
     )
     FetchContent_GetProperties(tinyobjloader)
 
@@ -184,5 +210,5 @@ macro(link_tinyobjloader TARGET ACCESS)
     endif()
 
     target_include_directories(${TARGET} ${ACCESS} ${tinyobjloader_SOURCE_DIR})
-
+    message(STATUS " > [dependency] 'tinyobjloader' loaded : ${tinyobjloader_SOURCE_DIR}")
 endmacro()

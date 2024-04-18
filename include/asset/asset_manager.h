@@ -14,17 +14,11 @@
 
 namespace cgx::asset
 {
-struct PathConfig
-{
-    std::filesystem::path shader_dir{SHADERS_DIRECTORY};
-    std::filesystem::path asset_dir{ASSETS_DIRECTORY};
-    std::filesystem::path font_dir{FONTS_DIRECTORY};
-};
 
 class AssetManager : public std::enable_shared_from_this<AssetManager>
 {
 public:
-    explicit AssetManager(PathConfig path_config = PathConfig());
+    explicit AssetManager();
     ~AssetManager();
 
     // todo: refine importer ownership model & extension -> importer mapping
@@ -46,8 +40,6 @@ public:
     bool is_path_supported(const std::string& path) const;
 
 private:
-    PathConfig m_path_config;
-
     std::vector<std::shared_ptr<AssetImporter>>                   m_importers;
     std::unordered_map<std::string, std::weak_ptr<AssetImporter>> m_extension_to_importer_map;
 

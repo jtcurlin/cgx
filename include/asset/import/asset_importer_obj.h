@@ -16,7 +16,7 @@ public:
     AssetImporterOBJ();
     ~AssetImporterOBJ() override;
 
-    AssetID import(const std::string& path) override;
+    AssetID import(const std::string& source_path) override;
     void    import_materials(const std::filesystem::path& source_path);
     void    import_meshes(const std::filesystem::path& source_path);
 

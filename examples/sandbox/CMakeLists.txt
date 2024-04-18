@@ -1,13 +1,18 @@
-add_executable(sandbox 
-    # headers
-    include/sandbox.h
+# Copyright © 2024 Jacob Curlin
 
-    # source
-    src/sandbox.cpp
-)
 
-target_include_directories(sandbox PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+set(INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/include")
+set(SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
-target_link_libraries(sandbox PRIVATE
-    cgx 
-)
+file(GLOB_RECURSE PUBLIC_HEADERS "${INCLUDE_DIR}/*.h")
+file(GLOB_RECURSE PRIVATE_SOURCES "${SOURCE_DIR}/*.cpp")
+
+add_executable(sandbox ${PRIVATE_SOURCES})
+
+target_include_directories(sandbox PUBLIC ${INCLUDE_DIR})
+
+target_link_libraries(sandbox cgx)
+
+add_dependencies(sandbox cgx)
+
+

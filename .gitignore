@@ -5,3 +5,7 @@ cmake-build-debug/
 out/
 imgui.ini
 include/utility/paths.h
+CMakeUserPresets.json
+
+
+

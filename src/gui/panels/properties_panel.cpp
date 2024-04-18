@@ -342,9 +342,9 @@ void PropertiesPanel::draw_mesh_asset_editor(asset::Mesh* mesh)
     ImGui::PushFont(m_manager.lock()->m_header_font);
     if (ImGui::CollapsingHeader("Mesh Details", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::PushFont(m_manager.lock()->m_body_font);
-        ImGui::Text("VAO ID: %zu", mesh->m_vao);
-        ImGui::Text("VBO ID: %zu", mesh->m_vbo);
-        ImGui::Text("EBO ID: %zu", mesh->m_ebo);
+        ImGui::Text("VAO ID: %u", mesh->m_vao);
+        ImGui::Text("VBO ID: %u", mesh->m_vbo);
+        ImGui::Text("EBO ID: %u", mesh->m_ebo);
 
         ImGui::Text("Vertex Count: %zu", mesh->m_vertices.size());
         ImGui::Text("Index Count: %zu", mesh->m_indices.size());
@@ -383,11 +383,11 @@ void PropertiesPanel::draw_texture_asset_editor(asset::Texture* texture)
     ImGui::PushFont(m_manager.lock()->m_header_font);
     if (ImGui::CollapsingHeader("Texture Details", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::PushFont(m_manager.lock()->m_body_font);
-        ImGui::Text("Texture ID: %zu", texture->m_texture_id);
-        ImGui::Text("Width: %zu", texture->m_width);
-        ImGui::Text("Height: %zu", texture->m_height);
-        ImGui::Text("Channels: %zu", texture->m_num_channels);
-        ImGui::Text("GL Format: %zu", texture->m_format);
+        ImGui::Text("Texture ID: %u", texture->m_texture_id);
+        ImGui::Text("Width: %u", texture->m_width);
+        ImGui::Text("Height: %u", texture->m_height);
+        ImGui::Text("Channels: %u", texture->m_num_channels);
+        ImGui::Text("GL Format: %u", texture->m_format);
         ImGui::PopFont();
     }
     ImGui::PopFont();

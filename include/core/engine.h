@@ -4,7 +4,6 @@
 
 #define GL_SILENCE_DEPRECATION
 
-#include "core/common.h"
 #include "utility/paths.h"
 
 #include <filesystem>
@@ -59,16 +58,7 @@ struct EngineSettings
     uint32_t render_width{1280};
     uint32_t render_height{720};
 
-    std::filesystem::path shader_dir{SHADERS_DIRECTORY};
-    std::filesystem::path asset_dir{ASSETS_DIRECTORY};
-    std::filesystem::path font_dir{FONTS_DIRECTORY};
-};
-
-struct PathConfig
-{
-    std::filesystem::path shader_dir{SHADERS_DIRECTORY};
-    std::filesystem::path asset_dir{ASSETS_DIRECTORY};
-    std::filesystem::path font_dir{FONTS_DIRECTORY};
+    std::filesystem::path data_dir{DATA_DIRECTORY};
 };
 
 class Engine
@@ -83,7 +73,6 @@ protected:
     virtual void initialize();
     virtual void update();
     virtual void render();
-    // virtual void shutdown();
 
     void setup_ecs();
     void setup_gui();

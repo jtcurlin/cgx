@@ -24,6 +24,9 @@ void Sandbox::render()
 
 void Sandbox::load_assets() const
 {
+    std::filesystem::path asset_dir(std::string(DATA_DIRECTORY) + "/assets");
+    std::filesystem::path shader_dir(std::string(DATA_DIRECTORY) + "/shaders");
+
     // load models
     const std::vector<std::string> model_filenames{
         "soccerball/ball.obj", "light_cube/light_cube.obj", "sponza/sponza.obj",
@@ -31,35 +34,35 @@ void Sandbox::load_assets() const
         // "holodeck/holodeck.obj"
     };
     for (const auto& filename : model_filenames) {
-        std::filesystem::path model_path = m_settings.asset_dir / filename;
+        std::filesystem::path model_path = asset_dir / filename;
         m_asset_manager->import_asset(model_path.string());
     }
 
     // load model, lighting shaders
     const std::vector<std::string> shader_names = {"model", "lighting"};
     for (const auto& name : shader_names) {
-        std::filesystem::path shader_path = m_settings.shader_dir / name;
+        std::filesystem::path shader_path = shader_dir / name;
         auto                  shader      = std::make_shared<cgx::asset::Shader>(shader_path.string(), name);
         m_asset_manager->add_asset(shader);
     }
 
     // load skybox 1
     const std::vector<std::string> skybox_1_face_paths = {
-        (m_settings.asset_dir / "skybox_mountains/right.jpg").string(),
-        (m_settings.asset_dir / "skybox_mountains/left.jpg").string(),
-        (m_settings.asset_dir / "skybox_mountains/top.jpg").string(),
-        (m_settings.asset_dir / "skybox_mountains/bottom.jpg").string(),
-        (m_settings.asset_dir / "skybox_mountains/back.jpg").string(),
-        (m_settings.asset_dir / "skybox_mountains/front.jpg").string()
+        (asset_dir / "skybox_mountains/right.jpg").string(),
+        (asset_dir / "skybox_mountains/left.jpg").string(),
+        (asset_dir / "skybox_mountains/top.jpg").string(),
+        (asset_dir / "skybox_mountains/bottom.jpg").string(),
+        (asset_dir / "skybox_mountains/back.jpg").string(),
+        (asset_dir / "skybox_mountains/front.jpg").string()
     };
     m_asset_manager->add_asset(
         std::make_shared<cgx::asset::Cubemap>("cgx://asset/cubemap/skybox01", "skybox01", skybox_1_face_paths));
 
     // load skybox 2
     const std::vector<std::string> skybox_2_face_paths = {
-        (m_settings.asset_dir / "skybox_2/px.png").string(), (m_settings.asset_dir / "skybox_2/nx.png").string(),
-        (m_settings.asset_dir / "skybox_2/py.png").string(), (m_settings.asset_dir / "skybox_2/ny.png").string(),
-        (m_settings.asset_dir / "skybox_2/pz.png").string(), (m_settings.asset_dir / "skybox_2/nz.png").string()
+        (asset_dir / "skybox_2/px.png").string(), (asset_dir / "skybox_2/nx.png").string(),
+        (asset_dir / "skybox_2/py.png").string(), (asset_dir / "skybox_2/ny.png").string(),
+        (asset_dir / "skybox_2/pz.png").string(), (asset_dir / "skybox_2/nz.png").string()
     };
     m_asset_manager->add_asset(
         std::make_shared<cgx::asset::Cubemap>("cgx://asset/cubemap/skybox02", "skybox02", skybox_2_face_paths));

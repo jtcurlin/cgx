@@ -47,7 +47,10 @@ ImGuiManager::ImGuiManager(std::shared_ptr<GUIContext> context)
     ImGui_ImplOpenGL3_Init("#version 330");
 }
 
-ImGuiManager::~ImGuiManager() = default;
+ImGuiManager::~ImGuiManager()
+{
+    shutdown();
+}
 
 void ImGuiManager::initialize()
 {
@@ -57,6 +60,9 @@ void ImGuiManager::initialize()
     register_panel(std::make_unique<ViewportPanel>(m_context, shared_from_this()));
     register_panel(std::make_unique<ScenePanel>(m_context, shared_from_this()));
     register_panel(std::make_unique<PropertiesPanel>(m_context, shared_from_this()));
+
+    std::string ini_path = std::string(DATA_DIRECTORY) + "/gui_layout.ini";
+    ImGui::LoadIniSettingsFromDisk(ini_path.c_str());
 }
 
 void ImGuiManager::shutdown()
@@ -184,7 +190,7 @@ void ImGuiManager::render_core_menu() const
 void ImGuiManager::load_fonts()
 {
     const ImGuiIO&              io              = ImGui::GetIO();
-    const std::filesystem::path fonts_directory = FONTS_DIRECTORY;
+    const std::filesystem::path fonts_directory(std::string(DATA_DIRECTORY) + "/fonts");
 
     const std::string regular_text_path  = (fonts_directory / "sf_pro_display_regular.otf").string();
     const std::string bold_text_path     = (fonts_directory / "sf_pro_display_bold.otf").string();

@@ -14,6 +14,6 @@ public:
     AssetImporterImage();
     ~AssetImporterImage() override;
 
-    AssetID import(const std::string &path) override;
+    AssetID import(const std::string &source_path) override;
 };
 }

@@ -1,0 +1,61 @@
+{
+  "version" : 3,
+  "cmakeMinimumRequired" : {
+    "major" : 3,
+    "minor": 19,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "cgx-debug",
+      "description" : "debug build via ninja",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/cgx-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "name": "cgx-release",
+      "description": "use release build settings",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/cgx-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "cgx-debug",
+      "description": "build project & run testbed executable using debug settings",
+      "configurePreset": "cgx-debug",
+      "targets": ["sandbox"]
+    },
+    {
+      "name": "cgx-release",
+      "description": "build project & run testbed executable using release settings",
+      "configurePreset": "cgx-debug",
+      "targets": ["sandbox"]
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "cgx-debug",
+      "configurePreset": "cgx-debug",
+      "description": "run tests for project using debug settings",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "cgx-release",
+      "configurePreset": "cgx-release",
+      "description": "run tests for project using release settings",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}
+

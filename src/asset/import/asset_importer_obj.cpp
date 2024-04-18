@@ -21,21 +21,21 @@
 namespace cgx::asset
 {
 AssetImporterOBJ::AssetImporterOBJ()
-    : AssetImporter("Wavefront OBJ Importer", std::string(ASSETS_DIRECTORY), {".obj"}, {AssetType::Model}) {}
+    : AssetImporter("Wavefront OBJ Importer", {".obj"}, {AssetType::Model}) {}
 
 AssetImporterOBJ::~AssetImporterOBJ() = default;
 
-AssetID AssetImporterOBJ::import(const std::string& path)
+AssetID AssetImporterOBJ::import(const std::string& source_path)
 {
-    const std::filesystem::path       relative_path = get_relative_path(path);
-    const std::filesystem::path source_path   = get_absolute_path(path);
+    const std::filesystem::path fs_path(source_path);
+
 
     tinyobj::ObjReaderConfig config;
-    config.mtl_search_path = source_path.parent_path().string();
-    if (!m_tinyobj_reader.ParseFromFile(source_path.string(), config)) {
+    config.mtl_search_path = fs_path.parent_path().string();
+    if (!m_tinyobj_reader.ParseFromFile(source_path, config)) {
         CGX_ERROR(
             "AssetImporterOBJ: Initialization Failed. (tinyobjreader " "failed to parse file at path [{}]",
-            source_path.string());
+            source_path);
 
         if (!m_tinyobj_reader.Error().empty()) {
             CGX_ERROR("AssetImporterOBJ: {}", m_tinyobj_reader.Error());
@@ -63,7 +63,7 @@ AssetID AssetImporterOBJ::import(const std::string& path)
     }
 
     // construct Model resource
-    const auto model = std::make_shared<Model>(source_path.string(), relative_path.stem().string(), meshes);
+    const auto model = std::make_shared<Model>(source_path, fs_path.stem().string(), meshes);
 
     reset(); // reset importer
 
