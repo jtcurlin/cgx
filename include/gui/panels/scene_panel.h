@@ -35,6 +35,9 @@ private:
     std::shared_ptr<scene::Node>               m_root{};
     std::unordered_map<std::size_t, NodeState> m_node_states{};
 
+    char m_input_buffer[256];
+    scene::Node* m_node_being_renamed;
+
     size_t m_current_node_id;
 
     bool         m_adding_node{false};

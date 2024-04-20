@@ -9,6 +9,8 @@
 #include "ecs/component_registry.h"
 #include "ecs/system_registry.h"
 
+#include "ecs/components/transform.h"
+
 #include <string>
 
 namespace cgx::render
@@ -31,11 +33,7 @@ public:
     [[nodiscard]] const std::shared_ptr<Node>& get_root() const;
 
     void add_node(const std::string& tag, NodeType node_type, Node* parent = nullptr) const;
-
-    void add_entity_node(const std::string& name) const;
-    void add_entity_node(const std::string& name, Node* parent) const;
-
-    // void remove_node(Node* node);
+    void remove_node(Node* node) const;
 
     template<typename T>
     void add_component(EntityNode* node, const T& component)

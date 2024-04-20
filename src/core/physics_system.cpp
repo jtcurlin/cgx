@@ -20,6 +20,11 @@ void PhysicsSystem::update(const float dt)
 
         transform.local_position += rigid_body.velocity * dt;
         rigid_body.velocity += rigid_body.acceleration * dt;
+
+        event::Event event(events::component::UPDATED);
+        event.set_param(events::component::TYPE, m_component_registry->get_component_type<component::Transform>());
+        event.set_param(events::component::ENTITY_ID, entity);
+        event::EventHandler::get_instance().SendEvent(event);
     }
 }
 }

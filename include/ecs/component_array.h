@@ -51,7 +51,7 @@ public:
         size_t index_of_last_element               = m_size - 1;
         m_component_array[index_of_removed_entity] = m_component_array[index_of_last_element];
 
-        Entity entity_of_last_element                  = m_index_to_entity_map[index_of_last_element];
+        const Entity entity_of_last_element                  = m_index_to_entity_map[index_of_last_element];
         m_entity_to_index_map[entity_of_last_element]  = index_of_removed_entity;
         m_index_to_entity_map[index_of_removed_entity] = entity_of_last_element;
 

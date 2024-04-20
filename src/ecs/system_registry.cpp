@@ -16,6 +16,7 @@ void SystemRegistry::entity_destroyed(const Entity entity) const
         auto const& system = pair.second;
 
         system->m_entities.erase(entity);
+        system->on_entity_removed(entity);
     }
 }
 
@@ -28,10 +29,12 @@ void SystemRegistry::entity_signature_changed(const Entity entity, const Signatu
 
         if ((entitySignature & system_signature) == system_signature) {
             system->m_entities.insert(entity);
+            system->on_entity_added(entity);
         }
 
         else {
             system->m_entities.erase(entity);
+            system->on_entity_removed(entity);
         }
     }
 }

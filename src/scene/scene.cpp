@@ -54,20 +54,27 @@ void Scene::add_node(const std::string& tag, const NodeType node_type, Node* par
     }
 }
 
-void Scene::add_entity_node(const std::string& name) const
+void Scene::remove_node(Node* node) const
 {
-    auto*       root   = m_root.get();
-    ecs::Entity entity = m_entity_registry->create_entity();
-
-    const auto node = std::make_shared<EntityNode>(entity, name);
-    node->set_parent(root);
-}
-
-void Scene::add_entity_node(const std::string& name, Node* parent) const
-{
-    ecs::Entity entity = m_entity_registry->create_entity();
-
-    const auto node = std::make_shared<EntityNode>(entity, name);
-    node->set_parent(parent);
+    switch (node->get_node_type()) {
+        case NodeType::Camera: {
+            node->remove();
+            break;
+        }
+        case NodeType::Entity: {
+            const auto entity_node = dynamic_cast<EntityNode*>(node);
+            m_entity_registry->destroy_entity(entity_node->get_entity());
+            node->remove();
+            break;
+        }
+        case NodeType::Light: {
+            node->remove();
+            break;
+        }
+        default: {
+            CGX_ERROR("Invalid node type specified");
+            std::exit(1);
+        }
+    }
 }
 }

@@ -14,6 +14,7 @@ class Model : public Asset
 {
 public:
     Model(const std::string &source_path, const std::string &tag, const std::vector<std::shared_ptr<Mesh>> &meshes);
+    Model(const std::string &source_path, const std::string &tag, const std::shared_ptr<Mesh>& mesh);
     ~Model() override;
 
     void draw(const Shader &shader) const;

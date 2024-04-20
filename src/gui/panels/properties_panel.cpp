@@ -184,7 +184,19 @@ void PropertiesPanel::draw_entity_node_properties(scene::EntityNode* entity_node
         }
         if (!scene->has_component<component::Transform>(entity_node)) {
             if (ImGui::Selectable("Transform Component")) {
+                auto transform = component::Transform{};
                 scene->add_component<component::Transform>(entity_node, component::Transform{});
+                if (auto     parent        = entity_node->get_parent().lock()) {
+                    if (auto casted_parent = dynamic_pointer_cast<scene::EntityNode>(parent)) {
+                        if (scene->has_component<component::Transform>(casted_parent.get())) {
+                            auto& parent_transform = scene->get_component<component::Transform>(casted_parent.get());
+                            parent_transform.children.push_back(entity_node->get_entity());
+                            scene->get_component<component::Transform>(entity_node).parent = casted_parent->
+                                    get_entity();
+                        }
+                    }
+
+                }
                 ImGui::CloseCurrentPopup();
             }
         }
@@ -228,23 +240,27 @@ void PropertiesPanel::draw_light_node_properties(scene::LightNode* light_node)
     ImGui::Text("todo");
 }
 
-
 void PropertiesPanel::draw_render_component_editor(scene::EntityNode* entity_node, scene::Scene* scene)
 {
     constexpr ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
                                          ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_SpanAvailWidth |
                                          ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
-    const bool editor_opened = ImGui::TreeNodeEx("Render Component", flags);
+    bool editor_opened = ImGui::TreeNodeEx("Render Component", flags);
+    bool updated       = false;
+    bool removed       = false;
 
     if (ImGui::BeginPopupContextItem("Render Component Context Popup")) {
         if (ImGui::MenuItem("Remove ##RenderComponent")) {
             scene->remove_component<component::Render>(entity_node);
+            removed       = true;
+            editor_opened = false;
         }
         if (ImGui::MenuItem("Reset ##RenderComponent")) {
             auto& component = scene->get_component<component::Render>(entity_node);
             component.model.reset();
             component.shader.reset();
+            updated = true;
         }
         ImGui::EndPopup();
     }
@@ -254,9 +270,20 @@ void PropertiesPanel::draw_render_component_editor(scene::EntityNode* entity_nod
         const auto asset_manager    = m_context->get_asset_manager();
         auto&      render_component = scene->get_component<component::Render>(entity_node);
 
+        // todo: check for update of shader/asset & set 'update' bool
         draw_asset_selector<asset::Model>(asset::AssetType::Model, render_component.model, "Model");
         draw_asset_selector<asset::Shader>(asset::AssetType::Shader, render_component.shader, "Shader");
         ImGui::Separator();
+    }
+    if (removed) {
+        event::Event event(events::component::REMOVED);
+        event.set_param(events::component::TYPE, scene->get_component_type<component::Render>());
+        event.set_param(events::component::ENTITY_ID, entity_node->get_entity());
+    }
+    if (updated) {
+        event::Event event(events::component::UPDATED);
+        event.set_param(events::component::TYPE, scene->get_component_type<component::Render>());
+        event.set_param(events::component::ENTITY_ID, entity_node->get_entity());
     }
 }
 
@@ -266,18 +293,22 @@ void PropertiesPanel::draw_transform_component_editor(scene::EntityNode* entity_
                                          ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_SpanAvailWidth |
                                          ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
-    const bool editor_opened = ImGui::TreeNodeEx("Transform Component", flags);
+    bool editor_opened = ImGui::TreeNodeEx("Transform Component", flags);
+    bool updated       = false;
+    bool removed       = false;
 
     if (ImGui::BeginPopupContextItem("Transform Component Context Popup")) {
         if (ImGui::MenuItem("Remove ##TransformComponent")) {
             scene->remove_component<component::Transform>(entity_node);
+            removed       = true;
+            editor_opened = false;
         }
         if (ImGui::MenuItem("Reset ##TransformComponent")) {
-            auto& component = scene->get_component<component::Transform>(entity_node);
-
+            auto& component          = scene->get_component<component::Transform>(entity_node);
             component.local_position = glm::vec3(0.0f);
             component.local_rotation = glm::vec3(0.0f);
             component.local_scale    = glm::vec3(1.0f);
+            updated                  = true;
         }
         ImGui::EndPopup();
     }
@@ -287,10 +318,34 @@ void PropertiesPanel::draw_transform_component_editor(scene::EntityNode* entity_
         const auto asset_manager = m_context->get_asset_manager();
         auto&      component     = scene->get_component<component::Transform>(entity_node);
 
-        ImGui::InputFloat3("Position##TransformComponent", &component.local_position[0]);
-        ImGui::InputFloat3("Rotation##TransformComponent", &component.local_rotation[0]);
-        ImGui::InputFloat3("Scale##TransformComponent", &component.local_scale[0]);
-        ImGui::Separator();
+        updated |= ImGui::InputFloat3("Position##TransformComponent", &component.local_position[0]);
+        updated |= ImGui::InputFloat3("Rotation##TransformComponent", &component.local_rotation[0]);
+        updated |= ImGui::InputFloat3("Scale##TransformComponent", &component.local_scale[0]);
+
+        std::string parent = std::to_string(component.parent);
+        std::string children;
+        if (component.children.size() > 0) {
+            for (auto& child : component.children) {
+                children += "[ " + std::to_string(child)  + " ] ";
+            }
+        }
+        else {
+            children = "[ None ]";
+        }
+        ImGui::Text("Parent: %s", parent.c_str());
+        ImGui::Text("Children %s", children.c_str());
+    }
+    if (removed) {
+        event::Event event(events::component::REMOVED);
+        event.set_param(events::component::TYPE, scene->get_component_type<component::Transform>());
+        event.set_param(events::component::ENTITY_ID, entity_node->get_entity());
+        event::EventHandler::get_instance().SendEvent(event);
+    }
+    if (updated) {
+        event::Event event(events::component::UPDATED);
+        event.set_param(events::component::TYPE, scene->get_component_type<component::Transform>());
+        event.set_param(events::component::ENTITY_ID, entity_node->get_entity());
+        event::EventHandler::get_instance().SendEvent(event);
     }
 }
 
@@ -301,17 +356,20 @@ void PropertiesPanel::draw_rigidbody_component_editor(scene::EntityNode* entity_
                                          ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
     bool editor_opened = ImGui::TreeNodeEx("RigidBody Component", flags);
+    bool updated       = false;
+    bool removed       = false;
 
     if (ImGui::BeginPopupContextItem("Rigid Body Component Context Popup")) {
         if (ImGui::MenuItem("Remove ##RigidBodyComponent")) {
             scene->remove_component<component::RigidBody>(entity_node);
+            removed       = true;
             editor_opened = false;
         }
         if (ImGui::MenuItem("Reset ##RigidBodyComponent")) {
-            auto& component = scene->get_component<component::RigidBody>(entity_node);
-
+            auto& component        = scene->get_component<component::RigidBody>(entity_node);
             component.velocity     = glm::vec3(0.0f);
             component.acceleration = glm::vec3(0.0f);
+            updated                = true;
         }
         ImGui::EndPopup();
     }
@@ -321,9 +379,21 @@ void PropertiesPanel::draw_rigidbody_component_editor(scene::EntityNode* entity_
         const auto asset_manager = m_context->get_asset_manager();
         auto&      component     = scene->get_component<component::RigidBody>(entity_node);
 
-        ImGui::InputFloat3("Velocity ##RigidBodyComponent", &component.velocity[0]);
-        ImGui::InputFloat3("Acceleration ##RigidBodyComponent", &component.acceleration[0]);
+        updated |= ImGui::InputFloat3("Velocity ##RigidBodyComponent", &component.velocity[0]);
+        updated |= ImGui::InputFloat3("Acceleration ##RigidBodyComponent", &component.acceleration[0]);
+
         ImGui::Separator();
+    }
+
+    if (updated) {
+        event::Event event(events::component::UPDATED);
+        event.set_param(events::component::TYPE, scene->get_component_type<component::RigidBody>());
+        event.set_param(events::component::ENTITY_ID, entity_node->get_entity());
+    }
+    if (removed) {
+        event::Event event(events::component::REMOVED);
+        event.set_param(events::component::TYPE, scene->get_component_type<component::RigidBody>());
+        event.set_param(events::component::ENTITY_ID, entity_node->get_entity());
     }
 }
 

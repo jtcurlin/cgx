@@ -24,6 +24,10 @@ public:
     );
     ~PhysicsSystem() override;
 
+    void on_entity_added(ecs::Entity entity) override {}
+    void on_entity_removed(ecs::Entity entity) override {}
+    void on_component_updated(ecs::Entity entity) override {}
+
     void update(float dt) override;
 };
 }

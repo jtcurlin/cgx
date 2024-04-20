@@ -15,7 +15,6 @@ using KeyCallback = std::function<void(input::Key, input::KeyAction)>;
 using MouseButtonCallback = std::function<void(input::Key, input::KeyAction)>;
 using MouseMoveCallback = std::function<void(double x_pos, double y_pos)>;
 using ScrollCallback = std::function<void(double x_offset, double y_offset)>;
-
 class WindowManager
 {
 public:
@@ -63,5 +62,7 @@ private:
     static int translate_key_action_to_glfw(input::KeyAction action);
     static int translate_key_code_to_glfw(input::Key key);
     static int translate_mouse_button_to_glfw(input::Key key);
+
+    friend class InputPanel;
 };
 }

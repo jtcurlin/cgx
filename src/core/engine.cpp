@@ -5,6 +5,7 @@
 #include "core/window_manager.h"
 #include "core/time_system.h"
 #include "core/physics_system.h"
+#include "core/transform_system.h"
 #include "ecs/entity_registry.h"
 #include "ecs/component_registry.h"
 #include "ecs/system_registry.h"
@@ -59,6 +60,12 @@ void Engine::initialize()
     // setup main scene
     m_scene_manager = std::make_shared<scene::SceneManager>();
     auto scene = m_scene_manager->add_scene("main_scene", m_entity_registry, m_component_registry, m_system_registry);
+
+    auto transform_system = m_system_registry->register_system<TransformSystem>(); {
+        ecs::Signature signature;
+        signature.set(m_component_registry->get_component_type<component::Transform>());
+        m_system_registry->set_signature<TransformSystem>(signature);
+    }
 
     // setup / register physics system
     auto physics_system = m_system_registry->register_system<PhysicsSystem>(); {

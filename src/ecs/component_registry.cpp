@@ -7,9 +7,9 @@ namespace cgx::ecs
 void ComponentRegistry::entity_destroyed(Entity entity)
 {
     for (auto const& pair : m_component_arrays) {
-        auto const& component = pair.second;
+        auto const& component_array = pair.second;
 
-        component->entity_destroyed(entity);
+        component_array->entity_destroyed(entity);
     }
 }
 }

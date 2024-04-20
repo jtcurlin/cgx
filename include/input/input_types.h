@@ -4,8 +4,10 @@
 
 #include "core/common.h"
 
+
 namespace cgx::input
 {
+
 enum class Key
 {
     key_0,
@@ -99,8 +101,6 @@ struct KeyInput
 {
     Key       key;
     KeyAction action;
-
-
 };
 
 enum class MouseAction
@@ -132,4 +132,4 @@ struct KeyInputHash
     }
 };
 
-} // namespace cgx::input
+}

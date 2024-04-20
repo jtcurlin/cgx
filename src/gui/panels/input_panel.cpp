@@ -11,6 +11,9 @@ InputPanel::~InputPanel() = default;
 
 void InputPanel::render()
 {
+
+
+
     ImGui::Text("Toggle Camera Control On: M");
     ImGui::Text("Toggle Camera Control Off: G");
     ImGui::Text("Movement: WASD");

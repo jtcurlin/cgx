@@ -15,5 +15,7 @@ protected:
     void update() override;
     void render() override;
 
+    void geometry_test() const;
+
     void load_assets() const;
 };

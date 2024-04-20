@@ -76,7 +76,6 @@ void RenderSystem::render()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     CGX_CHECK_GL_ERROR;
 
-
     m_view_mat = m_camera->getViewMatrix();
     m_proj_mat = glm::perspective(
         glm::radians(m_camera->getZoom()),
@@ -95,6 +94,7 @@ void RenderSystem::render()
             continue;
         }
 
+        /*
         // apply rotations transformations around each axis
         model_mat = glm::rotate(
             model_mat,
@@ -111,6 +111,7 @@ void RenderSystem::render()
 
         model_mat = translate(model_mat, transform_c.local_position); // apply position transformation
         model_mat = scale(model_mat, transform_c.local_scale);        // apply scale transformation
+        */
 
         // activate shader program, set shader data, draw
         render_c.shader->use();
@@ -123,7 +124,7 @@ void RenderSystem::render()
 
         render_c.shader->set_mat4("proj", m_proj_mat);
         render_c.shader->set_mat4("view", m_view_mat);
-        render_c.shader->set_mat4("model", model_mat);
+        render_c.shader->set_mat4("model", transform_c.world_matrix);
 
         render_c.model->draw(*(render_c.shader));
     }

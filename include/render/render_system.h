@@ -54,6 +54,9 @@ public:
     void render();
 
     void update(float dt) override;
+    void on_entity_added(ecs::Entity entity) override {}
+    void on_entity_removed(ecs::Entity entity) override {}
+    void on_component_updated(ecs::Entity entity) override {}
 
     void draw_skybox() const;
 

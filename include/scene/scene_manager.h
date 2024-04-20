@@ -33,7 +33,13 @@ public:
     [[nodiscard]] std::shared_ptr<Scene> get_active_scene() const;
     [[nodiscard]] std::shared_ptr<Scene> get_scene(const std::string& label) const;
 
-    void set_active_scene(const std::string& label); ;
+
+
+
+
+
+
+    void set_active_scene(const std::string& label);
     bool remove_scene(const std::string& label);
 
 private:

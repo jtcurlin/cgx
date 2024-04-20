@@ -13,6 +13,12 @@ Model::Model (const std::string& source_path, const std::string& tag, const std:
     : Asset(source_path, tag, AssetType::Model)
     , m_meshes(meshes) {}
 
+Model::Model(const std::string &source_path, const std::string &tag, const std::shared_ptr<Mesh>& mesh)
+    : Asset(source_path, tag, AssetType::Model)
+{
+    m_meshes.push_back(mesh);
+}
+
 Model::~Model () = default;
 
 void Model::draw (const Shader& shader) const
@@ -30,4 +36,4 @@ void Model::log () const
     }
 }
 
-} // namespace cgx::resource
+}

@@ -7,6 +7,8 @@
 
 #include "ecs/common.h"
 #include "ecs/component_array.h"
+#include "event/event_handler.h"
+#include "event/events/engine_events.h"
 #include "utility/logging.h"
 
 #include <unordered_map>
@@ -60,6 +62,11 @@ public:
     template<typename T>
     void add_component(Entity entity, T component)
     {
+        event::Event event(events::component::ADDED);
+        event.set_param(events::component::TYPE, get_component_type<T>());
+        event.set_param(events::component::ENTITY_ID, entity);
+        event::EventHandler::get_instance().SendEvent(event);
+
         get_component_array<T>()->insert_data(entity, component);
     }
 
@@ -68,6 +75,11 @@ public:
     template<typename T>
     void remove_component(Entity entity)
     {
+        event::Event event(events::component::REMOVED);
+        event.set_param(events::component::TYPE, get_component_type<T>());
+        event.set_param(events::component::ENTITY_ID, entity);
+        event::EventHandler::get_instance().SendEvent(event);
+
         get_component_array<T>()->remove_data(entity);
     }
 

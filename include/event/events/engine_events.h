@@ -16,7 +16,7 @@ namespace cgx::events::camera
 {
 constexpr event::EventId MOVE = "cgx::events::camera::move"_hash;
 
-namespace move
+namespace cgx::events::movement
 {
 constexpr event::ParamId DIRECTION = "cgx::events::camera::move::direction"_hash;
 }}
@@ -26,6 +26,15 @@ namespace cgx::events::ecs
 constexpr event::EventId ENTITY_CREATED   = "cgx::events::ecs::ENTITY_CREATED"_hash;
 constexpr event::EventId ENTITY_DESTROYED = "cgx::events::ecs::ENTITY_DESTROYED"_hash;
 constexpr event::ParamId ENTITY_ID        = "cgx::events::ecs::ENTITY_ID"_hash;
+}
+
+namespace cgx::events::component
+{
+constexpr event::EventId ADDED = "cgx::events::component::CREATED"_hash;
+constexpr event::EventId REMOVED = "cgx::events::component::DESTROYED"_hash;
+constexpr event::EventId UPDATED = "cgx::events::component::UPDATED"_hash;
+constexpr event::ParamId TYPE = "cgx::Events::component::TYPE"_hash;
+constexpr event::ParamId ENTITY_ID = "cgx::events::component::ENTITY_ID"_hash;
 }
 
 namespace cgx::events::asset

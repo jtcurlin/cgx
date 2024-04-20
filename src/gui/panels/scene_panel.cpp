@@ -89,6 +89,12 @@ void ScenePanel::add_node(const scene::NodeType node_type, scene::Node* parent) 
 void ScenePanel::draw_node_context_menu(scene::Node* node)
 {
     if (ImGui::BeginPopupContextItem("NodeContextMenu")) {
+
+        if (ImGui::MenuItem("Rename")) {
+            m_node_being_renamed = node;
+            ImGui::CloseCurrentPopup();
+        }
+
         if (ImGui::MenuItem("Inspect")) {
             m_context->set_selected_item(node);
             ImGui::CloseCurrentPopup();
@@ -105,6 +111,29 @@ void ScenePanel::draw_node_context_menu(scene::Node* node)
         }
         ImGui::EndPopup();
     }
+
+
+    if (m_node_being_renamed != nullptr) {
+        ImGui::OpenPopup("Rename Node ##NewNodeMenu");
+    }
+
+    const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+    if (ImGui::BeginPopupModal("Rename Node ##NewNodeMenu", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+
+        ImGui::InputText("Rename Node ## Input Field", m_input_buffer, 256);
+
+        if (ImGui::Button("OK ## Rename Node")) {
+            CGX_INFO("Node tag before rename: {}", node->get_tag());
+            m_node_being_renamed->set_tag(m_input_buffer);
+            m_node_being_renamed = nullptr;
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+
 }
 
 void ScenePanel::draw_new_node_menu()
@@ -142,7 +171,7 @@ void ScenePanel::draw_new_node_menu()
         }
         ImGui::Separator();
         if (ImGui::MenuItem("Cancel")) {
-            m_adding_node = false;
+            m_adding_node     = false;
             m_new_node_parent = nullptr;
             ImGui::CloseCurrentPopup();
         }
@@ -152,4 +181,5 @@ void ScenePanel::draw_new_node_menu()
     }
     ImGui::PopFont();
 }
+
 }
