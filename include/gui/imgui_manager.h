@@ -6,12 +6,14 @@
 #include "gui/gui_context.h"
 #include "imgui.h"
 
+#include <vector>
+
 namespace cgx::gui
 {
-class ImGuiManager : public std::enable_shared_from_this<ImGuiManager>
+class ImGuiManager
 {
 public:
-    explicit ImGuiManager(std::shared_ptr<GUIContext> context);
+    explicit ImGuiManager(GUIContext* context);
     ~ImGuiManager();
 
     void initialize();
@@ -37,10 +39,10 @@ public:
     ImFont* m_small_font{};
 
 private:
-    std::shared_ptr<GUIContext>              m_context;
+    GUIContext* m_context{nullptr};
     std::vector<std::unique_ptr<ImGuiPanel>> m_imgui_panels;
 
-
+    char m_input_buffer[256]{};
 
     void clear_inputs(ImGuiIO& io);
 };

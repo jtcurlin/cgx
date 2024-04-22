@@ -2,11 +2,32 @@
 
 #pragma once
 
-#include "core/window_manager.h"
-#include "asset/asset_manager.h"
-#include "render/render_system.h"
-#include "scene/scene_manager.h"
-#include "core/time_system.h"
+namespace cgx::core
+{
+class WindowManager;
+class TimeSystem;
+class Item;
+}
+
+namespace cgx::render
+{
+class RenderSystem;
+}
+
+namespace cgx::asset
+{
+class AssetManager;
+}
+
+namespace cgx::ecs
+{
+class ECSManager;
+}
+
+namespace cgx::scene
+{
+class SceneManager;
+}
 
 namespace cgx::gui
 {
@@ -14,31 +35,40 @@ class GUIContext
 {
 public:
     GUIContext(
-        const std::shared_ptr<asset::AssetManager>&  asset_manager,
-        const std::shared_ptr<render::RenderSystem>& render_system,
-        const std::shared_ptr<scene::SceneManager>&  scene_manager,
-        const std::shared_ptr<core::WindowManager>&  window_manager,
-        const std::shared_ptr<core::TimeSystem>&     time_system);
+        asset::AssetManager*  asset_manager,
+        ecs::ECSManager*      ecs_manager,
+        render::RenderSystem* render_system,
+        scene::SceneManager*  scene_manager,
+        core::WindowManager*  window_manager,
+        core::TimeSystem*     time_system);
     ~GUIContext();
 
-    [[nodiscard]] std::shared_ptr<asset::AssetManager>  get_asset_manager() const;
-    [[nodiscard]] std::shared_ptr<render::RenderSystem> get_render_system() const;
-    [[nodiscard]] std::shared_ptr<scene::SceneManager>  get_scene_manager() const;
-    [[nodiscard]] std::shared_ptr<core::WindowManager>  get_window_manager() const;
-    [[nodiscard]] std::shared_ptr<core::TimeSystem>     get_time_system() const;
+    [[nodiscard]] asset::AssetManager*  get_asset_manager() const;
+    [[nodiscard]] ecs::ECSManager*      get_ecs_manager() const;
+    [[nodiscard]] render::RenderSystem* get_render_system() const;
+    [[nodiscard]] scene::SceneManager*  get_scene_manager() const;
+    [[nodiscard]] core::WindowManager*  get_window_manager() const;
+    [[nodiscard]] core::TimeSystem*     get_time_system() const;
 
-    [[nodiscard]] core::Item* get_selected_item() const;
-    void                      set_selected_item(core::Item* item);
+    void set_item_to_birth(core::Item* item);
+    void set_item_to_rename(core::Item* item);
+    void set_item_to_inspect(core::Item* item);
+
+    [[nodiscard]] core::Item* get_item_to_birth() const;
+    [[nodiscard]] core::Item* get_item_to_rename() const;
+    [[nodiscard]] core::Item* get_item_to_inspect() const;
 
 private:
-    std::weak_ptr<asset::AssetManager>  m_asset_manager;
-    std::weak_ptr<render::RenderSystem> m_render_system;
-    std::weak_ptr<scene::SceneManager>  m_scene_manager;
-    std::weak_ptr<core::WindowManager>  m_window_manager;
-    std::weak_ptr<core::TimeSystem>     m_time_system;
+    asset::AssetManager*  m_asset_manager;
+    ecs::ECSManager*      m_ecs_manager;
+    render::RenderSystem* m_render_system;
+    scene::SceneManager*  m_scene_manager;
+    core::WindowManager*  m_window_manager;
+    core::TimeSystem*     m_time_system;
 
-    std::filesystem::path m_data_directory;
-
-    core::Item* m_selected_item;
+    core::Item* m_item_to_inspect{nullptr};
+    core::Item* m_item_to_birth{nullptr};
+    core::Item* m_item_to_rename{nullptr};
+    core::Item* m_item_to_display_popup{nullptr};
 };
 }

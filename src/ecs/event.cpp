@@ -1,8 +1,8 @@
 // Copyright © 2024 Jacob Curlin
 
-#include "event/event.h"
+#include "../../include/ecs/event.h"
 
-namespace cgx::event
+namespace cgx::ecs
 {
 EventId Event::get_type() const
 {

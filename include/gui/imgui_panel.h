@@ -13,11 +13,8 @@ class ImGuiManager;
 class ImGuiPanel
 {
 public:
-    explicit ImGuiPanel(
-        std::string                          title,
-        const std::shared_ptr<GUIContext>&   context,
-        const std::shared_ptr<ImGuiManager>& manager);
-    virtual ~ImGuiPanel() = default;
+    ImGuiPanel(std::string title, GUIContext* context, ImGuiManager* manager);
+    virtual  ~ImGuiPanel() = default;
 
     void Begin(); // ImGui::Begin() called (start actual ImGui window)
     void End();   // ImGui::End() called (end actual ImGui window)
@@ -36,9 +33,9 @@ public:
     void set_max_size(float width, float height);
 
 protected:
-    std::string                 m_title{"Window"};
-    std::shared_ptr<GUIContext> m_context;
-    std::weak_ptr<ImGuiManager> m_manager;
+    std::string   m_title{"Window"};
+    GUIContext*   m_context{nullptr};
+    ImGuiManager* m_manager{nullptr};
 
     bool m_is_visible{true};
     bool m_is_hovered{false};

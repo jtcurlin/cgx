@@ -1,9 +1,9 @@
 // Copyright © 2024 Jacob Curlin
 
-#include "event/event_handler.h"
-#include "event/event.h"
+#include "../../include/ecs/event_handler.h"
+#include "../../include/ecs/event.h"
 
-namespace cgx::event
+namespace cgx::ecs
 {
 EventHandler::EventHandler() = default;
 
@@ -13,19 +13,19 @@ EventHandler& EventHandler::get_instance()
     return instance;
 }
 
-void EventHandler::AddListener(const EventId event_id, std::function<void(Event&)> const& listener)
+void EventHandler::add_listener(const EventId event_id, std::function<void(Event&)> const& listener)
 {
     m_listeners[event_id].push_back(listener);
 }
 
-void EventHandler::SendEvent(Event& event)
+void EventHandler::send_event(Event& event)
 {
     for (auto const& listener : m_listeners[event.get_type()]) {
         listener(event);
     }
 }
 
-void EventHandler::SendEvent(const EventId event_id)
+void EventHandler::send_event(const EventId event_id)
 {
     Event event(event_id);
 

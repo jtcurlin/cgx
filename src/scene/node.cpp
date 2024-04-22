@@ -2,59 +2,38 @@
 
 #include "scene/node.h"
 
+#include "core/events/engine_events.h"
+#include "ecs/event_handler.h"
+
 namespace cgx::scene
 {
-std::string translate_node_typename(const NodeType node_type)
-{
-    switch (node_type) {
-        case NodeType::Entity: return "Entity";
-        case NodeType::Camera: return "Camera";
-        case NodeType::Light: return "Light";
-        default:
-            return "unknown_node_type";
-    }
-}
 
-Node::Node(const NodeType type, const std::string& tag)
-    : Hierarchy(core::ItemType::Node, tag)
-    , node_type(type)
-    , m_node_typename(translate_node_typename(type)) {}
+Node::Node(const ecs::Entity entity, const std::string& tag)
+    : Hierarchy{core::ItemType::Node, tag}
+    , m_entity{entity}
+{}
 
 Node::~Node() = default;
 
-const NodeType& Node::get_node_type() const
+void Node::handle_parent_update(Hierarchy* old_parent, Hierarchy* new_parent)
 {
-    return node_type;
+    Hierarchy::handle_parent_update(old_parent, new_parent);
+    const auto old_parent_node = dynamic_cast<Node*>(old_parent);
+    const auto new_parent_node = dynamic_cast<Node*>(new_parent);
+
+    const ecs::Entity old_parent_entity = old_parent_node ? old_parent_node->get_entity() : ecs::MAX_ENTITIES;
+    const ecs::Entity new_parent_entity = new_parent_node ? new_parent_node->get_entity() : ecs::MAX_ENTITIES;
+
+    CGX_INFO("Sending Event PARENT_UPDATE: child={}, old_parent={}, new_parent={}", get_entity(), old_parent_entity, new_parent_entity);
+    ecs::Event event(events::hierarchy::PARENT_UPDATE);
+    event.set_param(events::hierarchy::CHILD, get_entity());
+    event.set_param(events::hierarchy::OLD_PARENT, old_parent_entity);
+    event.set_param(events::hierarchy::NEW_PARENT, new_parent_entity);
+    ecs::EventHandler::get_instance().send_event(event);
 }
 
-const std::string& Node::get_node_typename() const
-{
-    return m_node_typename;
-}
-
-std::string Node::get_path_prefix() const
-{
-    return Hierarchy::get_path_prefix() + get_node_typename() + "/";
-}
-
-EntityNode::EntityNode(const ecs::Entity entity_id, const std::string& tag)
-    : Node(NodeType::Entity, tag)
-    , m_entity(entity_id) {}
-
-EntityNode::~EntityNode() = default;
-
-const ecs::Entity& EntityNode::get_entity() const
+ecs::Entity Node::get_entity() const
 {
     return m_entity;
 }
-
-CameraNode::CameraNode(const std::string& tag)
-    : Node(NodeType::Camera, tag) {}
-
-CameraNode::~CameraNode() = default;
-
-LightNode::LightNode(const std::string& tag)
-    : Node(NodeType::Light, tag) {}
-
-LightNode::~LightNode() = default;
 }

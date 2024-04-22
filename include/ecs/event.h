@@ -5,7 +5,7 @@
 #include <any>
 #include <unordered_map>
 
-namespace cgx::event
+namespace cgx::ecs
 {
 using EventId = std::uint32_t;
 using ParamId = std::uint32_t;

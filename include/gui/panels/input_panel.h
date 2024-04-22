@@ -4,12 +4,11 @@
 
 #include "gui/imgui_panel.h"
 
-
 namespace cgx::gui
 {
     class InputPanel : public ImGuiPanel
     {
-        InputPanel(const std::shared_ptr<GUIContext>& context, const std::shared_ptr<ImGuiManager>& manager);
+        InputPanel(GUIContext* context, ImGuiManager* manager);
         ~InputPanel() override;
 
         void render() override;

@@ -1,54 +1,80 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "scene/scene_manager.h"
+#include "core/components/hierarchy.h"
 
-#include "ecs/entity_registry.h"
-#include "ecs/component_registry.h"
-#include "ecs/system_registry.h"
+#include "ecs/ecs_manager.h"
 
 namespace cgx::scene
 {
-SceneManager::SceneManager()  = default;
+SceneManager::SceneManager(ecs::ECSManager* ecs_manager)
+    : m_ecs_manager(ecs_manager)
+{
+    CGX_INFO("scene manager : initialized");
+}
+
 SceneManager::~SceneManager() = default;
 
-std::shared_ptr<Scene> SceneManager::add_scene(
-    std::string                                    label,
-    const std::shared_ptr<ecs::EntityRegistry>&    entity_registry,
-    const std::shared_ptr<ecs::ComponentRegistry>& component_registry,
-    const std::shared_ptr<ecs::SystemRegistry>&    system_registry)
+Node* SceneManager::add_node(Node* parent, const std::string& tag) const
 {
-    const auto scene = std::make_shared<Scene>(label, entity_registry, component_registry, system_registry);
-    m_scenes[label]  = scene;
+    const auto entity = m_ecs_manager->acquire_entity();
+    m_ecs_manager->add_component<component::Hierarchy>(entity, component::Hierarchy{});
+    return m_active_scene->add_node(entity, tag, parent);
+}
 
-    m_active_scene = scene;
+void SceneManager::remove_node(Node* node) const
+{
+    CGX_ASSERT(node, "attempt to remove invalid node");
+
+    m_ecs_manager->release_entity(node->get_entity());
+    m_active_scene->remove_node(node);
+}
+
+void SceneManager::remove_node_recursive(Node* node) const
+{
+    CGX_ASSERT(node, "attempt to recursively remove invalid node");
+
+    node->for_each(
+        [this](core::Hierarchy& hierarchy) -> bool {
+            if (const Node* casted_node = dynamic_cast<Node*>(&hierarchy) ; casted_node) {
+                m_ecs_manager->release_entity(casted_node->get_entity());
+            }
+            return true;
+        });
+
+    m_ecs_manager->release_entity(node->get_entity());
+    m_active_scene->remove_node_recursive(node);
+}
+
+Scene* SceneManager::add_scene(const std::string& label)
+{
+    const auto scene_it = m_scenes.find(label);
+    CGX_ASSERT(scene_it == m_scenes.end(), "specified label is already associated with a scene");
+
+    m_scenes[label] = std::make_unique<Scene>(label);
+    return m_scenes[label].get();
+}
+
+void SceneManager::remove_scene(const std::string& label)
+{
+    const auto scene_it = m_scenes.find(label);
+    CGX_ASSERT(scene_it != m_scenes.end(), "attempt to remove non-existent scene");
+
+    m_scenes.erase(scene_it);
+}
+
+Scene* SceneManager::get_active_scene() const
+{
+    CGX_ASSERT(m_active_scene, "attempt to retreive active scene when no scene active");
+
     return m_active_scene;
-}
-
-bool SceneManager::remove_scene(const std::string& label)
-{
-    return m_scenes.erase(label) > 0;
-}
-
-std::shared_ptr<Scene> SceneManager::get_scene(const std::string& label) const
-{
-    if (const auto it = m_scenes.find(label) ; it != m_scenes.end()) {
-        return it->second;
-    }
-    return nullptr;
 }
 
 void SceneManager::set_active_scene(const std::string& label)
 {
-    if (const auto scene = get_scene(label) ; scene) {
-        m_active_scene = scene;
-    }
-    else {
-        CGX_ERROR("SceneManager::setActiveScene({}): Failed to find scene.", label);
-    }
-}
+    const auto scene_it = m_scenes.find(label);
+    CGX_ASSERT(scene_it != m_scenes.end() && scene_it->second, "attempt to retreive non-existent scene");
 
-std::shared_ptr<Scene> SceneManager::get_active_scene() const
-{
-    return m_active_scene;
+    m_active_scene = scene_it->second.get();
 }
 }

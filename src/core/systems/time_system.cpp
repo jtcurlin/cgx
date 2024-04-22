@@ -1,6 +1,6 @@
 // Copyright © 2024 Jacob Curlin
 
-#include "core/time_system.h"
+#include "../../../include/core/systems/time_system.h"
 
 namespace cgx::core
 {

@@ -1,26 +1,25 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "render/render_system.h"
-
 #include "render/camera.h"
 #include "render/framebuffer.h"
+
 #include "asset/model.h"
 #include "asset/shader.h"
+#include "core/components/transform.h"
+#include "core/components/render.h"
+#include "ecs/component_registry.h"
+#include "ecs/event_handler.h"
 #include "scene/scene.h"
 #include "utility/error.h"
-
-#include "ecs/component_registry.h"
-#include "ecs/components/transform.h"
-#include "ecs/components/render.h"
-#include "event/event_handler.h"
 
 #include "glad/glad.h"
 #include "glm/glm.hpp"
 
 namespace cgx::render
 {
-RenderSystem::RenderSystem(const std::shared_ptr<ecs::ComponentRegistry>& component_registry)
-    : System(component_registry) {}
+RenderSystem::RenderSystem(ecs::ECSManager* ecs_manager)
+    : System(ecs_manager) {}
 
 RenderSystem::~RenderSystem() = default;
 
@@ -87,8 +86,8 @@ void RenderSystem::render()
     for (auto& entity : m_entities) {
         glm::mat4 model_mat(1.0f);
 
-        auto& render_c    = GetComponent<component::Render>(entity);
-        auto& transform_c = GetComponent<component::Transform>(entity);
+        auto& render_c    = get_component<component::Render>(entity);
+        auto& transform_c = get_component<component::Transform>(entity);
 
         if (!(render_c.model && render_c.shader)) {
             continue;

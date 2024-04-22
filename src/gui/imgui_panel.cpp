@@ -13,10 +13,7 @@ void AspectRatioConstraint(ImGuiSizeCallbackData* data)
     data->DesiredSize.y      = data->DesiredSize.x / aspect_ratio;
 }
 
-ImGuiPanel::ImGuiPanel(
-    std::string                          title,
-    const std::shared_ptr<GUIContext>&   context,
-    const std::shared_ptr<ImGuiManager>& manager)
+ImGuiPanel::ImGuiPanel(std::string title, GUIContext* context, ImGuiManager* manager)
     : m_title(std::move(title))
     , m_context(context)
     , m_manager(manager)
@@ -39,10 +36,6 @@ void ImGuiPanel::Begin()
     else {
         ImGui::SetNextWindowSizeConstraints(ImVec2(m_min_size[0], m_min_size[1]), ImVec2(m_max_size[0], m_max_size[1]));
     }
-
-
-    // const bool collapsed = (ImGui::Begin(m_title.c_str(), &keep_visible, m_window_flags));
-    auto manager = m_manager.lock();
 
     ImGui::Begin(m_title.c_str(), &keep_visible, m_window_flags);
 
@@ -82,13 +75,13 @@ const std::string& ImGuiPanel::get_title()
     return m_title;
 }
 
-void ImGuiPanel::set_min_size(float width, float height)
+void ImGuiPanel::set_min_size(const float width, const float height)
 {
     m_min_size[0] = width;
     m_max_size[1] = height;
 }
 
-void ImGuiPanel::set_max_size(float width, float height)
+void ImGuiPanel::set_max_size(const float width, const float height)
 {
     m_max_size[0] = width;
     m_max_size[1] = height;

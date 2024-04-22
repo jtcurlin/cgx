@@ -1,8 +1,8 @@
 // Copyright © 2024 Jacob Curlin
 
-#include "geometry/primitive_mesh.h"
-#include "asset/mesh.h"
-#include "utility/math.h"
+#include "../../include/utility/primitive_mesh.h"
+#include "../../include/asset/mesh.h"
+#include "../../include/utility/math.h"
 
 namespace cgx::geometry
 {

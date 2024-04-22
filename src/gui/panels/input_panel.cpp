@@ -4,16 +4,13 @@
 
 namespace cgx::gui
 {
-InputPanel::InputPanel(const std::shared_ptr<GUIContext>& context, const std::shared_ptr<ImGuiManager>& manager)
+InputPanel::InputPanel(GUIContext* context, ImGuiManager* manager)
     : ImGuiPanel("Input", context, manager) {}
 
 InputPanel::~InputPanel() = default;
 
 void InputPanel::render()
 {
-
-
-
     ImGui::Text("Toggle Camera Control On: M");
     ImGui::Text("Toggle Camera Control Off: G");
     ImGui::Text("Movement: WASD");

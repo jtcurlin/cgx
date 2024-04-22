@@ -75,6 +75,13 @@ void Hierarchy::on_remove_child(Hierarchy* const child)
     }
 }
 
+void Hierarchy::handle_parent_update(Hierarchy* old_parent, Hierarchy* new_parent)
+{
+    // (to avoid unused parameter compiler warnings)
+    static_cast<void>(old_parent);
+    static_cast<void>(new_parent);
+}
+
 void Hierarchy::set_parent(const std::shared_ptr<Hierarchy>& parent)
 {
     set_parent(parent, std::numeric_limits<std::size_t>::max());
@@ -110,6 +117,8 @@ void Hierarchy::set_parent(const std::shared_ptr<Hierarchy>& new_parent, const s
     }
 
     set_depth_recursive(new_parent ? new_parent->get_depth() + 1 : 0);
+
+    handle_parent_update(old_parent, curr_parent);
 }
 
 void Hierarchy::set_parent(Hierarchy* parent)
@@ -225,7 +234,6 @@ bool Hierarchy::is_ancestor(const Hierarchy* candidate) const
 
     return parent->is_ancestor(candidate);
 }
-
 
 void Hierarchy::for_each(const std::function<bool (Hierarchy& hierarchy)>& func)
 {

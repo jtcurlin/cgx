@@ -3,11 +3,12 @@
 #include "gui/panels/profiler_panel.h"
 #include "gui/imgui_manager.h"
 
+#include "../../../include/core/systems/time_system.h"
+
 namespace cgx::gui
 {
-ProfilerPanel::ProfilerPanel(const std::shared_ptr<GUIContext> &context, const std::shared_ptr<ImGuiManager>& manager)
-    : ImGuiPanel("Performance", context, manager)
-{}
+ProfilerPanel::ProfilerPanel(GUIContext* context, ImGuiManager* manager)
+    : ImGuiPanel("Performance", context, manager) {}
 
 ProfilerPanel::~ProfilerPanel() = default;
 
@@ -28,7 +29,7 @@ void ProfilerPanel::update()
     const auto time_system = m_context->get_time_system();
 
     const auto frame_time = time_system->get_frame_time();
-    m_last_frame_time = frame_time;
+    m_last_frame_time     = frame_time;
 
     m_current_fps = (frame_time > 0) ? static_cast<uint32_t>(1.0 / frame_time) : 0;
 
@@ -45,7 +46,7 @@ void ProfilerPanel::update()
         total_frame_time += ft;
     }
     const double average_frame_time = total_frame_time / m_frame_times.size();
-    m_average_frame_time = static_cast<uint32_t>(average_frame_time * 1000);
+    m_average_frame_time            = static_cast<uint32_t>(average_frame_time * 1000);
 
     if (average_frame_time > 0) {
         m_average_fps = static_cast<uint32_t>(1.0 / average_frame_time);
@@ -54,7 +55,7 @@ void ProfilerPanel::update()
         m_average_fps = 0;
     }
 
-    m_total_uptime = time_system->get_uptime();
+    m_total_uptime      = time_system->get_uptime();
     m_total_frame_count = time_system->get_frame_number();
 }
 }

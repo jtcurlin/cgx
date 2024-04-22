@@ -1,7 +1,7 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "asset/asset_manager.h"
-#include "event/events/engine_events.h"
+#include "core/events/engine_events.h"
 
 namespace cgx::asset
 {
@@ -31,11 +31,11 @@ void AssetManager::register_importer(const std::shared_ptr<AssetImporter>& impor
     // need to pass shared pointer to this assetmanager instance)
     m_importers.push_back(importer);
 
-    auto&        event_handler = event::EventHandler::get_instance();
-    event::Event event(events::asset::IMPORTER_REGISTERED);
+    auto&        event_handler = ecs::EventHandler::get_instance();
+    ecs::Event event(events::asset::IMPORTER_REGISTERED);
     event.set_param(events::asset::IMPORTER_LABEL, importer->get_label());
     event.set_param(events::asset::IMPORTER_SUPPORTED_EXTENSIONS, extensions);
-    event_handler.SendEvent(event);
+    event_handler.send_event(event);
 }
 
 AssetID AssetManager::import_asset(const std::string& path)
@@ -95,13 +95,13 @@ AssetID AssetManager::add_asset(const std::shared_ptr<Asset>& asset)
     m_name_to_id[asset->get_tag()].push_back(asset->get_id());
     m_assets[asset->get_id()] = asset;
 
-    auto&        event_handler = event::EventHandler::get_instance();
-    event::Event event(events::asset::ASSET_ADDED);
+    auto&        event_handler = ecs::EventHandler::get_instance();
+    ecs::Event event(events::asset::ASSET_ADDED);
     event.set_param(events::asset::ASSET_ID, asset->get_id());
     event.set_param(events::asset::ASSET_NAME, asset->get_tag());
     event.set_param(events::asset::ASSET_PATH, asset->get_internal_path());
     event.set_param(events::asset::ASSET_TYPE, asset->get_asset_type());
-    event_handler.SendEvent(event);
+    event_handler.send_event(event);
 
     return asset->get_id();
 }
@@ -134,10 +134,10 @@ bool AssetManager::remove_asset(AssetID asset_id)
         m_assets.erase(asset_id);
 
         // dispatch resource-removed event
-        auto&        event_handler = event::EventHandler::get_instance();
-        event::Event event(events::asset::ASSET_REMOVED);
+        auto&        event_handler = ecs::EventHandler::get_instance();
+        ecs::Event event(events::asset::ASSET_REMOVED);
         event.set_param(events::asset::ASSET_ID, asset_id);
-        event_handler.SendEvent(event);
+        event_handler.send_event(event);
         return true;
     }
     CGX_WARN("AssetManager: failed to remove asset. (asset ID [{}] not registered)", asset_id);

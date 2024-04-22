@@ -1,10 +1,10 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "render/camera.h"
-#include "event/events/engine_events.h"
-#include "event/event_handler.h"
+#include "core/events/engine_events.h"
+#include "ecs/event_handler.h"
 
-#include "input/input_manager.h"
+#include "core/input_manager.h"
 
 namespace cgx::render
 {
@@ -16,15 +16,15 @@ Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch)
 {
     updateCameraVectors();
 
-    auto& event_handler = event::EventHandler::get_instance();
-    event_handler.AddListener(
+    auto& event_handler = ecs::EventHandler::get_instance();
+    event_handler.add_listener(
         events::engine::ENABLE_CAMERA_CONTROL,
-        [this](event::Event& event) {
+        [this](ecs::Event& event) {
             this->m_manual_control_enabled = true;
         });
-    event_handler.AddListener(
+    event_handler.add_listener(
         events::engine::DISABLE_CAMERA_CONTROL,
-        [this](event::Event& event) {
+        [this](ecs::Event& event) {
             this->m_manual_control_enabled = false;
         });
 }
@@ -32,28 +32,28 @@ Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch)
 void Camera::Update(const double dt)
 {
     if (m_manual_control_enabled) {
-        auto& input_manager = input::InputManager::GetSingleton();
+        auto& input_manager = core::InputManager::GetSingleton();
 
         double x_offset, y_offset;
         input_manager.get_mouse_offset(x_offset, y_offset);
         Look(x_offset, y_offset, true);
 
-        if (input_manager.is_key_pressed(input::Key::key_w)) {
+        if (input_manager.is_key_pressed(core::Key::key_w)) {
             Translate(kForward, dt);
         }
-        if (input_manager.is_key_pressed(input::Key::key_s)) {
+        if (input_manager.is_key_pressed(core::Key::key_s)) {
             Translate(kBackward, dt);
         }
-        if (input_manager.is_key_pressed(input::Key::key_a)) {
+        if (input_manager.is_key_pressed(core::Key::key_a)) {
             Translate(kLeft, dt);
         }
-        if (input_manager.is_key_pressed(input::Key::key_d)) {
+        if (input_manager.is_key_pressed(core::Key::key_d)) {
             Translate(kRight, dt);
         }
-        if (input_manager.is_key_pressed(input::Key::key_space)) {
+        if (input_manager.is_key_pressed(core::Key::key_space)) {
             Translate(kUp, dt);
         }
-        if (input_manager.is_key_pressed(input::Key::key_left_ctrl)) {
+        if (input_manager.is_key_pressed(core::Key::key_left_ctrl)) {
             Translate(kDown, dt);
         }
     }
@@ -124,7 +124,7 @@ void Camera::EnableManualControl()
 {
     m_manual_control_enabled = true;
 
-    auto& input_manager = input::InputManager::GetSingleton();
+    auto& input_manager = core::InputManager::GetSingleton();
 
     // extra pre-call to getMouseOffset to 'reset' the current offset created by mouse movements
     // while camera control disabled

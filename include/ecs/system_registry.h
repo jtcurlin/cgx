@@ -3,17 +3,18 @@
 #pragma once
 
 #include "ecs/common.h"
-#include "ecs/component_registry.h"
-#include "event/event_handler.h"
-#include "ecs/system.h"
 #include <unordered_map>
 
 namespace cgx::ecs
 {
+class System;
+
+class ECSManager;
+
 class SystemRegistry
 {
 public:
-    explicit SystemRegistry(const std::shared_ptr<ComponentRegistry>& component_registry);
+    explicit SystemRegistry(ECSManager* ecs_manager);
     ~SystemRegistry();
 
     template<typename T>
@@ -23,7 +24,7 @@ public:
 
         CGX_ASSERT(m_systems.find(type_name) == m_systems.end(), "Registering system more than once.");
 
-        auto system = std::make_shared<T>(m_component_registry);
+        auto system = std::make_shared<T>(m_ecs_manager);
         m_systems.insert({type_name, system});
         return system;
     }
@@ -38,18 +39,12 @@ public:
         m_signatures.insert({type_name, signature});
     }
 
-    void update(const float dt)
-    {
-        for (auto& [type_id, system] : m_systems) {
-            system->update(dt);
-        }
-    }
-
-    void entity_destroyed(Entity entity) const;
-    void entity_signature_changed(Entity entity, Signature entitySignature);
+    void update(float dt);
+    void on_entity_released(Entity entity) const;
+    void on_entity_updated(Entity entity, Signature entitySignature);
 
 private:
-    std::shared_ptr<ComponentRegistry> m_component_registry;
+    ECSManager* m_ecs_manager;
 
     std::unordered_map<const char*, Signature>               m_signatures{};
     std::unordered_map<const char*, std::shared_ptr<System>> m_systems{};

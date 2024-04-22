@@ -12,7 +12,7 @@ class ImGuiManager;
 class ProfilerPanel final : public ImGuiPanel
 {
 public:
-    explicit ProfilerPanel(const std::shared_ptr<GUIContext>& context, const std::shared_ptr<ImGuiManager>& manager);
+    ProfilerPanel(GUIContext* context, ImGuiManager* manager);
     ~ProfilerPanel() override;
 
     void render() override;
@@ -30,7 +30,7 @@ private:
     uint64_t m_total_frame_count{0};
 
     std::vector<double>           m_frame_times;
-    unsigned int                  m_frame_time_count       = 0;
-    static constexpr unsigned int m_max_frame_time_samples = 100;
+    unsigned int                  m_frame_time_count{0};
+    static constexpr unsigned int m_max_frame_time_samples{100};
 };
 }

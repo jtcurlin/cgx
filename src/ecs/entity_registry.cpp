@@ -13,7 +13,9 @@ EntityRegistry::EntityRegistry()
     }
 }
 
-Entity EntityRegistry::create_entity() // fetch first unused entity from entity vector
+EntityRegistry::~EntityRegistry() = default;
+
+Entity EntityRegistry::acquire_entity() // fetch first unused entity from entity vector
 {
     CGX_ASSERT(m_active_entity_count < MAX_ENTITIES, "Too many active entities.");
     if (!(m_active_entity_count < MAX_ENTITIES)) {
@@ -30,7 +32,7 @@ Entity EntityRegistry::create_entity() // fetch first unused entity from entity 
     return id;
 }
 
-void EntityRegistry::destroy_entity(Entity entity)
+void EntityRegistry::release_entity(Entity entity)
 {
     CGX_ASSERT(entity < MAX_ENTITIES, "Entity out of range.");
     CGX_INFO("Destroying Entity {}", entity);

@@ -1,6 +1,8 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "gui/panels/render_settings_panel.h"
+#include "render/render_system.h"
+#include "asset/asset_manager.h"
 
 #include "asset/cubemap.h"
 #include "asset/model.h"
@@ -8,9 +10,7 @@
 
 namespace cgx::gui
 {
-RenderSettingsPanel::RenderSettingsPanel(
-    const std::shared_ptr<GUIContext>&   context,
-    const std::shared_ptr<ImGuiManager>& manager)
+RenderSettingsPanel::RenderSettingsPanel(GUIContext* context, ImGuiManager* manager)
     : ImGuiPanel("Render Settings", context, manager) {}
 
 RenderSettingsPanel::~RenderSettingsPanel() = default;
@@ -23,10 +23,14 @@ void RenderSettingsPanel::render()
     ImGui::Checkbox("Enable MSAA", &render_settings.msaa_enabled);
     ImGui::Checkbox("Enable Rendering Test", &render_settings.m_render_test_enabled);
 
-    float label_width = ImGui::CalcTextSize("Camera Movement Speed").x;
-    float slider_width = ImGui::GetContentRegionAvail().x - label_width - ImGui::GetStyle().ItemInnerSpacing.x * 2; // Adjust spacing as necessary
-    ImGui::SetNextItemWidth(slider_width);
-    ImGui::SliderFloat("Camera Movement Speed", &m_context->get_render_system()->get_camera()->m_movement_speed, 0.0f, 10.0f);
+    // Adjust spacing as necessary
+    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 3);
+    ImGui::InputFloat(
+        "Camera Movement Speed",
+        &m_context->get_render_system()->get_camera()->m_movement_speed,
+        0.0f,
+        100.0f,
+        "%.2f");
 }
 
 void RenderSettingsPanel::draw_skybox_menu() const
@@ -35,7 +39,6 @@ void RenderSettingsPanel::draw_skybox_menu() const
     auto&      render_settings = render_system->get_render_settings();
 
     ImGui::Checkbox("Enable Skybox", &render_settings.skybox_enabled);
-
 
     const float button_width = ImGui::CalcTextSize("\uf1de").x + ImGui::GetStyle().ItemInnerSpacing.x * 2;
     ImGui::SameLine(ImGui::GetWindowWidth() - button_width - ImGui::GetStyle().WindowPadding.x);

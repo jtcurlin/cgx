@@ -6,13 +6,13 @@
 #define GLFW_INCLUDE_NONE
 
 #include "core/common.h"
-#include "input/input_types.h"
 #include "GLFW/glfw3.h"
+#include <functional>
 
 namespace cgx::core
 {
-using KeyCallback = std::function<void(input::Key, input::KeyAction)>;
-using MouseButtonCallback = std::function<void(input::Key, input::KeyAction)>;
+using KeyCallback = std::function<void(core::Key, core::KeyAction)>;
+using MouseButtonCallback = std::function<void(core::Key, core::KeyAction)>;
 using MouseMoveCallback = std::function<void(double x_pos, double y_pos)>;
 using ScrollCallback = std::function<void(double x_offset, double y_offset)>;
 class WindowManager
@@ -25,10 +25,10 @@ public:
 
     [[nodiscard]] GLFWwindow* get_glfw_window() const { return m_window; }
 
-    [[nodiscard]] bool is_key_pressed(input::Key key) const;
-    [[nodiscard]] bool is_key_released(input::Key key) const;
-    [[nodiscard]] bool is_mouse_button_pressed(input::Key button) const;
-    [[nodiscard]] bool is_mouse_button_released(input::Key button) const;
+    [[nodiscard]] bool is_key_pressed(core::Key key) const;
+    [[nodiscard]] bool is_key_released(core::Key key) const;
+    [[nodiscard]] bool is_mouse_button_pressed(core::Key button) const;
+    [[nodiscard]] bool is_mouse_button_released(core::Key button) const;
 
     void get_mouse_position(double &x_pos, double &y_pos) const;
 
@@ -55,14 +55,16 @@ private:
     static void glfw_mouse_button_callback(GLFWwindow *window, int button, int action, int mods);
     static void glfw_scroll_callback(GLFWwindow *window, double xoffset, double yoffset);
 
-    static input::KeyAction translate_key_action_to_internal(int glfw_action);
-    static input::Key       translate_key_code_to_internal(int glfw_key);
-    static input::Key       translate_mouse_button_to_internal(int glfw_mouse_button);
+    static core::KeyAction translate_key_action_to_internal(int glfw_action);
+    static core::Key       translate_key_code_to_internal(int glfw_key);
+    static core::Key       translate_mouse_button_to_internal(int glfw_mouse_button);
 
-    static int translate_key_action_to_glfw(input::KeyAction action);
-    static int translate_key_code_to_glfw(input::Key key);
-    static int translate_mouse_button_to_glfw(input::Key key);
+    static int translate_key_action_to_glfw(core::KeyAction action);
+    static int translate_key_code_to_glfw(core::Key key);
+    static int translate_mouse_button_to_glfw(core::Key key);
 
     friend class InputPanel;
 };
 }
+
+

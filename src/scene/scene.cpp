@@ -2,79 +2,91 @@
 
 #include "scene/scene.h"
 
+#include "core/events/engine_events.h"
+#include "ecs/event_handler.h"
+
 namespace cgx::scene
 {
-Scene::Scene(
-    std::string                                    label,
-    const std::shared_ptr<ecs::EntityRegistry>&    entity_registry,
-    const std::shared_ptr<ecs::ComponentRegistry>& component_registry,
-    const std::shared_ptr<ecs::SystemRegistry>&    system_registry)
-    : m_label(std::move(label))
-    , m_entity_registry{entity_registry}
-    , m_component_registry{component_registry}
-    , m_system_registry{system_registry}
+Scene::Scene(std::string label) : m_label(std::move(label))
 {
-    m_root = std::make_shared<Node>(NodeType::Unknown, "scene_root");
+    CGX_INFO("scene '{}' : initialized", m_label);
 }
-
 Scene::~Scene() = default;
 
-const std::shared_ptr<Node>& Scene::get_root() const
+std::vector<Node*> Scene::get_roots() const
 {
-    return m_root;
-}
-
-void Scene::add_node(const std::string& tag, const NodeType node_type, Node* parent) const
-{
-    auto* root = m_root.get();
-    switch (node_type) {
-        case NodeType::Camera: {
-            const auto node = std::make_shared<CameraNode>(tag);
-            if (parent) node->set_parent(parent);
-            else node->set_parent(root);
-            break;
-        }
-        case NodeType::Entity: {
-            ecs::Entity entity = m_entity_registry->create_entity();
-            const auto  node   = std::make_shared<EntityNode>(entity, tag);
-            if (parent) node->set_parent(parent);
-            else node->set_parent(root);
-            break;
-        }
-        case NodeType::Light: {
-            const auto node = std::make_shared<LightNode>(tag);
-            if (parent) node->set_parent(parent);
-            else node->set_parent(root);
-            break;
-        }
-        default: {
-            CGX_ERROR("invalid node type specified");
-            std::exit(1);
-        }
+    std::vector<Node*> roots;
+    for (auto& root : m_roots) {
+        roots.push_back(root.get());
     }
+    return roots;
 }
 
-void Scene::remove_node(Node* node) const
+Node* Scene::add_node(const ecs::Entity entity, const std::string& tag, Node* parent)
 {
-    switch (node->get_node_type()) {
-        case NodeType::Camera: {
-            node->remove();
-            break;
+    CGX_INFO("Adding node { entity={} ; tag={} }", entity, tag);
+    auto node = std::make_shared<Node>(entity, tag);
+    if (parent) {
+        CGX_INFO(" >> parent specified - setting parent to {}", parent->get_id());
+        node->set_parent(parent);
+    }
+    else {
+        m_roots.push_back(std::move(node));
+    }
+
+    ecs::Event event(events::entity::ACQUIRED);
+    event.set_param(events::entity::ID, entity);
+    ecs::EventHandler::get_instance().send_event(event);
+
+    return m_roots.back().get();
+}
+
+void Scene::remove_node(Node* node)
+{
+    CGX_ASSERT(node, "attempt to remove invalid node");
+    auto entity = node->get_entity();
+
+    auto root_node_it = std::find_if(
+        m_roots.begin(),
+        m_roots.end(),
+        [node](const std::shared_ptr<Node>& root_node) {
+            return root_node.get() == node;
+        });
+
+    if (root_node_it != m_roots.end()) {
+        const std::vector<std::shared_ptr<core::Hierarchy>>& children = node->get_mutable_children();
+
+        for (const auto&   child : children) {
+            if (const auto child_node = dynamic_cast<Node*>(child.get()) ; child_node) {
+                m_roots.push_back(std::make_unique<Node>(*child_node));
+            }
         }
-        case NodeType::Entity: {
-            const auto entity_node = dynamic_cast<EntityNode*>(node);
-            m_entity_registry->destroy_entity(entity_node->get_entity());
-            node->remove();
-            break;
-        }
-        case NodeType::Light: {
-            node->remove();
-            break;
-        }
-        default: {
-            CGX_ERROR("Invalid node type specified");
-            std::exit(1);
-        }
+        node->remove();
+        m_roots.erase(root_node_it);
+    }
+    else {
+        node->remove();
+    }
+
+    ecs::Event event(events::entity::RELEASED);
+    event.set_param(events::entity::ID, entity);
+    ecs::EventHandler::get_instance().send_event(event);
+}
+
+void Scene::remove_node_recursive(Node* node)
+{
+    CGX_ASSERT(node, "attempt to recursively remove invalid node");
+
+    auto root_node_it = std::find_if(
+        m_roots.begin(),
+        m_roots.end(),
+        [node](const std::shared_ptr<Node>& root_node) {
+            return root_node.get() == node;
+        });
+
+    node->recursive_remove();
+    if (root_node_it != m_roots.end()) {
+        m_roots.erase(root_node_it);
     }
 }
 }

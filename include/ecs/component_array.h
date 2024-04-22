@@ -7,7 +7,6 @@
 
 #include "core/common.h"
 #include "ecs/common.h"
-#include "ecs/entity_registry.h"
 
 namespace cgx::ecs
 {

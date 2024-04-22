@@ -6,14 +6,7 @@
 
 namespace cgx::ecs
 {
-class EntityRegistry;
-class ComponentRegistry;
-class SystemRegistry;
-}
-
-namespace cgx::event
-{
-class EventHandler;
+class ECSManager;
 }
 
 namespace cgx::scene
@@ -21,29 +14,24 @@ namespace cgx::scene
 class SceneManager
 {
 public:
-    SceneManager();
+    explicit SceneManager(ecs::ECSManager* ecs_manager);
     ~SceneManager();
 
-    std::shared_ptr<Scene> add_scene(
-        std::string                                    label,
-        const std::shared_ptr<ecs::EntityRegistry>&    entity_registry,
-        const std::shared_ptr<ecs::ComponentRegistry>& component_registry,
-        const std::shared_ptr<ecs::SystemRegistry>&    system_registry);
+    [[nodiscard]] Node* add_node(Node* parent, const std::string& tag) const;
 
-    [[nodiscard]] std::shared_ptr<Scene> get_active_scene() const;
-    [[nodiscard]] std::shared_ptr<Scene> get_scene(const std::string& label) const;
+    void remove_node(Node* node) const;
+    void remove_node_recursive(Node* node) const;
 
+    Scene* add_scene(const std::string& label);
+    void   remove_scene(const std::string& label);
 
-
-
-
-
-
-    void set_active_scene(const std::string& label);
-    bool remove_scene(const std::string& label);
+    [[nodiscard]] Scene* get_active_scene() const;
+    void                 set_active_scene(const std::string& label);
 
 private:
-    std::shared_ptr<Scene>                                  m_active_scene;
-    std::unordered_map<std::string, std::shared_ptr<Scene>> m_scenes;
+    Scene*                                                  m_active_scene{nullptr};
+    std::unordered_map<std::string, std::unique_ptr<Scene>> m_scenes{};
+
+    ecs::ECSManager* m_ecs_manager;
 };
 }

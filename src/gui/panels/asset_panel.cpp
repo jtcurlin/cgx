@@ -1,17 +1,15 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "gui/panels/asset_panel.h"
+#include "asset/asset_manager.h"
 #include "asset/asset.h"
 
-#include "asset/model.h"
 #include "asset/shader.h"
-
-#include <filesystem>
 
 namespace cgx::gui
 {
-AssetPanel::AssetPanel(const std::shared_ptr<GUIContext>& context, const std::shared_ptr<ImGuiManager>& manager)
-    : ImGuiPanel("Resource Management", context, manager) {}
+AssetPanel::AssetPanel(GUIContext* context, ImGuiManager* manager)
+    : ImGuiPanel("Asset Management", context, manager) {}
 
 AssetPanel::~AssetPanel() = default;
 
@@ -25,13 +23,36 @@ void AssetPanel::render()
     render_asset_list(asset::AssetType::Mesh);
 }
 
+void AssetPanel::draw_asset_context_menu(asset::Asset* asset)
+{
+    CGX_ASSERT(asset, "attempt to draw context menu for invalid node");
+    if (ImGui::BeginPopupContextItem("AssetContextMenu")) {
+
+        if (ImGui::MenuItem("Inspect")) {
+            m_context->set_item_to_inspect(asset);
+            ImGui::CloseCurrentPopup();
+        }
+        else if (ImGui::MenuItem("Rename")) {
+            m_context->set_item_to_rename(asset);
+            ImGui::CloseCurrentPopup();
+        }
+        /* todo: implement removal of assets
+        else if (ImGui::MenuItem("Remove")) {
+
+            ImGui::CloseCurrentPopup();
+        }
+        */
+        ImGui::EndPopup();
+    }
+}
+
 void AssetPanel::render_importers_list()
 {
     const auto&       importers = m_context->get_asset_manager()->get_importers();
     const std::string title     = "Importers [" + std::to_string(importers.size()) + "]";
 
     ImGui::Text("%s", title.c_str());
-    if (ImGui::BeginChild("RegisteredImportersList", ImVec2(0, 100), true)) {
+    if (ImGui::BeginChild("RegisteredImportersList##ImporterList", ImVec2(0, 100), true)) {
         for (const auto& importer : importers) {
             auto& label = importer->get_label();
             if (ImGui::Selectable(label.c_str(), label == m_current_importer_label)) {
@@ -61,7 +82,7 @@ void AssetPanel::render_asset_list(const asset::AssetType asset_type)
     auto& asset_ids = m_context->get_asset_manager()->getAllIDs(asset_type);
     auto& assets    = m_context->get_asset_manager()->get_assets();
 
-    std::string       type_str = asset::translate_asset_typename(asset_type) + "s";
+    const std::string type_str = asset::translate_asset_typename(asset_type) + "s";
     const std::string title    = type_str + " [" + std::to_string(asset_ids.size()) + "]";
     const std::string list_id  = type_str + "##asset_list";
 
@@ -74,33 +95,9 @@ void AssetPanel::render_asset_list(const asset::AssetType asset_type)
             if (ImGui::Selectable(name.c_str(), id == m_current_asset_id)) {
                 m_current_asset_id = id;
             }
-
-            if (ImGui::BeginPopupContextItem()) {
-                m_current_asset_id = id;
-
-                auto& path        = asset->get_internal_path();
-                auto& source_path = asset->get_source_path();
-                auto  type        = asset->get_asset_typename();
-
-                ImGui::Text("%s Asset", asset->get_asset_typename().c_str());
-
-                ImVec2 windowSize  = ImGui::GetWindowSize();
-                float  buttonWidth = ImGui::CalcTextSize("Inspect").x + ImGui::GetStyle().FramePadding.x * 2.0f;
-                ImGui::SameLine(windowSize.x - buttonWidth - ImGui::GetStyle().WindowPadding.x);
-
-                if (ImGui::Button("Inspect")) {
-                    m_context->set_selected_item(asset.get());
-                    ImGui::CloseCurrentPopup();
-                }
-
-                ImGui::Text("Asset ID: %zu", id);
-                ImGui::Text("Asset Name: %s", name.c_str());
-                ImGui::Text("Asset Path: %s", path.c_str());
-                ImGui::Text("Asset Type: %s", type.c_str());
-                ImGui::Text("Asset Source Path: %s", source_path.c_str());
-                ImGui::EndPopup();
-            }
             ImGui::SetItemTooltip("Right Click for Info");
+
+            draw_asset_context_menu(asset.get());
         }
     }
     ImGui::EndChild();

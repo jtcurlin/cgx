@@ -1,17 +1,18 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "gui/panels/viewport_panel.h"
+#include "render/render_system.h"
 #include "utility/error.h"
 
 namespace cgx::gui
 {
-ViewportPanel::ViewportPanel(const std::shared_ptr<GUIContext>& context, const std::shared_ptr<ImGuiManager>& manager)
+ViewportPanel::ViewportPanel(GUIContext* context, ImGuiManager* manager)
     : ImGuiPanel("Viewport", context, manager)
 {
     m_enforce_aspect_ratio = true;
     m_window_flags |= ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 
-    const auto framebuffer = context->get_render_system()->getFramebuffer();
+    const auto framebuffer = m_context->get_render_system()->getFramebuffer();
     uint32_t   width, height;
     framebuffer->getSize(width, height);
     CGX_ASSERT(glIsTexture(framebuffer->getTextureID()), "Invalid Texture ID in Render Framebuffer");

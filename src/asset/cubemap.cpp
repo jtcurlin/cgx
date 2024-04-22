@@ -4,7 +4,7 @@
 #include "asset/shader.h"
 
 #include <stb_image.h>
-#include "geometry/primitive_mesh.h"
+#include "../../include/utility/primitive_mesh.h"
 #include "utility/error.h"
 
 namespace cgx::asset

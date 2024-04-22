@@ -4,15 +4,13 @@
 
 #define GL_SILENCE_DEPRECATION
 
-#include "utility/paths.h"
+#include "core/common.h"
 
 #include <filesystem>
 
 namespace cgx::ecs
 {
-class EntityRegistry;
-class ComponentRegistry;
-class SystemRegistry;
+class ECSManager;
 }
 
 namespace cgx::scene
@@ -31,7 +29,7 @@ class GUIContext;
 class ImGuiManager;
 }
 
-namespace cgx::input
+namespace cgx::core
 {
 class InputManager;
 }
@@ -74,29 +72,19 @@ protected:
     virtual void update();
     virtual void render();
 
-    void setup_ecs();
     void setup_gui();
     void setup_engine_events();
 
     EngineSettings m_settings{};
+    bool           m_is_running{false};
 
-    bool                        m_is_running{false};
-    std::shared_ptr<TimeSystem> m_time_system;
-
-    std::shared_ptr<ecs::EntityRegistry>    m_entity_registry;
-    std::shared_ptr<ecs::ComponentRegistry> m_component_registry;
-    std::shared_ptr<ecs::SystemRegistry>    m_system_registry;
-
+    std::unique_ptr<TimeSystem>          m_time_system;
     std::shared_ptr<WindowManager>       m_window_manager;
-    std::shared_ptr<input::InputManager> m_input_manager;
-
+    std::unique_ptr<ecs::ECSManager>     m_ecs_manager;
     std::shared_ptr<scene::SceneManager> m_scene_manager;
-
-    std::shared_ptr<render::RenderSystem> m_render_system;
-
     std::shared_ptr<asset::AssetManager> m_asset_manager;
-
-    std::shared_ptr<gui::GUIContext>   m_gui_context;
-    std::shared_ptr<gui::ImGuiManager> m_imgui_manager;
+    std::unique_ptr<gui::GUIContext>     m_gui_context;
+    std::unique_ptr<gui::ImGuiManager>   m_imgui_manager;
+    std::shared_ptr<render::RenderSystem> m_render_system;
 };
 }

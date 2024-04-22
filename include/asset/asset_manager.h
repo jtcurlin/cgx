@@ -6,7 +6,7 @@
 #include "asset/asset.h"
 #include "asset/import/asset_importer.h"
 
-#include "event/event_handler.h"
+#include "../ecs/event_handler.h"
 #include "utility/paths.h"
 
 #include <unordered_map>

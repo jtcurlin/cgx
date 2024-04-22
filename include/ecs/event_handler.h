@@ -2,13 +2,13 @@
 
 #pragma once
 
-#include "event/event.h"
+#include "event.h"
 
 #include <functional>
 #include <list>
 #include <unordered_map>
 
-namespace cgx::event
+namespace cgx::ecs
 {
 class EventHandler
 {
@@ -20,9 +20,9 @@ public:
 
     static EventHandler& get_instance();
 
-    void AddListener(EventId event_id, std::function<void(Event&)> const& listener);
-    void SendEvent(Event& event);
-    void SendEvent(EventId event_id);
+    void add_listener(EventId event_id, std::function<void(Event&)> const& listener);
+    void send_event(Event& event);
+    void send_event(EventId event_id);
 
 private:
     EventHandler();

@@ -26,7 +26,7 @@ public:
     virtual void set_parent(const std::shared_ptr<Hierarchy>& new_parent, std::size_t position);
     virtual void on_add_child(const std::shared_ptr<Hierarchy>& child, std::size_t position);
     virtual void on_remove_child(Hierarchy* child);
-    // virtual void handle_parent_update(Hierarchy* old_parent, Hierarchy new_parent);
+    virtual void handle_parent_update(Hierarchy* old_parent, Hierarchy* new_parent);
 
     std::shared_ptr<Hierarchy> get_shared();
 

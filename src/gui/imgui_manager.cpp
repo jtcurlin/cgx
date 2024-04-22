@@ -9,6 +9,7 @@
 #include "gui/panels/viewport_panel.h"
 #include "gui/panels/properties_panel.h"
 
+#include "core/window_manager.h"
 #include "utility/paths.h"
 
 #include <imgui.h>
@@ -19,8 +20,8 @@
 
 namespace cgx::gui
 {
-ImGuiManager::ImGuiManager(std::shared_ptr<GUIContext> context)
-    : m_context(std::move(context))
+ImGuiManager::ImGuiManager(GUIContext* context)
+    : m_context(context)
 {
     IMGUI_CHECKVERSION();
 
@@ -54,19 +55,21 @@ ImGuiManager::~ImGuiManager()
 
 void ImGuiManager::initialize()
 {
-    register_panel(std::make_unique<AssetPanel>(m_context, shared_from_this()));
-    register_panel(std::make_unique<ProfilerPanel>(m_context, shared_from_this()));
-    register_panel(std::make_unique<RenderSettingsPanel>(m_context, shared_from_this()));
-    register_panel(std::make_unique<ViewportPanel>(m_context, shared_from_this()));
-    register_panel(std::make_unique<ScenePanel>(m_context, shared_from_this()));
-    register_panel(std::make_unique<PropertiesPanel>(m_context, shared_from_this()));
+    register_panel(std::make_unique<AssetPanel>(m_context, this));
+    register_panel(std::make_unique<ProfilerPanel>(m_context, this));
+    register_panel(std::make_unique<RenderSettingsPanel>(m_context, this));
+    register_panel(std::make_unique<ViewportPanel>(m_context, this));
+    register_panel(std::make_unique<ScenePanel>(m_context, this));
+    register_panel(std::make_unique<PropertiesPanel>(m_context, this));
 
-    std::string ini_path = std::string(DATA_DIRECTORY) + "/gui_layout.ini";
+    const std::string ini_path = std::string(DATA_DIRECTORY) + "/gui_layout.ini";
     ImGui::LoadIniSettingsFromDisk(ini_path.c_str());
 }
 
 void ImGuiManager::shutdown()
 {
+    const std::string ini_path = std::string(DATA_DIRECTORY) + "/gui_layout.ini";
+    ImGui::SaveIniSettingsToDisk(ini_path.c_str());
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
@@ -88,25 +91,6 @@ void ImGuiManager::register_panel(std::unique_ptr<ImGuiPanel> panel)
     }
 }
 
-/*
-void ImGuiManager::unregister_panel(std::shared_ptr<ImGuiPanel> window)
-{
-    auto it = std::find_if(
-        m_imgui_panels.begin(),
-        m_imgui_panels.end(),
-        [&window](const std::unique_ptr<ImGuiPanel> &w) {
-            return w.get() == window.get();
-        }
-    );
-    if (it != m_imgui_panels.end()) {
-        m_imgui_panels.erase(it);
-    }
-    else {
-        CGX_ERROR("ImGuiManager : Window {} not found for unregistration.", window->getTitle());
-    }
-}
-*/
-
 void ImGuiManager::render()
 {
     begin_render();
@@ -121,6 +105,20 @@ void ImGuiManager::render()
         }
     }
 
+    const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+    if (ImGui::BeginPopupModal("Rename Node ##PopUp", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+
+        ImGui::InputText("Rename Node ##InputField", m_input_buffer, 256);
+        if (ImGui::Button("Ok ##Rename Node")) {
+            const auto item = m_context->get_item_to_rename();
+            item->set_tag(m_input_buffer);
+            m_context->set_item_to_rename(nullptr);
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
     end_render();
 }
 

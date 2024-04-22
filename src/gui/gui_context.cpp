@@ -1,67 +1,93 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "gui/gui_context.h"
+#include "ecs/ecs_manager.h"
+#include "core/window_manager.h"
+#include "asset/asset_manager.h"
+#include "render/render_system.h"
+#include "scene/scene_manager.h"
+#include "../../include/core/systems/time_system.h"
 
 namespace cgx::gui
 {
 GUIContext::GUIContext(
-    const std::shared_ptr<asset::AssetManager>&  asset_manager,
-    const std::shared_ptr<render::RenderSystem>& render_system,
-    const std::shared_ptr<scene::SceneManager>&  scene_manager,
-    const std::shared_ptr<core::WindowManager>&  window_manager,
-    const std::shared_ptr<core::TimeSystem>&     time_system)
+    asset::AssetManager*  asset_manager,
+    ecs::ECSManager*      ecs_manager,
+    render::RenderSystem* render_system,
+    scene::SceneManager*  scene_manager,
+    core::WindowManager*  window_manager,
+    core::TimeSystem*     time_system)
     : m_asset_manager(asset_manager)
+    , m_ecs_manager(ecs_manager)
     , m_render_system(render_system)
     , m_scene_manager(scene_manager)
     , m_window_manager(window_manager)
-    , m_time_system(time_system)
-    , m_selected_item{nullptr} {}
+    , m_time_system(time_system) {}
 
 GUIContext::~GUIContext() = default;
 
-std::shared_ptr<asset::AssetManager> GUIContext::get_asset_manager() const
+asset::AssetManager* GUIContext::get_asset_manager() const
 {
-    auto asset_manager = m_asset_manager.lock();
-    CGX_ASSERT(asset_manager, "failed to obtain valid asset manager instance");
-    return asset_manager;
+    CGX_ASSERT(m_asset_manager, "attempt to retreive invalid asset manager ptr");
+    return m_asset_manager;
 }
 
-std::shared_ptr<render::RenderSystem> GUIContext::get_render_system() const
+ecs::ECSManager* GUIContext::get_ecs_manager() const
 {
-    auto render_system = m_render_system.lock();
-    CGX_ASSERT(render_system, "failed to obtain valid render system instance");
-    return render_system;
+    return m_ecs_manager;
 }
 
-std::shared_ptr<scene::SceneManager> GUIContext::get_scene_manager() const
+render::RenderSystem* GUIContext::get_render_system() const
 {
-    auto scene_manager = m_scene_manager.lock();
-    CGX_ASSERT(scene_manager, "failed to obtain valid scene_manager instance");
-    return scene_manager;
+    CGX_ASSERT(m_render_system, "attempt to retreive invalid render system ptr");
+    return m_render_system;
 }
 
-std::shared_ptr<core::WindowManager> GUIContext::get_window_manager() const
+scene::SceneManager* GUIContext::get_scene_manager() const
 {
-    auto window_manager = m_window_manager.lock();
-    CGX_ASSERT(window_manager, "failed to obtain valid window manager instance");
-    return window_manager;
+    CGX_ASSERT(m_scene_manager, "attempt to retreive invalid scene manager ptr");
+    return m_scene_manager;
 }
 
-std::shared_ptr<core::TimeSystem> GUIContext::get_time_system() const
+core::WindowManager* GUIContext::get_window_manager() const
 {
-    auto time_system = m_time_system.lock();
-    CGX_ASSERT(time_system, "failed to obtain valid window manager instance");
-    return time_system;
+    CGX_ASSERT(m_scene_manager, "attempt to retreive invalid window manager ptr");
+    return m_window_manager;
 }
 
-
-void GUIContext::set_selected_item(core::Item* item)
+core::TimeSystem* GUIContext::get_time_system() const
 {
-    m_selected_item = item;
+    CGX_ASSERT(m_scene_manager, "attempt to retreive invalid time sytsem ptr");
+    return m_time_system;
 }
 
-core::Item* GUIContext::get_selected_item() const
+void GUIContext::set_item_to_birth(core::Item* item)
 {
-    return m_selected_item;
+    m_item_to_birth = item;
+}
+
+void GUIContext::set_item_to_rename(core::Item* item)
+{
+    m_item_to_rename = item;
+}
+
+void GUIContext::set_item_to_inspect(core::Item* item)
+{
+    m_item_to_inspect = item;
+}
+
+core::Item* GUIContext::get_item_to_birth() const
+{
+    return m_item_to_birth;
+}
+
+core::Item* GUIContext::get_item_to_rename() const
+{
+    return m_item_to_rename;
+}
+
+core::Item* GUIContext::get_item_to_inspect() const
+{
+    return m_item_to_inspect;
 }
 }

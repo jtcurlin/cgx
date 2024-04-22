@@ -14,9 +14,10 @@ class EntityRegistry
 {
 public:
     EntityRegistry();
+    ~EntityRegistry();
 
-    Entity create_entity();
-    void   destroy_entity(Entity entity);
+    Entity acquire_entity();
+    void   release_entity(Entity entity);
 
     void      set_signature(Entity entity, Signature signature);
     Signature get_signature(Entity entity);
@@ -27,6 +28,6 @@ private:
     std::queue<Entity>                  m_available_entities{};
     std::array<Signature, MAX_ENTITIES> m_signatures{};
 
-    uint32_t m_active_entity_count;
+    uint32_t m_active_entity_count{0};
 };
 }

@@ -4,50 +4,42 @@
 
 #include "gui/imgui_manager.h"
 #include "scene/node.h"
+#include "scene/scene_manager.h"
 
 namespace cgx::gui
 {
-
-size_t ScenePanel::s_node_counter = 0;
-
-ScenePanel::ScenePanel(const std::shared_ptr<GUIContext>& context, const std::shared_ptr<ImGuiManager>& manager)
-    : ImGuiPanel("Scene", context, manager)
-{
-    m_root = m_context->get_scene_manager()->get_active_scene()->get_root();
-}
+ScenePanel::ScenePanel(GUIContext* context, ImGuiManager* manager)
+    : ImGuiPanel("Scene", context, manager) {}
 
 ScenePanel::~ScenePanel() = default;
 
 void ScenePanel::render()
 {
-    if (!m_root) return;
-
-
     ImGui::SetWindowFontScale(1.0f);
     if (ImGui::Button("\uf0fe  Add Root Node")) {
-        m_new_node_parent = m_root.get();
-        m_adding_node     = true;
+        m_adding_node = true;
     }
     ImGui::SetWindowFontScale(1.0f);
 
-    for (const auto& child : m_root->get_children()) {
-        draw_node(std::dynamic_pointer_cast<scene::Node>(child));
+    auto roots = m_context->get_scene_manager()->get_active_scene()->get_roots();
+    for (auto* root_node : roots) {
+        draw_node(root_node);
     }
 
     draw_new_node_menu();
 }
 
-void ScenePanel::draw_node(const std::shared_ptr<scene::Node>& node)
+void ScenePanel::draw_node(scene::Node* node)
 {
     if (!node) return;
-    ImGui::PushID(node.get());
-    // const auto id    = node->get_id();
-    auto& state = m_node_states[node->get_id()];
+    ImGui::PushID(node);
+    auto& node_state = m_node_states[node->get_id()];
 
     ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_None;
     node_flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
-    node_flags |= state.is_expanded ? ImGuiTreeNodeFlags_DefaultOpen : 0;
+    node_flags |= node_state.is_expanded ? ImGuiTreeNodeFlags_DefaultOpen : 0;
 
+    /*
     const char* icon;
     switch (node->get_node_type()) {
         case scene::NodeType::Camera: icon = "\uf03d  Camera Node";
@@ -58,19 +50,22 @@ void ScenePanel::draw_node(const std::shared_ptr<scene::Node>& node)
             break;
         default: icon = "\ue47b Unknown Node Type";
     }
+    */
+    const std::string icon = "\uf6cf " + node->get_tag();
 
-    bool node_opened = ImGui::TreeNodeEx(icon, node_flags);
+    const bool node_opened = ImGui::TreeNodeEx(icon.c_str(), node_flags);
 
     if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-        state.is_expanded = !state.is_expanded;
+        node_state.is_expanded = !node_state.is_expanded;
     }
 
-    draw_node_context_menu(node.get());
-
+    draw_node_context_menu(node);
 
     if (node_opened) {
         for (const auto& child : node->get_children()) {
-            draw_node(std::dynamic_pointer_cast<scene::Node>(child));
+            auto casted_child = dynamic_cast<scene::Node*>(child.get());
+            CGX_ASSERT(casted_child, "attempt to draw non-node hierarchy element");
+            draw_node(casted_child);
         }
         ImGui::TreePop();
     }
@@ -78,62 +73,30 @@ void ScenePanel::draw_node(const std::shared_ptr<scene::Node>& node)
     ImGui::PopID();
 }
 
-void ScenePanel::add_node(const scene::NodeType node_type, scene::Node* parent) const
-{
-    std::stringstream name_ss;
-    name_ss << "Node " << std::setw(3) << std::setfill('0') << std::to_string(s_node_counter++);
-
-    m_context->get_scene_manager()->get_active_scene()->add_node(name_ss.str(), node_type, parent);
-}
-
 void ScenePanel::draw_node_context_menu(scene::Node* node)
 {
+    CGX_ASSERT(node, "attempt to draw context menu for invalid node");
     if (ImGui::BeginPopupContextItem("NodeContextMenu")) {
 
-        if (ImGui::MenuItem("Rename")) {
-            m_node_being_renamed = node;
-            ImGui::CloseCurrentPopup();
-        }
-
         if (ImGui::MenuItem("Inspect")) {
-            m_context->set_selected_item(node);
+            m_context->set_item_to_inspect(node);
             ImGui::CloseCurrentPopup();
         }
-        if (ImGui::MenuItem("Add Child")) {
-            m_new_node_parent = node;
-            m_adding_node     = true;
+        else if (ImGui::MenuItem("Rename")) {
+            m_context->set_item_to_rename(node);
             ImGui::CloseCurrentPopup();
         }
-
-        if (ImGui::MenuItem("Remove")) {
+        else if (ImGui::MenuItem("Add Child")) {
+            m_node_to_birth = node;
+            m_adding_node   = true;
+            ImGui::CloseCurrentPopup();
+        }
+        else if (ImGui::MenuItem("Remove")) {
             node->remove();
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
     }
-
-
-    if (m_node_being_renamed != nullptr) {
-        ImGui::OpenPopup("Rename Node ##NewNodeMenu");
-    }
-
-    const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-
-    if (ImGui::BeginPopupModal("Rename Node ##NewNodeMenu", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-
-        ImGui::InputText("Rename Node ## Input Field", m_input_buffer, 256);
-
-        if (ImGui::Button("OK ## Rename Node")) {
-            CGX_INFO("Node tag before rename: {}", node->get_tag());
-            m_node_being_renamed->set_tag(m_input_buffer);
-            m_node_being_renamed = nullptr;
-            ImGui::CloseCurrentPopup();
-        }
-
-        ImGui::EndPopup();
-    }
-
 }
 
 void ScenePanel::draw_new_node_menu()
@@ -141,45 +104,66 @@ void ScenePanel::draw_new_node_menu()
     if (m_adding_node) {
         ImGui::OpenPopup("Add Node ##NewNodeMenu");
     }
-    // Define the size and position of the popup
     const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
     // Open a modal popup to block interactions with other UI elements
-    ImGui::PushFont(m_manager.lock()->m_title_font);
+    ImGui::PushFont(m_manager->m_title_font);
     if (ImGui::BeginPopupModal("Add Node ##NewNodeMenu", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
         // Display buttons for each type of node
-
-        ImGui::PushFont(m_manager.lock()->m_header_font);
-        if (ImGui::MenuItem("\uf6cf  Entity Node")) {
-            add_node(scene::NodeType::Entity, m_new_node_parent);
-            m_adding_node     = false;
-            m_new_node_parent = nullptr;
+        ImGui::PushFont(m_manager->m_header_font);
+        if (ImGui::MenuItem("\uf6cf   Entity Node")) {
+            scene::Node* new_node = nullptr;
+            new_node = m_context->get_scene_manager()->add_node(m_node_to_birth, generate_default_node_tag());
+            on_node_added(new_node);
+            m_node_to_birth = nullptr;
+            m_adding_node   = false;
             ImGui::CloseCurrentPopup();
         }
-        if (ImGui::MenuItem("\uf03d  Camera Node")) {
-            add_node(scene::NodeType::Camera, m_new_node_parent);
-            m_adding_node     = false;
-            m_new_node_parent = nullptr;
+        else if (ImGui::MenuItem("\uf03d   Camera Node")) {
+            scene::Node* new_node = nullptr;
+            new_node = m_context->get_scene_manager()->add_node(m_node_to_birth, generate_default_node_tag());
+            on_node_added(new_node);
+            m_node_to_birth = nullptr;
+            m_adding_node   = false;
             ImGui::CloseCurrentPopup();
         }
-        if (ImGui::MenuItem("\uf4a1  Light Node")) {
-            add_node(scene::NodeType::Light, m_new_node_parent);
-            m_adding_node     = false;
-            m_new_node_parent = nullptr;
+        else if (ImGui::MenuItem("\uf4a1   Light Node")) {
+            scene::Node* new_node = nullptr;
+            new_node = m_context->get_scene_manager()->add_node(m_node_to_birth, generate_default_node_tag());
+            on_node_added(new_node);
+            m_node_to_birth = nullptr;
+            m_adding_node   = false;
             ImGui::CloseCurrentPopup();
         }
         ImGui::Separator();
         if (ImGui::MenuItem("Cancel")) {
-            m_adding_node     = false;
-            m_new_node_parent = nullptr;
+            m_node_to_birth = nullptr;
+            m_adding_node   = false;
             ImGui::CloseCurrentPopup();
         }
         ImGui::PopFont();
 
         ImGui::EndPopup();
     }
+
     ImGui::PopFont();
+}
+
+void ScenePanel::on_node_added(scene::Node* node)
+{
+    m_context->set_item_to_inspect(node);
+    m_node_states[node->get_id()] = NodeState{};
+}
+
+std::string ScenePanel::generate_default_node_tag()
+{
+    static size_t s_node_counter = 0;
+    CGX_ASSERT(s_node_counter <= 999, "exceeded default node tag count");
+
+    std::stringstream name_ss;
+    name_ss << "node_" << std::setw(3) << std::setfill('0') << std::to_string(s_node_counter++);
+    return name_ss.str();
 }
 
 }

@@ -16,10 +16,10 @@ class Model;
 
 namespace cgx::ecs
 {
-class ComponentRegistry;
+class ECSManager;
 }
 
-namespace cgx::event
+namespace cgx::ecs
 {
 class EventHandler;
 }
@@ -47,7 +47,7 @@ struct RenderSettings
 class RenderSystem : public ecs::System
 {
 public:
-    explicit RenderSystem(const std::shared_ptr<ecs::ComponentRegistry>& component_registry);
+    explicit RenderSystem(ecs::ECSManager* ecs_manager);
     ~RenderSystem() override;
 
     void initialize();
@@ -56,7 +56,6 @@ public:
     void update(float dt) override;
     void on_entity_added(ecs::Entity entity) override {}
     void on_entity_removed(ecs::Entity entity) override {}
-    void on_component_updated(ecs::Entity entity) override {}
 
     void draw_skybox() const;
 

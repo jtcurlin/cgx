@@ -2,8 +2,7 @@
 
 #pragma once
 
-#include "input/input_types.h"
-#include "event/event.h"
+#include "ecs/event.h"
 
 #include "core/common.h"
 
@@ -12,7 +11,7 @@ namespace cgx::core
 class WindowManager;
 }
 
-namespace cgx::input
+namespace cgx::core
 {
 // ! SINGLETON
 
@@ -31,7 +30,7 @@ public:
     void initialize(const std::shared_ptr<core::WindowManager>& window_manager);
 
     // bind an event to a specific input
-    void bind_key_input_event(Key key, KeyAction action, event::Event event);
+    void bind_key_input_event(Key key, KeyAction action, ecs::Event event);
 
     // for glfw to call
     void on_keyboard_input(Key key, KeyAction action);
@@ -56,7 +55,7 @@ private:
     bool m_initialized{false};
 
     std::shared_ptr<core::WindowManager>                     m_window_manager{};
-    std::unordered_map<KeyInput, event::Event, KeyInputHash> m_event_bindings{};
+    std::unordered_map<KeyInput, ecs::Event, KeyInputHash> m_event_bindings{};
 
     double m_mouse_x{0.0};
     double m_mouse_y{0.0};
