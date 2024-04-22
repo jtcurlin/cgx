@@ -10,9 +10,14 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_subdirectory(external)
 add_subdirectory(examples)
 
+option(FETCH_EXTERNAL_DEPENDENCIES "Fetch dependencies from external repositories if not present" ON)
+option(PREFER_BUNDLED_DEPENDENCIES "Prefer to use bundled versions of dependencies rather than them fetching externally" ON)
+
 set(SOURCE_DIR "${CMAKE_SOURCE_DIR}/src")
 set(INCLUDE_DIR "${CMAKE_SOURCE_DIR}/include")
-set(EXTERNAL_DIR "${CMAKE_SOURCE_DIR}/include")
+
+set(EXTERNAL_SOURCE_DIR "${CMAKE_SOURCE_DIR}/include")
+set(EXTERNAL_BINARY_DIR "${CMAKE_SOURCE_DIR}/include")
 
 # configure paths.h before setting up dependent targets
 set(DATA_DIRECTORY "${CMAKE_BINARY_DIR}/data")
@@ -35,9 +40,10 @@ link_glm(cgx PUBLIC)
 link_imgui(cgx PUBLIC)
 link_stb(cgx PUBLIC)
 link_tinyobjloader(cgx PUBLIC)
+link_tinygltfloader(cgx PUBLIC)
 
 target_sources(cgx PUBLIC ${PUBLIC_HEADERS} PRIVATE ${PRIVATE_SOURCES})
-target_include_directories(cgx PUBLIC ${INCLUDE_DIR} ${EXTERNAL_DIR} PRIVATE ${SOURCE_DIR})
+target_include_directories(cgx PUBLIC ${INCLUDE_DIR} ${EXTERNAL_SOURCE_DIR} PRIVATE ${SOURCE_DIR})
 
 # copy data (assets, fonts, shaders, etc.) into to build directory
 add_custom_command(

@@ -3,79 +3,86 @@
 
 include(FetchContent)
 
+macro(check_directory DIR)
+    if(EXISTS "${DIR}")
+        file(GLOB contents "${DIR}/*")
+        list(LENGTH contents contents_count)
+
+        if(contents_count EQUAL 0)
+            message(NOTICE " > Directory exists but is empty, removing: ${DIR}")
+            file(REMOVE_RECURSE "${DIR}")
+        endif()
+    endif()
+endmacro()
+
+
 # =====================================================
-# glad
+# opengl
 
 macro(link_opengl TARGET ACCESS)
     find_package(OpenGL REQUIRED)
     if (OpenGL_FOUND)
         target_include_directories(${TARGET} ${ACCESS} ${OPENGL_INCLUDE_DIR})
-
         target_link_libraries(${TARGET} ${ACCESS} OpenGL::GL)
-
         add_dependencies(${TARGET} OpenGL::GL)
-        message(STATUS " > [dependency] 'OpenGL' found and linked to ${TARGET} : ${OPENGL_INCLUDE_DIR}")
+        message(STATUS " >>  [dependency : opengl] loaded & linked successfully")
    else()
-        message(FATAL_ERROR " > [build failure] OpenGL not found on this system")
+        message(FATAL_ERROR " >  [dependency : opengl] not found on this system")
     endif()
 endmacro()
 
 # =====================================================
 # glad
 
-# glad config settings
-set(GLAD_OUT_DIR        "${CMAKE_CURRENT_BINARY_DIR}" CACHE STRING "Output directory" FORCE)
-set(GLAD_PROFILE        "core" CACHE STRING "OpenGL profile" FORCE)
-set(GLAD_API            "gl=3.3" CACHE STRING "API type/version pairs, like \"gl=3.2,gles=\", no version means latest" FORCE)
-set(GLAD_GENERATOR      "c" CACHE STRING "Language to generate the binding for" FORCE)
-set(GLAD_EXTENSIONS     "" CACHE STRING "Path to extensions file or comma separated list of extensions, if missing all extensions are included" FORCE)
-set(GLAD_SPEC           "gl" CACHE STRING "Name of the spec" FORCE)
-set(GLAD_ALL_EXTENSIONS OFF CACHE BOOL "Include all extensions instead of those specified by GLAD_EXTENSIONS" FORCE)
-set(GLAD_NO_LOADER      OFF CACHE BOOL "No loader" FORCE)
-set(GLAD_REPRODUCIBLE   OFF CACHE BOOL "Reproducible build" FORCE)
-
 macro(link_glad TARGET ACCESS)
-    FetchContent_Declare(
-            glad
-            GIT_REPOSITORY https://github.com/Dav1dde/glad.git
-            SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/glad"
-            BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/external/glad"
-    )
+    set(glad_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/glad")
 
-    FetchContent_GetProperties(glad)
-    if (NOT glad_POPULATED)
-        FetchContent_Populate(glad)
-        add_subdirectory(${glad_SOURCE_DIR} ${glad_BINARY_DIR} EXCLUDE_FROM_ALL)
-    endif ()
+    if(EXISTS "${glad_SOURCE_DIR}/src/glad.c")
+        message(STATUS " > [dependency: glad] Using bundled GLAD library @ ${glad_SOURCE_DIR}")
 
-    target_include_directories(${TARGET} ${ACCESS} ${glad_SOURCE_DIR})
-    target_link_libraries(${TARGET} ${ACCESS} glad)
+        add_library(glad STATIC "${glad_SOURCE_DIR}/src/glad.c")
+        target_include_directories(glad PUBLIC "${glad_SOURCE_DIR}/include")
 
+        target_link_libraries(${TARGET} ${ACCESS} glad)
+        target_include_directories(${TARGET} ${ACCESS} "${glad_SOURCE_DIR}/include")
 
-    add_dependencies(${TARGET} glad)
-    message(STATUS " > [dependency] 'glad' loaded          : ${glad_SOURCE_DIR}")
+        add_dependencies(${TARGET} glad)
+    else()
+        message(FATAL_ERROR " > [dependency: glad] GLAD directory not found or incomplete in ${glad_SOURCE_DIR}")
+    endif()
 endmacro()
+
 
 # =====================================================
 #glm
 
 macro(link_glm TARGET ACCESS)
+    set(glm_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/glm")
+    set(glm_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/external/glm")
 
-    FetchContent_Declare(
-            glm
-            GIT_REPOSITORY https://github.com/g-truc/glm.git
-            GIT_TAG a2844eede81f92b7dfb327f831c0bc0dbb273078 # 1.0.2
-            SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/glm"
-            BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/external/glm"
-    )
-    FetchContent_GetProperties(glm)
+    check_directory("${glm_SOURCE_DIR}")
+    if (PREFER_BUNDLED_DEPENDENCIES AND EXISTS "${glm_SOURCE_DIR}")
+        message(STATUS " >  [dependency : glm] using bundled library @ ${glm_SOURCE_DIR}")
+    elseif (FETCH_EXTERNAL_DEPENDENCIES)
+        FetchContent_Declare(
+                glm
+                GIT_REPOSITORY https://github.com/g-truc/glm.git
+                GIT_TAG 1.0.1
+                SOURCE_DIR "${glm_SOURCE_DIR}"
+                BINARY_DIR "${glm_BINARY_DIR}"
+        )
+        FetchContent_GetProperties(glm)
 
-    if (NOT glm_POPULATED)
-        FetchContent_Populate(glm)
+        if (NOT glm_POPULATED)
+            FetchContent_Populate(glm)
+        endif()
+    else()
+        file(REMOVE_RECURSE "${glm_SOURCE_DIR}")
+        message(FATAL_ERROR "!> [dependency : glm] external fetching disabled, glm not found @ ${glm_SOURCE_DIR}")
     endif()
 
     target_include_directories(${TARGET} ${ACCESS} ${glm_SOURCE_DIR})
-    message(STATUS " > [dependency] 'glm' loaded           : ${glm_SOURCE_DIR}")
+    message(STATUS " >> [dependency : glm] loaded successfully")
 endmacro()
 
 # =====================================================
@@ -87,79 +94,112 @@ set(GLFW_BUILD_DOCS OFF CACHE BOOL "build docs" FORCE)
 set(GLFW_INSTALL OFF CACHE BOOL "configure an install" FORCE)
 
 macro (link_glfw TARGET ACCESS)
+    set(glfw_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/glfw")
+    set(glfw_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/external/glfw")
 
-    FetchContent_Declare(
-            glfw
-            GIT_REPOSITORY https://github.com/glfw/glfw.git
-            GIT_TAG b35641f4a3c62aa86a0b3c983d163bc0fe36026d # 04/12/24
-            SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/glfw"
-            BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/external/glfw"
-    )
-    FetchContent_GetProperties(glfw)
+    check_directory("${glfw_SOURCE_DIR}")
+    if (PREFER_BUNDLED_DEPENDENCIES AND EXISTS "${glfw_SOURCE_DIR}")
+        message(STATUS " >  [dependency : glfw] using bundled library @ ${glfw_SOURCE_DIR}")
+    elseif (FETCH_EXTERNAL_DEPENDENCIES)
+        FetchContent_Declare(
+                glfw
+                GIT_REPOSITORY https://github.com/glfw/glfw.git
+                GIT_TAG 3.4
+                SOURCE_DIR "${glfw_SOURCE_DIR}"
+                BINARY_DIR "${glfw_BINARY_DIR}"
+        )
+        FetchContent_GetProperties(glfw)
 
-    if (NOT glfw_POPULATED)
-        FetchContent_Populate(glfw)
-        add_subdirectory(${glfw_SOURCE_DIR} ${glfw_BINARY_DIR} EXCLUDE_FROM_ALL)
+        if (NOT glfw_POPULATED)
+            FetchContent_Populate(glfw)
+        endif()
+    else()
+        file(REMOVE_RECURSE "${glfw_SOURCE_DIR}")
+        message(FATAL_ERROR "!> [dependency : glfw] external fetching disabled, glfw not found @ ${glfw_SOURCE_DIR}")
     endif()
 
+    add_subdirectory(${glfw_SOURCE_DIR} ${glfw_BINARY_DIR} EXCLUDE_FROM_ALL)
     target_include_directories(${TARGET} ${ACCESS} ${glfw_SOURCE_DIR}/include)
     target_link_libraries(${TARGET} ${ACCESS} glfw)
 
     add_dependencies(${TARGET} glfw)
-    message(STATUS " > [dependency] 'glfw' loaded          : ${glfw_SOURCE_DIR}")
+    message(STATUS " >> [dependency : glfw] loaded successfully")
 endmacro()
 
 # =====================================================
 # spdlog
 
+
 macro(link_spdlog TARGET ACCESS)
+    set(spdlog_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/spdlog")
+    set(spdlog_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/external/spdlog")
 
-    FetchContent_Declare(
-            spdlog
-            GIT_REPOSITORY https://github.com/gabime/spdlog.git
-            GIT_TAG a2b4262090fd3f005c2315dcb5be2f0f1774a005
-            SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/spdlog"
-            BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/external/spdlog"
-    )
+    check_directory("${spdlog_SOURCE_DIR}")
+    if (PREFER_BUNDLED_DEPENDENCIES AND EXISTS "${spdlog_SOURCE_DIR}")
+        message(STATUS " >  [dependency : spdlog] using bundled library @ ${spdlog_SOURCE_DIR}")
+    elseif (FETCH_EXTERNAL_DEPENDENCIES)
+        FetchContent_Declare(
+                spdlog
+                GIT_REPOSITORY https://github.com/gabime/spdlog.git
+                GIT_TAG v1.13.0
+                SOURCE_DIR "${spdlog_SOURCE_DIR}"
+                BINARY_DIR "${spdlog_BINARY_DIR}"
+        )
 
-    FetchContent_GetProperties(spdlog)
-    if (NOT spdlog_POPULATED)
-        FetchContent_Populate(spdlog)
-        add_subdirectory(${spdlog_SOURCE_DIR} ${spdlog_BINARY_DIR} EXCLUDE_FROM_ALL)
+        FetchContent_GetProperties(spdlog)
+        if (NOT spdlog_POPULATED)
+            FetchContent_Populate(spdlog)
+        endif()
+    else()
+        file(REMOVE_RECURSE "${spdlog_SOURCE_DIR}")
+        message(FATAL_ERROR "!> [dependency : spdlog] external fetching disabled, spdlog not found @ ${spdlog_SOURCE_DIR}")
     endif()
 
+    add_subdirectory(${spdlog_SOURCE_DIR} ${spdlog_BINARY_DIR} EXCLUDE_FROM_ALL)
     target_include_directories(${TARGET} ${ACCESS} ${spdlog_SOURCE_DIR}/include)
     target_link_libraries(${TARGET} ${ACCESS} spdlog::spdlog_header_only)
 
     add_dependencies(${TARGET} spdlog)
-    message(STATUS " > [dependency] 'spdlog' loaded : ${spdlog_SOURCE_DIR}")
+    message(STATUS " >> [dependency: spdlog] loaded successfully")
 endmacro()
 
 # =====================================================
 # imgui
 
 macro(link_imgui TARGET ACCESS)
-    FetchContent_Declare(
-            imgui
-            GIT_REPOSITORY https://github.com/ocornut/imgui.git
-            GIT_TAG docking
-            SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/imgui"
-            BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/external/imgui"
-    )
-    FetchContent_GetProperties(imgui)
-    if (NOT imgui_POPULATED)
-        FetchContent_Populate(imgui)
-        set(IMGUI_SOURCES
-                ${imgui_SOURCE_DIR}/imgui.cpp
-                ${imgui_SOURCE_DIR}/imgui_demo.cpp
-                ${imgui_SOURCE_DIR}/imgui_draw.cpp
-                ${imgui_SOURCE_DIR}/imgui_widgets.cpp
-                ${imgui_SOURCE_DIR}/imgui_tables.cpp
-                ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
-                ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+    set(imgui_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/imgui")
+    set(imgui_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/external/imgui")
+
+    check_directory("${imgui_SOURCE_DIR}")
+    if (PREFER_BUNDLED_DEPENDENCIES AND EXISTS "${imgui_SOURCE_DIR}")
+        message(STATUS " >  [dependency : imgui] using bundled library @ ${imgui_SOURCE_DIR}")
+    elseif (FETCH_EXTERNAL_DEPENDENCIES)
+        FetchContent_Declare(
+                imgui
+                GIT_REPOSITORY https://github.com/ocornut/imgui.git
+                GIT_TAG v1.90.5-docking
+                SOURCE_DIR "${imgui_SOURCE_DIR}"
+                BINARY_DIR "${imgui_BINARY_DIR}"
         )
-        add_library(imgui STATIC ${IMGUI_SOURCES})
+        FetchContent_GetProperties(imgui)
+        if (NOT imgui_POPULATED)
+            FetchContent_Populate(imgui)
+        endif()
+    else()
+        file(REMOVE_RECURSE "${imgui_SOURCE_DIR}")
+        message(FATAL_ERROR "!> [dependency : imgui] external fetching disabled, imgui not found @ ${imgui_SOURCE_PATH}")
     endif()
+
+    set(IMGUI_SOURCES
+            ${imgui_SOURCE_DIR}/imgui.cpp
+            ${imgui_SOURCE_DIR}/imgui_demo.cpp
+            ${imgui_SOURCE_DIR}/imgui_draw.cpp
+            ${imgui_SOURCE_DIR}/imgui_widgets.cpp
+            ${imgui_SOURCE_DIR}/imgui_tables.cpp
+            ${imgui_SOURCE_DIR}/backends/imgui_impl_glfw.cpp
+            ${imgui_SOURCE_DIR}/backends/imgui_impl_opengl3.cpp
+    )
+    add_library(imgui STATIC ${IMGUI_SOURCES})
 
     target_include_directories(imgui PUBLIC ${imgui_SOURCE_DIR} ${imgui_SOURCE_DIR}/backends)
     target_link_libraries(imgui PRIVATE glfw)
@@ -168,47 +208,102 @@ macro(link_imgui TARGET ACCESS)
     target_link_libraries(${TARGET} ${ACCESS} imgui)
 
     add_dependencies(${TARGET} imgui)
-    message(STATUS " > [dependency] 'imgui' loaded         : ${imgui_SOURCE_DIR}")
+    message(STATUS " >> [dependency : imgui] loaded successfully")
 endmacro()
 
 # =====================================================
 # stb (image)
 
 macro(link_stb TARGET ACCESS)
-    FetchContent_Declare(
-            stb
-            GIT_REPOSITORY https://github.com/nothings/stb.git
-            GIT_TAG ae721c50eaf761660b4f90cc590453cdb0c2acd0
-            SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/stb"
-            BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/external/stb"
-    )
-    FetchContent_GetProperties(stb)
+    set(stb_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/stb")
+    set(stb_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/external/stb")
 
-    if (NOT stb_POPULATED)
-        FetchContent_Populate(stb)
+    check_directory("${stb_SOURCE_DIR}")
+    if (PREFER_BUNDLED_DEPENDENCIES AND EXISTS "${stb_SOURCE_DIR}")
+        message(STATUS " >  [dependency : stb] using bundled library @ ${stb_SOURCE_DIR}")
+    elseif (FETCH_EXTERNAL_DEPENDENCIES)
+        FetchContent_Declare(
+                stb
+                GIT_REPOSITORY https://github.com/nothings/stb.git
+                GIT_TAG ae721c50eaf761660b4f90cc590453cdb0c2acd0
+                SOURCE_DIR "${stb_SOURCE_DIR}"
+                BINARY_DIR "${stb_BINARY_DIR}"
+        )
+        FetchContent_GetProperties(stb)
+
+        if (NOT stb_POPULATED)
+            FetchContent_Populate(stb)
+        endif()
+    else()
+        file(REMOVE_RECURSE "${stb_SOURCE_DIR}")
+        message(FATAL_ERROR "!> [dependency : stb]          external fetching disabled, stb not found @ ${stb_SOURCE_DIR}")
     endif()
 
     target_include_directories(${TARGET} ${ACCESS} ${stb_SOURCE_DIR})
-    message(STATUS " > [dependency] 'stb' loaded           : ${stb_SOURCE_DIR}")
+    message(STATUS " >> [dependency : stb] loaded successfully")
 
 endmacro()
+
 # =====================================================
 # tinyobjloader
 
 macro(link_tinyobjloader TARGET ACCESS)
-    FetchContent_Declare(
-            tinyobjloader
-            GIT_REPOSITORY https://github.com/tinyobjloader/tinyobjloader.git
-            GIT_TAG cab4ad7254cbf7eaaafdb73d272f99e92f166df8
-            SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/tinyobjloader"
-            BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/external/tinyobjloader"
-    )
-    FetchContent_GetProperties(tinyobjloader)
+    set(tinyobjloader_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/tinyobjloader")
+    set(tinyobjloader_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/external/tinyobjloader")
 
-    if (NOT tinyobjloader_POPULATED)
-        FetchContent_Populate(tinyobjloader)
+    check_directory("${tinyobjloader_SOURCE_DIR}")
+    if (PREFER_BUNDLED_DEPENDENCIES AND EXISTS "${tinyobjloader_SOURCE_DIR}")
+        message(STATUS " >  [dependency : tinyobjloader] using bundled library @ ${tinyobjloader_SOURCE_DIR}")
+    elseif (FETCH_EXTERNAL_DEPENDENCIES)
+        FetchContent_Declare(
+                tinyobjloader
+                GIT_REPOSITORY https://github.com/tinyobjloader/tinyobjloader.git
+                GIT_TAG cab4ad7254cbf7eaaafdb73d272f99e92f166df8
+                SOURCE_DIR "${tinyobjloader_SOURCE_DIR}"
+                BINARY_DIR "${tinyobjloader_BINARY_DIR}"
+        )
+        FetchContent_GetProperties(tinyobjloader)
+
+        if (NOT tinyobjloader_POPULATED)
+            FetchContent_Populate(tinyobjloader)
+        endif()
+    else()
+        file(REMOVE_RECURSE "${tinyobjloader_SOURCE_DIR}")
+        message(FATAL_ERROR "!> [dependency : tinyobjloader] external fetching disabled, tinyobjloader not found @ ${tinyobjloader_SOURCE_DIR}")
     endif()
 
     target_include_directories(${TARGET} ${ACCESS} ${tinyobjloader_SOURCE_DIR})
-    message(STATUS " > [dependency] 'tinyobjloader' loaded : ${tinyobjloader_SOURCE_DIR}")
+    message(STATUS " >> [dependency : tinyobjloader] loaded successfully")
+endmacro()
+
+# =====================================================
+# tinygltfloader
+
+macro(link_tinygltfloader TARGET ACCESS)
+    set(tinygltfloader_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/tinygltfloader")
+    set(tinygltfloader_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/external/tinygltfloader")
+
+    check_directory("${tinygltfloader_SOURCE_DIR}")
+    if (PREFER_BUNDLED_DEPENDENCIES AND EXISTS "${tinygltfloader_SOURCE_DIR}")
+        message(STATUS " >  [dependency : tinygltfloader] using bundled library @ ${tinygltfloader_SOURCE_DIR}")
+    elseif (FETCH_EXTERNAL_DEPENDENCIES)
+        FetchContent_Declare(
+                tinygltfloader
+                GIT_REPOSITORY https://github.com/syoyo/tinygltf.git
+                GIT_TAG v2.8.21
+                SOURCE_DIR "${tinygltfloader_SOURCE_DIR}"
+                BINARY_DIR "${tinygltfloader_BINARY_DIR}"
+        )
+        FetchContent_GetProperties(tinygltfloader)
+
+        if (NOT tinygltfloader_POPULATED)
+            FetchContent_Populate(tinygltfloader)
+        endif()
+    else()
+        file(REMOVE_RECURSE "${tinygltfloader_SOURCE_DIR}")
+        message(FATAL_ERROR "!> [dependency : tinygltfloader] external fetching disabled, tinygltfloader not found @ ${tinygltfloader_SOURCE_DIR}")
+    endif()
+
+    target_include_directories(${TARGET} ${ACCESS} ${tinygltfloader_SOURCE_DIR})
+    message(STATUS " >> [dependency : tinygltfloader] loaded successfully")
 endmacro()

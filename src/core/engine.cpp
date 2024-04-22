@@ -67,8 +67,7 @@ void Engine::initialize()
     m_ecs_manager->register_component<component::Render>();
     m_ecs_manager->register_component<component::PointLight>();
 
-    auto m_hierarchy_system = m_ecs_manager->register_system<HierarchySystem>();
-    {
+    auto m_hierarchy_system = m_ecs_manager->register_system<HierarchySystem>(); {
         ecs::Signature signature;
         signature.set(m_ecs_manager->get_component_type<component::Hierarchy>());
         m_ecs_manager->set_system_signature<HierarchySystem>(signature);
@@ -131,7 +130,7 @@ void Engine::setup_engine_events()
 
     // 'esc' : quit engine & close window
     const ecs::Event quit_event(events::engine::QUIT);
-    input_manager.bind_key_input_event(core::Key::key_escape, core::KeyAction::press, quit_event);
+    input_manager.bind_key_input_event(Key::key_escape, KeyAction::press, quit_event);
     event_handler.add_listener(
         events::engine::QUIT,
         [this](ecs::Event& event) {
@@ -140,7 +139,7 @@ void Engine::setup_engine_events()
 
     // 'm' : activate manual camera control (look/move around)
     const ecs::Event enable_camera_control_event(events::engine::ENABLE_CAMERA_CONTROL);
-    input_manager.bind_key_input_event(core::Key::key_m, core::KeyAction::press, enable_camera_control_event);
+    input_manager.bind_key_input_event(Key::key_m, KeyAction::press, enable_camera_control_event);
     event_handler.add_listener(
         events::engine::ENABLE_CAMERA_CONTROL,
         [this](ecs::Event& event) {
@@ -150,7 +149,7 @@ void Engine::setup_engine_events()
 
     // 'g' : activate GUI control (normal cursor operation, fixed camera)
     const ecs::Event disable_camera_control_event(events::engine::DISABLE_CAMERA_CONTROL);
-    input_manager.bind_key_input_event(core::Key::key_g, core::KeyAction::press, disable_camera_control_event);
+    input_manager.bind_key_input_event(Key::key_g, KeyAction::press, disable_camera_control_event);
     event_handler.add_listener(
         events::engine::DISABLE_CAMERA_CONTROL,
         [this](ecs::Event& event) {
