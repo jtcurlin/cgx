@@ -7,6 +7,7 @@
 #include "imgui.h"
 
 #include <vector>
+#include <memory>
 
 namespace cgx::gui
 {

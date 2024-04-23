@@ -24,7 +24,7 @@ std::vector<Node*> Scene::get_roots() const
 
 Node* Scene::add_node(const ecs::Entity entity, const std::string& tag, Node* parent)
 {
-    CGX_INFO("Adding node { entity={} ; tag={} }", entity, tag);
+    CGX_INFO("Adding node  entity={} ; tag={}", entity, tag);
     auto node = std::make_shared<Node>(entity, tag);
     if (parent) {
         CGX_INFO(" >> parent specified - setting parent to {}", parent->get_id());

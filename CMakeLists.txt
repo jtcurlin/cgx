@@ -52,3 +52,5 @@ add_custom_command(
         ${CMAKE_SOURCE_DIR}/data
         ${DATA_DIRECTORY}
 )
+
+set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT sandbox)
