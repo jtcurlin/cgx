@@ -1,14 +1,17 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "scene/scene_manager.h"
-#include "core/components/hierarchy.h"
+#include "scene/scene_importer.h"
 
+#include "asset/asset_manager.h"
+#include "core/components/hierarchy.h"
 #include "ecs/ecs_manager.h"
 
 namespace cgx::scene
 {
-SceneManager::SceneManager(ecs::ECSManager* ecs_manager)
+SceneManager::SceneManager(ecs::ECSManager* ecs_manager, asset::AssetManager* asset_manager)
     : m_ecs_manager(ecs_manager)
+    , m_asset_manager(asset_manager)
 {
     CGX_INFO("scene manager : initialized");
 }
@@ -76,5 +79,11 @@ void SceneManager::set_active_scene(const std::string& label)
     CGX_ASSERT(scene_it != m_scenes.end() && scene_it->second, "attempt to retreive non-existent scene");
 
     m_active_scene = scene_it->second.get();
+}
+
+void SceneManager::import_scene(const std::string& path) const
+{
+    auto importer = SceneImporter(m_ecs_manager, m_asset_manager);
+    importer.import(path, m_active_scene);
 }
 }

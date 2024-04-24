@@ -1,36 +1,38 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "asset/asset.h"
+#include <unordered_map>
 
 namespace cgx::asset
 {
-Asset::Asset(const std::string& source_path, const std::string& tag, const AssetType asset_type)
-    : Item(core::ItemType::Asset, tag)
-    , m_asset_type(asset_type)
-    , m_asset_typename(translate_asset_typename(asset_type))
-    , m_source_path(source_path)
+
+std::string AssetType::get_typename(const Type type)
 {
-    set_internal_path(get_path_prefix() + tag);
+    static const std::unordered_map<Type, std::string> typeNames = {
+        {Mesh, "Mesh"}, {Model, "Model"}, {Material, "Material"}, {Texture, "Texture"}, {Shader, "Shader"},
+        {Cubemap, "Cubemap"},
+    };
+    const auto it = typeNames.find(type);
+    return it != typeNames.end() ? it->second : "Unknown";
 }
 
-const std::string& Asset::get_source_path() const
+std::string AssetType::get_lower_typename(const Type type)
 {
-    return m_source_path;
+    static const std::unordered_map<Type, std::string> typeNames = {
+        {Mesh, "mesh"}, {Model, "model"}, {Material, "material"}, {Texture, "texture"}, {Shader, "shader"},
+        {Cubemap, "cubemap"},
+    };
+    const auto it = typeNames.find(type);
+    return it != typeNames.end() ? it->second : "unknown";
+
 }
 
-const AssetType& Asset::get_asset_type() const
-{
-    return m_asset_type;
-}
-
-std::string Asset::get_asset_typename() const
-{
-    return m_asset_typename;
-}
+Asset::Asset(std::string tag, std::string internal_path, std::string external_path)
+    : Item(std::move(tag), std::move(internal_path), std::move(external_path)) {}
 
 std::string Asset::get_path_prefix() const
 {
-    return Item::get_path_prefix() + get_asset_typename() + "/";
+    return Item::get_path_prefix() + "/" + core::ItemType::get_lower_typename(core::ItemType::Asset);
 }
 
 std::size_t Asset::generate_id(const std::string& path)
@@ -38,16 +40,13 @@ std::size_t Asset::generate_id(const std::string& path)
     return std::hash<std::string>()(path);
 }
 
-std::string translate_asset_typename(const AssetType type)
+std::string Asset::get_asset_typename() const
 {
-    switch (type) {
-        case AssetType::Model: return "model";
-        case AssetType::Mesh: return "mesh";
-        case AssetType::Material: return "material";
-        case AssetType::Texture: return "texture";
-        case AssetType::Shader: return "shader";
-        default:
-            return "unknown_asset_type";
-    }
+    return AssetType::get_typename(get_asset_type());
+}
+
+core::ItemType::Type Asset::get_item_type() const
+{
+    return core::ItemType::Asset;
 }
 }

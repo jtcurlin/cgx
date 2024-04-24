@@ -20,11 +20,11 @@ void PhysicsSystem::update(const float dt)
         auto& rigid_body = get_component<component::RigidBody>(entity);
         auto& transform  = get_component<component::Transform>(entity);
 
-        transform.local_position += rigid_body.velocity * dt;
+        transform.translate += rigid_body.velocity * dt;
         rigid_body.velocity += rigid_body.acceleration * dt;
 
-        transform.local_rotation += rigid_body.angular_velocity * dt;
-        transform.local_scale += rigid_body.scale_rate * dt;
+        transform.rotate += rigid_body.angular_velocity * dt;
+        transform.scale += rigid_body.scale_rate * dt;
 
         transform.dirty = true;
     }

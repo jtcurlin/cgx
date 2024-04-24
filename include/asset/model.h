@@ -10,15 +10,19 @@ namespace cgx::asset
 class Mesh;
 class Shader;
 
-class Model : public Asset
+class Model final : public Asset
 {
+    friend class gui::PropertiesPanel;
+
 public:
-    Model(const std::string &source_path, const std::string &tag, const std::vector<std::shared_ptr<Mesh>> &meshes);
-    Model(const std::string &source_path, const std::string &tag, const std::shared_ptr<Mesh>& mesh);
+    Model(std::string tag, std::string source_path, const std::vector<std::shared_ptr<Mesh>>& meshes);
+    Model(std::string tag, std::string source_path, const std::shared_ptr<Mesh>& mesh);
     ~Model() override;
 
-    void draw(const Shader &shader) const;
-    void log() const;
+    void draw(Shader* shader) const;
+
+    std::string get_path_prefix() const override;
+    AssetType::Type get_asset_type() const override;
 
 private:
     std::vector<std::shared_ptr<Mesh>> m_meshes;

@@ -43,8 +43,10 @@ namespace cgx::asset
 {
 class Cubemap final : public Asset
 {
+    friend class gui::PropertiesPanel;
+
 public:
-    Cubemap(const std::string& path, const std::string&, const std::vector<std::string>& face_texture_paths);
+    Cubemap(std::string tag, std::string path, const std::vector<std::string>& face_texture_paths);
     ~Cubemap() override;
 
     void draw() const;
@@ -53,11 +55,14 @@ public:
     [[nodiscard]] uint32_t get_height() const;
     [[nodiscard]] GLenum   get_format() const;
 
-    const std::shared_ptr<Mesh>& get_mesh() const;
+    const std::shared_ptr<Mesh>&   get_mesh() const;
     const std::shared_ptr<Shader>& get_shader() const;
 
     void set_mesh(const std::shared_ptr<Mesh>& mesh);
     void set_shader(const std::shared_ptr<Shader>& shader);
+
+    std::string get_path_prefix() const override;
+    AssetType::Type get_asset_type() const override;
 
 private:
     uint32_t m_texture_id{0};
@@ -68,6 +73,4 @@ private:
     std::shared_ptr<Mesh>   m_mesh;
     std::shared_ptr<Shader> m_shader;
 };
-
-
 }

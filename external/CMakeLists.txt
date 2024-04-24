@@ -307,3 +307,83 @@ macro(link_tinygltfloader TARGET ACCESS)
     target_include_directories(${TARGET} ${ACCESS} ${tinygltfloader_SOURCE_DIR})
     message(STATUS " >> [dependency : tinygltfloader] loaded successfully")
 endmacro()
+
+# =====================================================
+# openAL
+
+set(ALSOFT_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(ALSOFT_TESTS OFF CACHE BOOL "" FORCE)
+set(ALSOFT_UTILS OFF CACHE BOOL "" FORCE)
+
+macro(link_openal TARGET ACCESS)
+    set(openal-soft_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/openal-soft")
+    set(openal-soft_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/external/openal-soft")
+
+    check_directory("${openal-soft_SOURCE_DIR}")
+    if (PREFER_BUNDLED_DEPENDENCIES AND EXISTS "${openal-soft_SOURCE_DIR}")
+        message(STATUS " >  [dependency : openal-soft] using bundled library @ ${openal-soft_SOURCE_DIR}")
+    elseif (FETCH_EXTERNAL_DEPENDENCIES)
+        FetchContent_Declare(
+                openal
+                GIT_REPOSITORY https://github.com/kcat/openal-soft.git
+                GIT_TAG 1.23.1
+                SOURCE_DIR "${openal-soft_SOURCE_DIR}"
+                BINARY_DIR "${openal-soft_BINARY_DIR}"
+        )
+        FetchContent_GetProperties(openal-soft)
+        if (NOT openal-soft_POPULATED)
+            FetchContent_Populate(openal)
+        endif()
+    else()
+        file(REMOVE_RECURSE "${openal-soft_SOURCE_DIR}")
+        message(FATAL_ERROR "!> [dependency : openal-soft] external fetching disabled, openal-soft not found @ ${openal-soft_SOURCE_DIR}")
+    endif()
+
+    add_subdirectory(${openal-soft_SOURCE_DIR} ${openal-soft_BINARY_DIR})
+    target_link_libraries(${TARGET} ${ACCESS} OpenAL)
+
+    add_dependencies(${TARGET} OpenAL)
+    message(STATUS " >> [dependency : openal-soft] loaded successfully")
+endmacro()
+
+# =====================================================
+# libsndfile
+
+set(LIBSNDFILE_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(LIBSNDFILE_TESTS OFF CACHE BOOL "" FORCE)
+set(LIBSNDFILE_UTILS OFF CACHE BOOL "" FORCE)
+
+macro(link_libsndfile TARGET ACCESS)
+    set(libsndfile_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/libsndfile")
+    set(libsndfile_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/external/libsndfile")
+
+    check_directory("${libsndfile_SOURCE_DIR}")
+    if (PREFER_BUNDLED_DEPENDENCIES AND EXISTS "${libsndfile_SOURCE_DIR}")
+        message(STATUS " >  [dependency : libsndfile] using bundled library @ ${libsndfile_SOURCE_DIR}")
+    elseif (FETCH_EXTERNAL_DEPENDENCIES)
+        FetchContent_Declare(
+                libsndfile
+                GIT_REPOSITORY https://github.com/libsndfile/libsndfile.git
+                GIT_TAG 1.2.2
+                SOURCE_DIR "${libsndfile_SOURCE_DIR}"
+                BINARY_DIR "${libsndfile_BINARY_DIR}"
+        )
+        FetchContent_GetProperties(libsndfile)
+        if (NOT libsndfile_POPULATED)
+            FetchContent_Populate(libsndfile)
+        endif()
+    else()
+        file(REMOVE_RECURSE "${libsndfile_SOURCE_DIR}")
+        message(FATAL_ERROR "!> [dependency : libsndfile] external fetching disabled, libsndfile not found @ ${libsndfile_SOURCE_DIR}")
+    endif()
+
+    add_subdirectory(${libsndfile_SOURCE_DIR} ${libsndfile_BINARY_DIR})
+    target_link_libraries(${TARGET} ${ACCESS} sndfile)
+
+    add_dependencies(${TARGET} sndfile)
+    message(STATUS " >> [dependency : libsndfile] loaded successfully")
+endmacro()
+
+
+
+

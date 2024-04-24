@@ -13,7 +13,7 @@ namespace cgx::core
 class Hierarchy : public Item
 {
 public:
-    explicit Hierarchy(ItemType item_type, const std::string& tag);
+    explicit Hierarchy(std::string tag, std::string path = "");
     ~Hierarchy() override;
 
     /*
@@ -68,10 +68,11 @@ public:
         }
     }
 
+    ItemType::Type get_item_type() const override;
+
 protected:
     std::weak_ptr<Hierarchy>                m_parent;
     std::vector<std::shared_ptr<Hierarchy>> m_children;
     std::size_t                             m_depth{0};
-
 };
 }

@@ -9,31 +9,32 @@
 
 namespace cgx::asset
 {
-Model::Model (const std::string& source_path, const std::string& tag, const std::vector<std::shared_ptr<Mesh>>& meshes)
-    : Asset(source_path, tag, AssetType::Model)
+Model::Model(std::string tag, std::string source_path, const std::vector<std::shared_ptr<Mesh>>& meshes)
+    : Asset(tag, get_path_prefix() + tag, std::move(source_path))
     , m_meshes(meshes) {}
 
-Model::Model(const std::string &source_path, const std::string &tag, const std::shared_ptr<Mesh>& mesh)
-    : Asset(source_path, tag, AssetType::Model)
+Model::Model(std::string tag, std::string source_path, const std::shared_ptr<Mesh>& mesh)
+    : Asset(tag, get_path_prefix() + tag, std::move(source_path))
 {
     m_meshes.push_back(mesh);
 }
 
-Model::~Model () = default;
+Model::~Model() = default;
 
-void Model::draw (const Shader& shader) const
+void Model::draw(Shader* shader) const
 {
     for (auto& mesh : m_meshes) {
         mesh->draw(shader);
     }
 }
 
-void Model::log () const
+std::string Model::get_path_prefix() const
 {
-    for (size_t i = 0 ; i < m_meshes.size() ; ++i) {
-        CGX_DEBUG("[Model {}] : [Mesh {}]", get_tag(), i);
-        auto& mesh = m_meshes[i];
-    }
+    return Asset::get_path_prefix() + "/" + AssetType::get_lower_typename(AssetType::Model) + "/";
 }
 
+AssetType::Type Model::get_asset_type() const
+{
+    return AssetType::Model;
+}
 }

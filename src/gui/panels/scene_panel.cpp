@@ -6,6 +6,8 @@
 #include "scene/node.h"
 #include "scene/scene_manager.h"
 
+#include "iomanip"
+
 namespace cgx::gui
 {
 ScenePanel::ScenePanel(GUIContext* context, ImGuiManager* manager)
@@ -16,6 +18,9 @@ ScenePanel::~ScenePanel() = default;
 void ScenePanel::render()
 {
     ImGui::SetWindowFontScale(1.0f);
+    if (ImGui::Button("Import GLTF Scene")) {
+        m_importing_scene = true;
+    }
     if (ImGui::Button("\uf0fe  Add Root Node")) {
         m_adding_node = true;
     }
@@ -27,6 +32,7 @@ void ScenePanel::render()
     }
 
     draw_new_node_menu();
+    draw_scene_import_popup();
 }
 
 void ScenePanel::draw_node(scene::Node* node)
@@ -39,18 +45,6 @@ void ScenePanel::draw_node(scene::Node* node)
     node_flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
     node_flags |= node_state.is_expanded ? ImGuiTreeNodeFlags_DefaultOpen : 0;
 
-    /*
-    const char* icon;
-    switch (node->get_node_type()) {
-        case scene::NodeType::Camera: icon = "\uf03d  Camera Node";
-            break;
-        case scene::NodeType::Entity: icon = "\uf6cf  Entity Node";
-            break;
-        case scene::NodeType::Light: icon = "\uf4a1  Light Node";
-            break;
-        default: icon = "\ue47b Unknown Node Type";
-    }
-    */
     const std::string icon = "\uf6cf " + node->get_tag();
 
     const bool node_opened = ImGui::TreeNodeEx(icon.c_str(), node_flags);
@@ -143,10 +137,35 @@ void ScenePanel::draw_new_node_menu()
             ImGui::CloseCurrentPopup();
         }
         ImGui::PopFont();
-
         ImGui::EndPopup();
     }
 
+    ImGui::PopFont();
+}
+
+void ScenePanel::draw_scene_import_popup()
+{
+    if (m_importing_scene) {
+        ImGui::OpenPopup("Add Scene ##ImportSceneMenu");
+    }
+    const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+    // Open a modal popup to block interactions with other UI elements
+    ImGui::PushFont(m_manager->m_title_font);
+    if (ImGui::BeginPopupModal("Add Scene ##ImportSceneMenu", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::PushFont(m_manager->m_header_font);
+        ImGui::InputText("Enter GLTF/GLB Path (relative to data directory)", m_import_path_buffer, 256);
+        if (ImGui::Button("Ok ##ImportSceneMenu")) {
+            auto* scene_manager = m_context->get_scene_manager();
+            std::string path = std::string(DATA_DIRECTORY) + "/" + m_import_path_buffer;
+            scene_manager->import_scene(path);
+            m_importing_scene = false;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::PopFont();
+        ImGui::EndPopup();
+    }
     ImGui::PopFont();
 }
 

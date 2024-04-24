@@ -56,7 +56,7 @@ public:
 
 
     template<typename AssetType>
-    void draw_asset_selector(asset::AssetType asset_type, std::shared_ptr<AssetType>& current_asset, const std::string& label) const
+    void draw_asset_selector(asset::AssetType::Type asset_type, std::shared_ptr<AssetType>& current_asset, const std::string& label) const
     {
         if (ImGui::BeginCombo(label.c_str(), current_asset ? current_asset->get_tag().c_str() : "[None]")) {
             const auto asset_manager = m_context->get_asset_manager();

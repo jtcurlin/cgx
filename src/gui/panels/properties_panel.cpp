@@ -5,7 +5,8 @@
 
 #include "asset/model.h"
 #include "asset/mesh.h"
-#include "asset/material.h"
+#include "asset/pbr_material.h"
+#include "asset/phong_material.h"
 #include "asset/texture.h"
 #include "asset/shader.h"
 
@@ -193,8 +194,8 @@ void PropertiesPanel::draw_node_properties(const scene::Node* node)
 
     ImGui::TreeNodeEx(
         entity_id_text.c_str(),
-        ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Framed |
-        ImGuiTreeNodeFlags_NoTreePushOnOpen | ImGuiTreeNodeFlags_NoAutoOpenOnLog);
+        ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_NoTreePushOnOpen |
+        ImGuiTreeNodeFlags_NoAutoOpenOnLog);
 
     if (ImGui::CollapsingHeader("Components", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::PopFont();
@@ -283,10 +284,10 @@ void PropertiesPanel::draw_transform_component_editor(const scene::Node* node)
         if (ImGui::MenuItem("Reset ##TransformComponent")) {
             auto& component = m_context->get_ecs_manager()->get_component<component::Transform>(node->get_entity());
 
-            component.local_position = glm::vec3(0.0f);
-            component.local_rotation = glm::vec3(0.0f);
-            component.local_scale    = glm::vec3(1.0f);
-            updated                  = true;
+            component.translate = glm::vec3(0.0f);
+            component.rotate    = glm::vec3(0.0f);
+            component.scale     = glm::vec3(1.0f);
+            updated             = true;
         }
         ImGui::EndPopup();
     }
@@ -295,9 +296,9 @@ void PropertiesPanel::draw_transform_component_editor(const scene::Node* node)
     if (editor_opened) {
         auto& component = m_context->get_ecs_manager()->get_component<component::Transform>(node->get_entity());
 
-        updated |= ImGui::InputFloat3("Position##TransformComponent", &component.local_position[0]);
-        updated |= ImGui::InputFloat3("Rotation##TransformComponent", &component.local_rotation[0]);
-        updated |= ImGui::InputFloat3("Scale##TransformComponent", &component.local_scale[0]);
+        updated |= ImGui::InputFloat3("Position##TransformComponent", &component.translate[0]);
+        updated |= ImGui::InputFloat3("Rotation##TransformComponent", &component.rotate[0]);
+        updated |= ImGui::InputFloat3("Scale##TransformComponent", &component.scale[0]);
 
         if (updated) {
             component.dirty = true;
@@ -409,24 +410,48 @@ void PropertiesPanel::draw_mesh_asset_editor(asset::Mesh* mesh)
 void PropertiesPanel::draw_material_asset_editor(asset::Material* material)
 {
     ImGui::PushFont(m_manager->m_header_font);
+    auto material_type = material->get_material_type();
+
+
     if (ImGui::CollapsingHeader("Material Details", ImGuiTreeNodeFlags_DefaultOpen)) {
         ImGui::PushFont(m_manager->m_body_font);
-        ImGui::Text("Base Colors");
-        ImGui::ColorEdit3("Ambient Color", &material->m_ambient_color[0]);
-        ImGui::ColorEdit3("Diffuse Color", &material->m_diffuse_color[0]);
-        ImGui::ColorEdit3("Specular Color", &material->m_specular_color[0]);
-        ImGui::SliderFloat("Shininess", &material->m_shininess, 0.0f, 128.0f);
-        ImGui::Separator();
+        if (material_type == asset::MaterialType::Phong) {
+            auto* phong_material = dynamic_cast<asset::PhongMaterial*>(material);
+            CGX_ASSERT(phong_material, "invalid phong material ptr");
+            ImGui::Text("Material Type: Phong");
+            ImGui::Text("Base Colors");
+            ImGui::ColorEdit3("Ambient Color", &phong_material->m_ambient_color[0]);
+            ImGui::ColorEdit3("Diffuse Color", &phong_material->m_diffuse_color[0]);
+            ImGui::ColorEdit3("Specular Color", &phong_material->m_specular_color[0]);
+            ImGui::SliderFloat("Shininess", &phong_material->m_shininess, 0.0f, 128.0f);
+            ImGui::Separator();
 
-        ImGui::Text("Texture Maps");
-        draw_asset_selector<asset::Texture>(asset::AssetType::Texture, material->m_ambient_map, "Ambient Map");
-        draw_asset_selector<asset::Texture>(asset::AssetType::Texture, material->m_diffuse_map, "Diffuse Map");
-        draw_asset_selector<asset::Texture>(asset::AssetType::Texture, material->m_specular_map, "Specular Map");
-        draw_asset_selector<asset::Texture>(asset::AssetType::Texture, material->m_normal_map, "Normal Map");
+            ImGui::Text("Texture Maps");
+            draw_asset_selector<asset::Texture>(
+                asset::AssetType::Texture,
+                phong_material->m_ambient_map,
+                "Ambient Map");
+            draw_asset_selector<asset::Texture>(
+                asset::AssetType::Texture,
+                phong_material->m_diffuse_map,
+                "Diffuse Map");
+            draw_asset_selector<asset::Texture>(
+                asset::AssetType::Texture,
+                phong_material->m_specular_map,
+                "Specular Map");
+            draw_asset_selector<asset::Texture>(asset::AssetType::Texture, phong_material->m_normal_map, "Normal Map");
+        }
+        if (material_type == asset::MaterialType::PBR) {
+            auto* phong_material = dynamic_cast<asset::PBRMaterial*>(material);
+            CGX_ASSERT(phong_material, "invalid pbr material ptr");
+            ImGui::Text("Material Type: PBR");
+            ImGui::Text("(Unimplemented)");
+
+        }
         ImGui::Separator();
         ImGui::PopFont();
+        ImGui::PopFont();
     }
-    ImGui::PopFont();
 }
 
 void PropertiesPanel::draw_texture_asset_editor(const asset::Texture* texture)

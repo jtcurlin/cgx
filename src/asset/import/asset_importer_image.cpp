@@ -52,7 +52,7 @@ AssetID AssetImporterImage::import(const std::string& source_path)
     const std::filesystem::path fs_path(source_path);
     const std::string           tag = fs_path.stem().string();
 
-    const auto texture = std::make_shared<Texture>(source_path, tag, width, height, num_channels, format, data);
+    const auto texture = std::make_shared<Texture>(tag, source_path, width, height, num_channels, format, data);
 
     // this class has an inherited member variable std::weak_ptr<AssetManager>  m_asset_manager
     // at the start of import, it should get this asset manager object / make sure its been initialized / still exists

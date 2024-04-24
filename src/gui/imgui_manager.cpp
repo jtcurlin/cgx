@@ -108,7 +108,13 @@ void ImGuiManager::render()
     const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
     ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-    if (ImGui::BeginPopupModal("Rename Node ##PopUp", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+    std::string unique_id = "";
+    if (m_context->get_item_to_rename() != nullptr) {
+        CGX_INFO("Item to rename is not nullptr");
+        unique_id = "Rename Node##" + std::to_string(m_context->get_item_to_rename()->get_id());
+        ImGui::OpenPopup(unique_id.c_str());
+    }
+    if (ImGui::BeginPopupModal(unique_id.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
 
         ImGui::InputText("Rename Node ##InputField", m_input_buffer, 256);
         if (ImGui::Button("Ok ##Rename Node")) {

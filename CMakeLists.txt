@@ -41,6 +41,8 @@ link_imgui(cgx PUBLIC)
 link_stb(cgx PUBLIC)
 link_tinyobjloader(cgx PUBLIC)
 link_tinygltfloader(cgx PUBLIC)
+# link_openal(cgx PUBLIC)
+# link_libsndfile(cgx PUBLIC)
 
 target_sources(cgx PUBLIC ${PUBLIC_HEADERS} PRIVATE ${PRIVATE_SOURCES})
 target_include_directories(cgx PUBLIC ${INCLUDE_DIR} ${EXTERNAL_SOURCE_DIR} PRIVATE ${SOURCE_DIR})

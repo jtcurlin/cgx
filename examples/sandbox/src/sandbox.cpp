@@ -10,7 +10,6 @@ void Sandbox::initialize()
 {
     Engine::initialize();
     load_assets();
-
 }
 
 void Sandbox::update()
@@ -28,10 +27,26 @@ void Sandbox::load_assets() const
     std::filesystem::path asset_dir(std::string(DATA_DIRECTORY) + "/assets");
     std::filesystem::path shader_dir(std::string(DATA_DIRECTORY) + "/shaders");
 
+    std::filesystem::path grid_tex_path = asset_dir / "kenney/prototype_textures/png/Dark/texture_13.png";
+    const std::vector<std::string> grid_skybox_face_paths = {
+        grid_tex_path.string(),
+        grid_tex_path.string(),
+        grid_tex_path.string(),
+        grid_tex_path.string(),
+        grid_tex_path.string(),
+        grid_tex_path.string(),
+    };
+    m_asset_manager->add_asset(
+        std::make_shared<cgx::asset::Cubemap>("skybox01", "cgx://asset/cubemap/skybox01", grid_skybox_face_paths));
+
+    auto ids = m_asset_manager->getAllIDs(cgx::asset::AssetType::Cubemap);
+
+
     // load models
+    std::filesystem::path kenney = asset_dir / "kenney";
     const std::vector<std::string> model_filenames{
-        "soccerball/ball.obj", "light_cube/light_cube.obj", "sponza/sponza.obj",
-        // "backpack/backpack.obj",
+        "misc/soccerball/ball.obj",
+        (kenney / "city/obj/large_buildingA.obj").string()
         // "holodeck/holodeck.obj"
     };
     for (const auto& filename : model_filenames) {
@@ -40,24 +55,23 @@ void Sandbox::load_assets() const
     }
 
     // load model, lighting shaders
-    const std::vector<std::string> shader_names = {"model", "lighting"};
+    const std::vector<std::string> shader_names = {"model", "lighting", "pbr"};
     for (const auto& name : shader_names) {
         std::filesystem::path shader_path = shader_dir / name;
-        auto                  shader      = std::make_shared<cgx::asset::Shader>(shader_path.string(), name);
+        auto                  shader      = std::make_shared<cgx::asset::Shader>(name, shader_path.string());
         m_asset_manager->add_asset(shader);
     }
 
+    /*
+
     // load skybox 1
     const std::vector<std::string> skybox_1_face_paths = {
-        (asset_dir / "skybox_mountains/right.jpg").string(),
-        (asset_dir / "skybox_mountains/left.jpg").string(),
-        (asset_dir / "skybox_mountains/top.jpg").string(),
-        (asset_dir / "skybox_mountains/bottom.jpg").string(),
-        (asset_dir / "skybox_mountains/back.jpg").string(),
-        (asset_dir / "skybox_mountains/front.jpg").string()
+        (asset_dir / "skybox_mountains/right.jpg").string(), (asset_dir / "skybox_mountains/left.jpg").string(),
+        (asset_dir / "skybox_mountains/top.jpg").string(), (asset_dir / "skybox_mountains/bottom.jpg").string(),
+        (asset_dir / "skybox_mountains/back.jpg").string(), (asset_dir / "skybox_mountains/front.jpg").string()
     };
     m_asset_manager->add_asset(
-        std::make_shared<cgx::asset::Cubemap>("cgx://asset/cubemap/skybox01", "skybox01", skybox_1_face_paths));
+        std::make_shared<cgx::asset::Cubemap>("skybox01", "cgx://asset/cubemap/skybox01", skybox_1_face_paths));
 
     // load skybox 2
     const std::vector<std::string> skybox_2_face_paths = {
@@ -66,10 +80,100 @@ void Sandbox::load_assets() const
         (asset_dir / "skybox_2/pz.png").string(), (asset_dir / "skybox_2/nz.png").string()
     };
     m_asset_manager->add_asset(
-        std::make_shared<cgx::asset::Cubemap>("cgx://asset/cubemap/skybox02", "skybox02", skybox_2_face_paths));
+        std::make_shared<cgx::asset::Cubemap>("skybox02", "cgx://asset/cubemap/skybox02", skybox_2_face_paths));
+
+    */
 
     geometry_test();
 }
+
+/*
+void Sandbox::audio_setup()
+{
+    CGX_INFO("Setting up OpenAL Audio Context");
+
+    m_al_device = alcOpenDevice(NULL);
+    CGX_VERIFY(m_al_device != nullptr);
+
+    m_al_context = alcCreateContext(m_al_device, NULL);
+    CGX_VERIFY(m_al_context);
+
+    alcMakeContextCurrent(m_al_context);
+
+    alGenSources(1, &m_al_source);
+
+    alSourcef(m_al_source, AL_PITCH, 1);
+    alSourcef(m_al_source, AL_GAIN, 1);
+    alSource3f(m_al_source, AL_POSITION, 0, 0, 0);
+    alSource3f(m_al_source, AL_VELOCITY, 0, 0, 0);
+    alSourcei(m_al_source, AL_LOOPING, AL_FALSE);
+
+    // Generate a buffer to store audio data
+    alGenBuffers(1, &m_al_buffer);
+
+    CGX_INFO("Completed OpenAL Setup.");
+}
+
+void Sandbox::audio_test()
+{
+    std::string data_dir = std::string(DATA_DIRECTORY);
+    std::filesystem::path test_wav_filepath = std::filesystem::path(data_dir) / "audio" / "CantinaBand3.wav";
+    CGX_INFO("Loading audio file ({})", test_wav_filepath.string());
+
+    SF_INFO sfinfo;
+    memset(&sfinfo, 0, sizeof(sfinfo));
+
+    SNDFILE *sndfile = sf_open(test_wav_filepath.c_str(), SFM_READ, &sfinfo);
+    CGX_VERIFY(sndfile != nullptr);
+
+    if (!(sfinfo.format & SF_FORMAT_WAV)) {
+        sf_close(sndfile);
+        CGX_FATAL("Unsupported Audio Format.");
+    }
+
+    // Allocate memory to hold the audio samples
+    const size_t num_samples = static_cast<size_t>(sfinfo.frames) * sfinfo.channels;
+    std::vector<short> samples(num_samples);
+
+    // Read audio samples
+    const sf_count_t num_read = sf_read_short(sndfile, samples.data(), num_samples);
+    CGX_VERIFY(num_read == num_samples);
+
+    // Determine the OpenAL format
+    ALenum format;
+    if (sfinfo.channels == 1)
+        format = AL_FORMAT_MONO16;
+    else if (sfinfo.channels == 2)
+        format = AL_FORMAT_STEREO16;
+    else {
+        sf_close(sndfile);
+        throw std::runtime_error("Unsupported channel count.");
+    }
+
+    // Bind the buffer with the audio data
+    alBufferData(m_al_buffer, format, samples.data(), num_samples * sizeof(short), sfinfo.samplerate);
+
+    // Attach the buffer to the source
+    alSourcei(m_al_source, AL_BUFFER, m_al_buffer);
+
+    // Play the source
+    CGX_INFO("Playing Audio.");
+    alSourcePlay(m_al_source);
+
+    // Check source state and wait for the playback to stop
+    ALint source_state;
+    alGetSourcei(m_al_source, AL_SOURCE_STATE, &source_state);
+    while (source_state == AL_PLAYING) {
+        alGetSourcei(m_al_source, AL_SOURCE_STATE, &source_state);
+    }
+
+    CGX_INFO("Finished Playing Audio.");
+
+    // Close the sound file
+    sf_close(sndfile);
+}
+*/
+
 
 void Sandbox::geometry_test() const
 {
@@ -87,17 +191,19 @@ void Sandbox::geometry_test() const
     // an entity node
 
 
-
     auto my_primitive_sphere_mesh = cgx::geometry::create_sphere(10, 10, 5);
 
     // this is optional, but if we want to have the mesh itself registered / visible in the asset manager (rather than just the parent model), we must register it
     m_asset_manager->add_asset(my_primitive_sphere_mesh);
 
     // create meshes vector (just with our one primitive mesh) in order to construct a model
-    std::vector<std::shared_ptr<cgx::asset::Mesh>> meshes = { my_primitive_sphere_mesh };
+    std::vector<std::shared_ptr<cgx::asset::Mesh>> meshes = {my_primitive_sphere_mesh};
 
     // pass our meshes vector along with path and tag strings into the model constructor
-    auto my_primitives_model = std::make_shared<cgx::asset::Model>("cgx://geometry/primitive-sphere-model", "sphere",  meshes);
+    auto my_primitives_model = std::make_shared<cgx::asset::Model>(
+        "cgx://geometry/primitive-sphere-model",
+        "sphere",
+        meshes);
 
     // add the asset to the asset manager
     m_asset_manager->add_asset(my_primitives_model);

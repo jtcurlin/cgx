@@ -5,8 +5,8 @@
 
 namespace cgx::core
 {
-Hierarchy::Hierarchy(const ItemType item_type, const std::string& tag)
-    : Item(item_type, tag)
+Hierarchy::Hierarchy(std::string tag, const std::string path)
+    : Item(std::move(tag), std::move(path))
 {
     set_internal_path(Hierarchy::get_path_prefix() + tag);
 }
@@ -243,5 +243,10 @@ void Hierarchy::for_each(const std::function<bool (Hierarchy& hierarchy)>& func)
     for (const auto& child : m_children) {
         child->for_each(func);
     }
+}
+
+ItemType::Type Hierarchy::get_item_type() const
+{
+    return ItemType::Hierarchy;
 }
 }

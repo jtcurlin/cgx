@@ -3,7 +3,6 @@
 #pragma once
 
 #include "asset/asset.h"
-#include "asset/material.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
@@ -11,11 +10,6 @@
 
 #include <string>
 #include <vector>
-
-namespace cgx::gui
-{
-class PropertiesPanel;
-}
 
 namespace cgx::asset
 {
@@ -47,14 +41,17 @@ struct hash<cgx::asset::Vertex>
 
 namespace cgx::asset
 {
+class Material;
 class Shader;
 
 class Mesh final : public Asset
 {
+    friend class gui::PropertiesPanel;
+
 public:
     Mesh(
-        const std::string&               tag,
-        const std::string&               source_path,
+        std::string                      tag,
+        std::string                      source_path,
         const std::vector<Vertex>&       vertices,
         const std::vector<uint32_t>&     indices,
         const std::shared_ptr<Material>& material = nullptr);
@@ -62,8 +59,10 @@ public:
 
     void set_material(const std::shared_ptr<Material>& material);
 
-    void draw(const Shader& shader) const;
-    void log() const;
+    void draw(Shader* shader) const;
+
+    std::string get_path_prefix() const override;
+    AssetType::Type get_asset_type() const override;
 
 private:
     void initialize();
@@ -75,7 +74,5 @@ private:
     uint32_t m_vao{0};
     uint32_t m_vbo{0};
     uint32_t m_ebo{0};
-
-    friend class gui::PropertiesPanel;
 };
 }

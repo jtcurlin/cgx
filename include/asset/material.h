@@ -3,57 +3,41 @@
 #pragma once
 
 #include "asset/asset.h"
-#include <glm/glm.hpp>
-// #include "gui/panels/asset_panel.h"
-
-namespace cgx::gui
-{
-class PropertiesPanel;
-}
 
 namespace cgx::asset
 {
 class Texture;
 class Shader;
 
-class Material final : public Asset
+struct MaterialType
+{
+    enum Type
+    {
+        Phong,
+        PBR
+    };
+
+    static std::string get_typename(Type type);
+    static std::string get_lower_typename(Type type);
+};
+
+class Material : public Asset
 {
 public:
-    Material(
-        const std::string &             source_path,
-        const std::string &             tag,
-        float                           shininess = 32.0f,
-        glm::vec3                       ambient_color = glm::vec3(0.2f, 0.1f, 0.1f),
-        glm::vec3                       diffuse_color = glm::vec3(1.0f, 0.75f, 0.8f),
-        glm::vec3                       specular_color = glm::vec3(1.0f, 0.9f, 0.9f),
-        const std::shared_ptr<Texture> &ambient_map = nullptr,
-        const std::shared_ptr<Texture> &diffuse_map = nullptr,
-        const std::shared_ptr<Texture> &specular_map = nullptr,
-        const std::shared_ptr<Texture> &normal_map = nullptr
-    );
+    Material(std::string tag, std::string internal_path, std::string external_path, std::shared_ptr<Shader> shader=nullptr);
     ~Material() override;
 
-    void set_ambient_map(const std::shared_ptr<Texture> &map);
-    void set_diffuse_map(const std::shared_ptr<Texture> &map);
-    void set_specular_map(const std::shared_ptr<Texture> &map);
-    void set_normal_map(const std::shared_ptr<Texture> &map);
+    virtual void bind(Shader* shader) const = 0;
 
-    void bind(const Shader &shader) const;
+    std::shared_ptr<Shader> get_shader() const;
 
-    void log() const;
+    std::string get_path_prefix() const override;
+    AssetType::Type            get_asset_type() const override;
+    virtual MaterialType::Type get_material_type() const = 0;
+    virtual std::string        get_material_typename() const;
 
-private:
-    glm::vec3 m_ambient_color;
-    glm::vec3 m_diffuse_color;
-    glm::vec3 m_specular_color;
+protected:
+    std::shared_ptr<Shader> m_shader;
 
-    float m_shininess;
-
-    std::shared_ptr<Texture> m_ambient_map;
-    std::shared_ptr<Texture> m_diffuse_map;
-    std::shared_ptr<Texture> m_specular_map;
-    std::shared_ptr<Texture> m_normal_map;
-
-    friend class gui::PropertiesPanel;
 };
 }

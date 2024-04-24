@@ -5,10 +5,10 @@
 namespace cgx::asset
 {
 AssetImporter::AssetImporter(
-    const std::string&       label,
-    std::vector<std::string> extensions,
-    std::vector<AssetType>   asset_types)
-    : m_label(label)
+    std::string                  label,
+    std::vector<std::string>     extensions,
+    std::vector<AssetType::Type> asset_types)
+    : m_label(std::move(label))
     , m_extensions(std::move(extensions))
     , m_asset_types(std::move(asset_types)) {}
 
@@ -24,7 +24,7 @@ const std::vector<std::string>& AssetImporter::get_supported_file_extensions() c
     return m_extensions;
 }
 
-const std::vector<AssetType>& AssetImporter::get_output_asset_types() const
+const std::vector<AssetType::Type>& AssetImporter::get_output_asset_types() const
 {
     return m_asset_types;
 }

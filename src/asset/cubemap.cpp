@@ -9,8 +9,8 @@
 
 namespace cgx::asset
 {
-Cubemap::Cubemap(const std::string& path, const std::string& tag, const std::vector<std::string>& face_texture_paths)
-    : Asset(path, tag, AssetType::Cubemap)
+Cubemap::Cubemap(std::string tag, std::string path, const std::vector<std::string>& face_texture_paths)
+    : Asset(tag, get_path_prefix() + tag, std::move(path))
     , m_mesh(geometry::create_cube())
     , m_shader(
         std::make_shared<Shader>("skybox", std::string(SKYBOX_VERT_SHADER_CODE), std::string(SKYBOX_FRAG_SHADER_CODE)))
@@ -25,7 +25,7 @@ Cubemap::Cubemap(const std::string& path, const std::string& tag, const std::vec
     for (size_t i = 0 ; i < 6 ; ++i) {
         stbi_uc* data = nullptr;
 
-        stbi_set_flip_vertically_on_load(0);
+        stbi_set_flip_vertically_on_load(1);
         data = stbi_load(face_texture_paths[i].c_str(), &width, &height, &num_channels, 0);
 
         if (data) {
@@ -75,7 +75,7 @@ void Cubemap::draw() const
     CGX_CHECK_GL_ERROR;
     glBindTexture(GL_TEXTURE_CUBE_MAP, m_texture_id);
     CGX_CHECK_GL_ERROR;
-    m_mesh->draw(*(m_shader));
+    m_mesh->draw(m_shader.get());
 }
 
 uint32_t Cubemap::get_width() const
@@ -112,6 +112,15 @@ void Cubemap::set_mesh(const std::shared_ptr<Mesh>& mesh)
 void Cubemap::set_shader(const std::shared_ptr<Shader>& shader)
 {
     m_shader = shader;
+}
+
+std::string Cubemap::get_path_prefix() const
+{
+    return Asset::get_path_prefix() + "/" + AssetType::get_typename(AssetType::Cubemap) + "/";
+}
+
+AssetType::Type Cubemap::get_asset_type() const {
+    return AssetType::Cubemap;
 }
 
 

@@ -1,6 +1,7 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "asset/mesh.h"
+#include "asset/material.h"
 #include "utility/error.h"
 
 #include <glad/glad.h>
@@ -8,12 +9,12 @@
 namespace cgx::asset
 {
 Mesh::Mesh(
-    const std::string&               source_path,
-    const std::string&               tag,
+    std::string                      tag,
+    std::string                      source_path,
     const std::vector<Vertex>&       vertices,
     const std::vector<uint32_t>&     indices,
     const std::shared_ptr<Material>& material)
-    : Asset(source_path, tag, AssetType::Mesh)
+    : Asset(tag, get_path_prefix() + tag, std::move(source_path))
     , m_vertices(vertices)
     , m_indices(indices)
     , m_material(material)
@@ -33,7 +34,7 @@ void Mesh::set_material(const std::shared_ptr<Material>& material)
     m_material = material;
 }
 
-void Mesh::draw(const Shader& shader) const
+void Mesh::draw(Shader* shader) const
 {
     if (m_material != nullptr) {
         m_material->bind(shader);
@@ -46,6 +47,13 @@ void Mesh::draw(const Shader& shader) const
     glBindVertexArray(0);
     CGX_CHECK_GL_ERROR;
 }
+
+std::string Mesh::get_path_prefix() const
+{
+    return Asset::get_path_prefix() + "/" + AssetType::get_lower_typename(AssetType::Mesh) + "/";
+}
+
+AssetType::Type Mesh::get_asset_type() const { return AssetType::Mesh; }
 
 void Mesh::initialize()
 {
@@ -100,49 +108,5 @@ void Mesh::initialize()
     CGX_CHECK_GL_ERROR;
 
     glBindVertexArray(0); // unbind any bound vertex arrays
-}
-
-void Mesh::log() const
-{
-    CGX_DEBUG(" >> Vertex Data (count = {})", m_vertices.size());
-    for (size_t i = 0 ; i < m_vertices.size() ; ++i) {
-        const auto& v = m_vertices[i];
-        CGX_DEBUG(
-            "  [Vertex {}] Pos({:.2f}, {:.2f}, {:.2f}), Norm({:.2f}, {:.2f}, {:.2f}), Tex({:.2f}, {:.2f})",
-            i,
-            v.position.x,
-            v.position.y,
-            v.position.z,
-            v.normal.x,
-            v.normal.y,
-            v.normal.z,
-            v.uv.x,
-            v.uv.y);
-    }
-
-    CGX_DEBUG(" >> Index Data (count = {})", m_indices.size());
-    std::stringstream ss;
-    for (size_t i = 0 ; i < m_indices.size() ; ++i) {
-        ss << m_indices[i];
-        if ((i + 1) % 3 != 0) {
-            ss << ", ";
-        }
-        else {
-            CGX_DEBUG("  [Triangle {}] ({})", i / 3, ss.str());
-            ss.str("");
-        }
-        if (i == m_indices.size() - 1 && (i + 1) % 3 != 0) {
-            CGX_DEBUG("  [Partial Triangle {}] : ({})", i / 3, ss.str());
-        }
-    }
-
-    CGX_DEBUG(" >> Material Data");
-    if (m_material != nullptr) {
-        m_material->log();
-    }
-    else {
-        CGX_DEBUG("  [No material assigned]")
-    }
-    CGX_DEBUG("m_vao = {}", m_vao);
 }
 }

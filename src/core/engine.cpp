@@ -95,15 +95,15 @@ void Engine::initialize()
     }
     m_render_system->initialize();
 
-    m_scene_manager = std::make_shared<scene::SceneManager>(m_ecs_manager.get());
-    m_scene_manager->add_scene("main_scene");
-    m_scene_manager->set_active_scene("main_scene");
-
     setup_engine_events();
 
     m_asset_manager = std::make_shared<asset::AssetManager>();
     m_asset_manager->register_importer(std::make_shared<asset::AssetImporterImage>());
     m_asset_manager->register_importer(std::make_shared<asset::AssetImporterOBJ>());
+
+    m_scene_manager = std::make_shared<scene::SceneManager>(m_ecs_manager.get(), m_asset_manager.get());
+    m_scene_manager->add_scene("main_scene");
+    m_scene_manager->set_active_scene("main_scene");
 
     setup_gui();
 }

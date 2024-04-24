@@ -56,7 +56,7 @@ void RenderSettingsPanel::draw_skybox_menu() const
                            ? render_system->get_skybox_cubemap()->get_tag()
                            : "Select Cubemap";
         if (ImGui::BeginCombo("Cubemap", preview_text.c_str())) {
-            auto& cubemap_ids = asset_manager->getAllIDs(asset::AssetType::Cubemap);
+            auto& cubemap_ids = asset_manager->getAllIDs(asset::AssetType::Type::Cubemap);
             for (const auto& cubemap_id : cubemap_ids) {
                 auto       cubemap     = asset_manager->get_asset(cubemap_id);
                 const bool is_selected = cubemap != nullptr ? (cubemap->get_id() == cubemap_id) : false;

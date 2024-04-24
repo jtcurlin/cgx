@@ -5,8 +5,7 @@
 
 namespace cgx::asset
 {
-AssetManager::AssetManager() {}
-
+AssetManager::AssetManager()  = default;
 AssetManager::~AssetManager() = default;
 
 void AssetManager::register_importer(const std::shared_ptr<AssetImporter>& importer)
@@ -31,7 +30,7 @@ void AssetManager::register_importer(const std::shared_ptr<AssetImporter>& impor
     // need to pass shared pointer to this assetmanager instance)
     m_importers.push_back(importer);
 
-    auto&        event_handler = ecs::EventHandler::get_instance();
+    auto&      event_handler = ecs::EventHandler::get_instance();
     ecs::Event event(events::asset::IMPORTER_REGISTERED);
     event.set_param(events::asset::IMPORTER_LABEL, importer->get_label());
     event.set_param(events::asset::IMPORTER_SUPPORTED_EXTENSIONS, extensions);
@@ -70,7 +69,7 @@ AssetID AssetManager::add_asset(const std::shared_ptr<Asset>& asset)
         return k_invalid_id;
     }
 
-    const auto path_fs = clean_path(asset->get_source_path());
+    const auto path_fs = clean_path(asset->get_external_path());
 
     if (path_fs.string().empty()) {
         CGX_ERROR("AssetManager:: failed to add asset. (no path assigned)");
@@ -95,7 +94,7 @@ AssetID AssetManager::add_asset(const std::shared_ptr<Asset>& asset)
     m_name_to_id[asset->get_tag()].push_back(asset->get_id());
     m_assets[asset->get_id()] = asset;
 
-    auto&        event_handler = ecs::EventHandler::get_instance();
+    auto&      event_handler = ecs::EventHandler::get_instance();
     ecs::Event event(events::asset::ASSET_ADDED);
     event.set_param(events::asset::ASSET_ID, asset->get_id());
     event.set_param(events::asset::ASSET_NAME, asset->get_tag());
@@ -112,11 +111,9 @@ bool AssetManager::remove_asset(AssetID asset_id)
         const auto& asset = asset_it->second;
 
         // remove asset's entry from type->id map if present
-        if (asset->get_asset_type() != AssetType::Undefined) {
-            if (auto& asset_ids = m_type_to_id[asset->get_asset_type()] ; !asset_ids.empty()) {
-                const auto new_end = std::remove(asset_ids.begin(), asset_ids.end(), asset->get_id());
-                asset_ids.erase(new_end, asset_ids.end());
-            }
+        if (auto& asset_ids = m_type_to_id[asset->get_asset_type()] ; !asset_ids.empty()) {
+            const auto new_end = std::remove(asset_ids.begin(), asset_ids.end(), asset->get_id());
+            asset_ids.erase(new_end, asset_ids.end());
         }
 
         // remove asset's entry from name->id map if present
@@ -134,7 +131,7 @@ bool AssetManager::remove_asset(AssetID asset_id)
         m_assets.erase(asset_id);
 
         // dispatch resource-removed event
-        auto&        event_handler = ecs::EventHandler::get_instance();
+        auto&      event_handler = ecs::EventHandler::get_instance();
         ecs::Event event(events::asset::ASSET_REMOVED);
         event.set_param(events::asset::ASSET_ID, asset_id);
         event_handler.send_event(event);
@@ -171,7 +168,7 @@ std::vector<AssetID> AssetManager::getAllIDs()
     return asset_id_list;
 }
 
-const std::vector<AssetID>& AssetManager::getAllIDs(const AssetType type_filter)
+const std::vector<AssetID>& AssetManager::getAllIDs(const AssetType::Type type_filter)
 {
     return m_type_to_id[type_filter];
 }

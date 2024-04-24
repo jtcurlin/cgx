@@ -28,6 +28,8 @@ public:
 
     ecs::Entity get_entity() const;
 
+    core::ItemType::Type get_item_type() const override;
+
 private:
     ecs::Entity m_entity;
 };

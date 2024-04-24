@@ -25,11 +25,11 @@ public:
 
     void render() override;
 
-    void draw_asset_context_menu(asset::Asset* asset);
+    void draw_asset_context_menu(asset::Asset* asset, const std::string& unique_label);
 
     void render_importers_list();
 
-    void render_asset_list(asset::AssetType type);
+    void render_asset_list(asset::AssetType::Type type);
 
 private:
     asset::AssetID m_current_asset_id{asset::k_invalid_id};

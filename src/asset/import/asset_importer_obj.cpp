@@ -6,9 +6,8 @@
 #include "core/common.h"
 #include "asset/model.h"
 #include "asset/mesh.h"
-#include "asset/material.h"
+#include "asset/phong_material.h"
 #include "asset/texture.h"
-#include "utility/paths.h"
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
@@ -28,7 +27,6 @@ AssetImporterOBJ::~AssetImporterOBJ() = default;
 AssetID AssetImporterOBJ::import(const std::string& source_path)
 {
     const std::filesystem::path fs_path(source_path);
-
 
     tinyobj::ObjReaderConfig config;
     config.mtl_search_path = fs_path.parent_path().string();
@@ -63,7 +61,7 @@ AssetID AssetImporterOBJ::import(const std::string& source_path)
     }
 
     // construct Model resource
-    const auto model = std::make_shared<Model>(source_path, fs_path.stem().string(), meshes);
+    const auto model = std::make_shared<Model>(fs_path.stem().string(), source_path, meshes);
 
     reset(); // reset importer
 
@@ -131,9 +129,10 @@ void AssetImporterOBJ::import_materials(const std::filesystem::path& source_path
             normal_map = nullptr;
         }
 
-        auto material = std::make_shared<Material>(
-            source_path.string() + ":" + tag_ss.str(),
+        std::string material_source_path = source_path.string() + ":"  + tag_ss.str();
+        auto material = std::make_shared<PhongMaterial>(
             tag_ss.str(),
+            material_source_path,
             static_cast<float>(mat.shininess),
             glm::vec3(mat.ambient[0], mat.ambient[1], mat.ambient[2]),
             glm::vec3(mat.diffuse[0], mat.diffuse[1], mat.diffuse[2]),
@@ -228,7 +227,7 @@ void AssetImporterOBJ::import_meshes(const std::filesystem::path& source_path)
         auto  material       = std::dynamic_pointer_cast<Material>(material_asset);
         auto& indices        = material_to_indices[material_id];
 
-        auto mesh = std::make_shared<Mesh>(source_path_ss.str(), tag_ss.str(), vertices, indices, material);
+        auto mesh = std::make_shared<Mesh>(tag_ss.str(), source_path_ss.str(), vertices, indices, material);
 
         auto mesh_asset_id = asset_manager->add_asset(mesh);
         m_mesh_asset_ids.push_back(mesh_asset_id);

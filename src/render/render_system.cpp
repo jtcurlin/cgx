@@ -114,18 +114,44 @@ void RenderSystem::render()
 
         // activate shader program, set shader data, draw
         render_c.shader->use();
-
-        // shader->setVec3("light.position", (m_ecsHandler->GetComponent<TransformComponent>(light))) /TODO
-        render_c.shader->set_vec3("light.position", 1.0f, 1.0f, 1.0f);
-        render_c.shader->set_vec3("light.ambient", 0.2f, 0.2f, 0.2f);
-        render_c.shader->set_vec3("light.diffuse", 0.5f, 0.5f, 0.5f);
-        render_c.shader->set_vec3("light.specular", 1.0f, 1.0f, 1.0f);
-
+        bool pbr = true;
         render_c.shader->set_mat4("proj", m_proj_mat);
         render_c.shader->set_mat4("view", m_view_mat);
         render_c.shader->set_mat4("model", transform_c.world_matrix);
 
-        render_c.model->draw(*(render_c.shader));
+        if (pbr) {
+            // Light positions
+             static std::vector<glm::vec3> lightPositions = {
+                glm::vec3(-3.0f, 3.0f, 3.0f),
+                glm::vec3(3.0f, 3.0f, 3.0f),
+                glm::vec3(-3.0f, -3.0f, 3.0f),
+                glm::vec3(3.0f, -3.0f, 3.0f)
+            };
+
+            // Light colors
+            static std::vector<glm::vec3> lightColors = {
+                glm::vec3(1.0f, 1.0f, 1.0f), // White light
+                glm::vec3(1.0f, 0.5f, 0.0f), // Orange light
+                glm::vec3(0.0f, 1.0f, 0.0f), // Green light
+                glm::vec3(0.0f, 0.0f, 1.0f)  // Blue light
+            };
+
+            for (size_t i = 0; i < lightPositions.size(); ++i) {
+                render_c.shader->set_vec3("lightPositions[" + std::to_string(i) + "]", lightPositions[i]);
+                render_c.shader->set_vec3("lightColors[" + std::to_string(i) + "]", lightColors[i]);
+            }
+
+            render_c.shader->set_vec3("camPos", m_camera->get_cam_pos());
+        }
+        else {
+             // shader->setVec3("light.position", (m_ecsHandler->GetComponent<TransformComponent>(light))) /TODO
+            render_c.shader->set_vec3("light.position", 1.0f, 1.0f, 1.0f);
+            render_c.shader->set_vec3("light.ambient", 0.2f, 0.2f, 0.2f);
+            render_c.shader->set_vec3("light.diffuse", 0.5f, 0.5f, 0.5f);
+            render_c.shader->set_vec3("light.specular", 1.0f, 1.0f, 1.0f);
+        }
+
+        render_c.model->draw(render_c.shader.get());
     }
 
     if (m_settings.m_render_test_enabled) {

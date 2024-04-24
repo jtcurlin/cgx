@@ -109,6 +109,9 @@ _(in progress)_
 - **[godot engine](https://github.com/godotengine/godot)** _by Juan Linietsky and Ariel Manzur_<br>
 - **[unreal engine](https://github.com/EpicGames)** _(Epic Games)_<br>
 
+#### Assets
+
+- **[Kenney](www.kenney.nl)**
 
 ## License
 

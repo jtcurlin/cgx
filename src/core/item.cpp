@@ -2,29 +2,34 @@
 
 #include "core/item.h"
 
+#include <unordered_map>
+
 namespace cgx::core
 {
-std::string translate_item_typename(const ItemType item_type)
+
+std::string ItemType::get_typename(const Type type)
 {
-    switch (item_type) {
-        case ItemType::Asset: {
-            return "asset";
-        }
-        case ItemType::Node: {
-            return "node";
-        }
-        default: {
-            return "unknown_item_type";
-        }
-    }
+    static const std::unordered_map<Type, std::string> type_names = {
+        {Asset, "Asset"}, {Node, "Node"}, {Hierarchy, "Hierarchy"}
+    };
+    const auto it = type_names.find(type);
+    return it != type_names.end() ? it->second : "Unknown";
 }
 
-Item::Item(const ItemType item_type, std::string tag)
-    : m_id(generate_id())
-    , m_item_type{item_type}
-    , m_item_typename{translate_item_typename(item_type)}
-    , m_tag(std::move(tag))
-{}
+std::string ItemType::get_lower_typename(const Type type)
+{
+    static const std::unordered_map<Type, std::string> type_names = {
+        {Asset, "asset"}, {Node, "node"}, {Hierarchy, "hierarchy"}
+    };
+    const auto it = type_names.find(type);
+    return it != type_names.end() ? it->second : "unknown";
+}
+
+Item::Item(std::string tag, std::string internal_path, std::string external_path)
+    : m_tag(std::move(tag))
+    , m_external_path(std::move(external_path))
+    , m_internal_path(std::move(internal_path))
+    , m_id(generate_id()) {}
 
 Item::~Item() = default;
 
@@ -63,19 +68,15 @@ const std::string& Item::get_external_path() const
     return m_external_path;
 }
 
-const ItemType& Item::get_item_type() const
+std::string Item::get_item_typename() const
 {
-    return m_item_type;
+    return ItemType::get_typename(get_item_type());
 }
 
-const std::string& Item::get_item_typename() const
-{
-    return m_item_typename;
-}
 
 std::string Item::get_path_prefix() const
 {
-    return "cgx://" + get_item_typename() + "/";
+    return "cgx://item";
 }
 
 std::size_t Item::generate_id()

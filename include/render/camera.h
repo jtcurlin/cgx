@@ -52,6 +52,8 @@ public:
     void EnableManualControl();
     void DisableManualControl();
 
+    glm::vec3 get_cam_pos() const;
+
 private:
     void updateCameraVectors();
 

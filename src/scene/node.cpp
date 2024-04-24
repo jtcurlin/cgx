@@ -9,7 +9,7 @@ namespace cgx::scene
 {
 
 Node::Node(const ecs::Entity entity, const std::string& tag)
-    : Hierarchy{core::ItemType::Node, tag}
+    : Hierarchy{tag}
     , m_entity{entity}
 {}
 
@@ -35,5 +35,11 @@ void Node::handle_parent_update(Hierarchy* old_parent, Hierarchy* new_parent)
 ecs::Entity Node::get_entity() const
 {
     return m_entity;
+}
+
+core::ItemType::Type Node::get_item_type() const
+{
+    // return Hierarchy::get_item_type();
+    return core::ItemType::Node;
 }
 }

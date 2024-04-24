@@ -11,10 +11,10 @@ namespace fs = std::filesystem;
 
 namespace cgx::asset
 {
-Shader::Shader(const std::string& source_path, const std::string& tag)
-    : Asset(source_path, tag, AssetType::Shader)
+Shader::Shader(std::string tag, std::string source_path)
+    : Asset(tag, get_path_prefix() + tag, source_path)
 {
-    const fs::path    shader_root_path{source_path};
+    const fs::path    shader_root_path{m_external_path};
     const std::string base_shader_filename = shader_root_path.filename().string();
     const fs::path    v_path               = shader_root_path / (base_shader_filename + ".vs");
     const fs::path    f_path               = shader_root_path / (base_shader_filename + ".fs");
@@ -56,8 +56,8 @@ Shader::Shader(const std::string& source_path, const std::string& tag)
     }
 }
 
-Shader::Shader(const std::string& tag, std::string vertex_code, std::string fragment_code)
-    : Asset("cgx://asset/shader/" + tag, tag, AssetType::Shader)
+Shader::Shader(std::string tag, std::string vertex_code, std::string fragment_code)
+    : Asset(tag, get_path_prefix() + tag, get_path_prefix() + tag )
     , m_vert_code{std::move(vertex_code)}
     , m_frag_code{std::move(fragment_code)}
 
@@ -151,6 +151,16 @@ bool Shader::check_compile_errors(const unsigned int shader, const std::string& 
     return true;
 }
 
+std::string Shader::get_path_prefix() const
+{
+    return Item::get_path_prefix() + "/" + AssetType::get_lower_typename(AssetType::Shader) + "/";
+}
+
+AssetType::Type Shader::get_asset_type() const
+{
+    return AssetType::Shader;
+}
+
 void Shader::set_bool(const std::string& name, const bool value) const
 {
     glUniform1i(glGetUniformLocation(m_program_id, name.c_str()), static_cast<GLint>(value));
@@ -223,9 +233,4 @@ void Shader::set_mat4(const std::string& name, const glm::mat4& mat) const
     CGX_CHECK_GL_ERROR;
 }
 
-void Shader::log() const
-{
-    CGX_DEBUG("Shader {}: m_vert_path = {}", get_tag(), m_vert_path);
-    CGX_DEBUG("Shader {}: m_frag_path = {}", get_tag(), m_frag_path);
 }
-} // namespace cgx::resource

@@ -136,4 +136,9 @@ void Camera::DisableManualControl()
 {
     m_manual_control_enabled = false;
 }
+
+glm::vec3 Camera::get_cam_pos() const
+{
+    return m_position;
+}
 }

@@ -1,6 +1,6 @@
 // Copyright © 2024 Jacob Curlin
 
-#include <../../../external/glm/glm/glm.hpp>
+#include <glm/glm.hpp>
 
 namespace cgx::component
 {
