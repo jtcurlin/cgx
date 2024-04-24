@@ -1,7 +1,7 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "core/systems/hierarchy_system.h"
-#include "core/components/Transform.h"
+#include "core/components/transform.h"
 
 #include "ecs/event_handler.h"
 #include "core/events/engine_events.h"

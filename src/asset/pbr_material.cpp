@@ -3,9 +3,17 @@
 #include "asset/pbr_material.h"
 #include "asset/shader.h"
 #include "asset/texture.h"
+#include "utility/logging.h"
+
+#define PBR_BASE_COLOR_MAP_BIT 1 << 0
+#define PBR_METALLIC_ROUGHNESS_MAP_BIT 1 << 1
+#define PBR_NORMAL_MAP_BIT 1 << 2
+#define PBR_OCCLUSION_MAP_BIT 1 << 3
+#define PBR_EMISSIVE_MAP_BIT 1 << 4
 
 namespace cgx::asset
 {
+
 PBRMaterial::PBRMaterial(
     std::string                     tag,
     std::string                     source_path,
@@ -32,54 +40,53 @@ PBRMaterial::~PBRMaterial() = default;
 
 void PBRMaterial::bind(Shader* shader) const
 {
-    if (shader == nullptr)
-        shader = m_shader.get();
+    if (shader == nullptr) shader = m_shader.get();
+    CGX_VERIFY(shader);
+
+    int map_bitset = 0;
 
     shader->use();
 
-    // Set base color factor
     shader->set_vec4("baseColorFactor", m_base_color_factor);
 
-    // Set metallic factor
     shader->set_float("metallicFactor", m_metallic_factor);
 
-    // Set roughness factor
     shader->set_float("roughnessFactor", m_roughness_factor);
 
-    // Bind base color map
-    if (m_base_color_map != nullptr)
-    {
+    static bool first = true;
+
+    if (m_base_color_map != nullptr) {
         m_base_color_map->bind(0);
-        shader->set_int("baseColorMap", 0);
+        shader->set_int("base_color_map", 0);
+        map_bitset |= PBR_BASE_COLOR_MAP_BIT;
     }
 
-    // Bind metallic-roughness map
-    if (m_metallic_roughness_map != nullptr)
-    {
+    if (m_metallic_roughness_map != nullptr) {
         m_metallic_roughness_map->bind(1);
-        shader->set_int("metallicRoughnessMap", 1);
+        shader->set_int("metallic_roughness_map", 1);
+        map_bitset |= PBR_METALLIC_ROUGHNESS_MAP_BIT;
     }
 
-    // Bind normal map
-    if (m_normal_map != nullptr)
-    {
+    if (m_normal_map != nullptr) {
         m_normal_map->bind(2);
-        shader->set_int("normalMap", 2);
+        shader->set_int("normal_map", 2);
+        map_bitset |= PBR_NORMAL_MAP_BIT;
     }
 
-    // Bind occlusion map
-    if (m_occlusion_map != nullptr)
-    {
+    if (m_occlusion_map != nullptr) {
         m_occlusion_map->bind(3);
-        shader->set_int("occlusionMap", 3);
+        shader->set_int("occlusion_map", 3);
+        map_bitset |= PBR_OCCLUSION_MAP_BIT;
     }
 
-    // Bind emissive map
-    if (m_emissive_map != nullptr)
-    {
+    if (m_emissive_map != nullptr) {
         m_emissive_map->bind(4);
-        shader->set_int("emissiveMap", 4);
+        shader->set_int("emissive_map", 4);
+        map_bitset |= PBR_EMISSIVE_MAP_BIT;
     }
+
+    shader->set_int("map_bitset", map_bitset);
+    glActiveTexture(GL_TEXTURE0);
 }
 
 std::string PBRMaterial::get_path_prefix() const
