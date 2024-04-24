@@ -7,6 +7,7 @@
 #include "tiny_obj_loader.h"
 
 #include <filesystem>
+#include <unordered_map>
 
 namespace cgx::asset
 {
