@@ -69,8 +69,10 @@ void SceneImporter::process_node(
     Scene*                 scene)
 {
     const std::string node_tag = "todo"; // todo
-    auto              node     = scene->add_node(m_ecs_manager->acquire_entity(), node_tag, parent_node);
-    m_ecs_manager->add_component<component::Hierarchy>(node->get_entity(), component::Hierarchy{});
+
+    auto new_node_entity = m_ecs_manager->acquire_entity();
+    m_ecs_manager->add_component<component::Hierarchy>(new_node_entity, component::Hierarchy{});
+    auto node = scene->add_node(new_node_entity, node_tag, parent_node);
 
     glm::vec3 translation(0.0f);
     glm::vec3 rotation(0.0f);
@@ -90,7 +92,7 @@ void SceneImporter::process_node(
             static_cast<float>(gltf_node.rotation[2]));
     }
 
-    if (!gltf_node.rotation.empty()) {
+    if (!gltf_node.scale.empty()) {
         scale = glm::vec3(
             static_cast<float>(gltf_node.scale[0]),
             static_cast<float>(gltf_node.scale[1]),

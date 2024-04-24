@@ -110,11 +110,10 @@ void RenderSystem::render()
 
         model_mat = translate(model_mat, transform_c.local_position); // apply position transformation
         model_mat = scale(model_mat, transform_c.local_scale);        // apply scale transformation
-        */
 
         // activate shader program, set shader data, draw
         render_c.shader->use();
-        bool pbr = true;
+        bool pbr = false;
         render_c.shader->set_mat4("proj", m_proj_mat);
         render_c.shader->set_mat4("view", m_view_mat);
         render_c.shader->set_mat4("model", transform_c.world_matrix);
@@ -130,10 +129,10 @@ void RenderSystem::render()
 
             // Light colors
             static std::vector<glm::vec3> lightColors = {
-                glm::vec3(1.0f, 1.0f, 1.0f), // White light
-                glm::vec3(1.0f, 0.5f, 0.0f), // Orange light
-                glm::vec3(0.0f, 1.0f, 0.0f), // Green light
-                glm::vec3(0.0f, 0.0f, 1.0f)  // Blue light
+                glm::vec3(150.0f, 150.0f, 150.0f), // White light
+                glm::vec3(150.0f, 150.5f, 150.0f), // Orange light
+                glm::vec3(150.0f, 150.0f, 150.0f), // Green light
+                glm::vec3(150.0f, 150.0f, 150.0f)  // Blue light
             };
 
             for (size_t i = 0; i < lightPositions.size(); ++i) {
@@ -150,6 +149,14 @@ void RenderSystem::render()
             render_c.shader->set_vec3("light.diffuse", 0.5f, 0.5f, 0.5f);
             render_c.shader->set_vec3("light.specular", 1.0f, 1.0f, 1.0f);
         }
+        */
+
+        render_c.shader->use();
+        render_c.shader->set_mat4("proj", m_proj_mat);
+        render_c.shader->set_mat4("view", m_view_mat);
+        render_c.shader->set_mat4("model", transform_c.world_matrix);
+
+        render_c.shader->set_vec3("light_direction", glm::normalize(glm::vec3(1.0, 1.0, 1.0)));
 
         render_c.model->draw(render_c.shader.get());
     }
