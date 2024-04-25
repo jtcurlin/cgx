@@ -3,6 +3,7 @@
 #pragma once
 
 #include <string>
+#include <memory>
 
 namespace cgx::core
 {

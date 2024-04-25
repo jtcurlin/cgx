@@ -3,6 +3,7 @@
 #pragma once
 
 #include "asset/asset.h"
+#include <memory>
 
 namespace cgx::asset
 {
