@@ -13,8 +13,12 @@ class ImGuiManager;
 class ImGuiPanel
 {
 public:
-    ImGuiPanel(std::string title, GUIContext* context, ImGuiManager* manager);
-    virtual  ~ImGuiPanel() = default;
+    ImGuiPanel(
+        std::string      title,
+        GUIContext*      context,
+        ImGuiManager*    manager,
+        ImGuiWindowFlags window_flags = ImGuiWindowFlags_None);
+    virtual ~ImGuiPanel() = default;
 
     void Begin(); // ImGui::Begin() called (start actual ImGui window)
     void End();   // ImGui::End() called (end actual ImGui window)
@@ -41,6 +45,7 @@ protected:
     bool m_is_hovered{false};
     bool m_enforce_aspect_ratio{false};
 
+    ImGuiID m_dockspace_id;
     ImGuiWindowFlags m_window_flags;
 
     float m_aspect_ratio{1};

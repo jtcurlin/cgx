@@ -40,24 +40,24 @@ public:
         float     pitch    = kPitch);
     ~Camera() = default ;
 
-    void Update(double dt);
+    void update(double dt);
 
-    glm::mat4 getViewMatrix() const;
+    glm::mat4 get_view_matrix() const;
 
-    [[nodiscard]] float getZoom() const;
+    [[nodiscard]] float get_zoom() const;
 
-    void Translate(TranslateDirection dir, double dt);
-    void Look(double x_offset, double y_offset, GLboolean constrain_pitch);
+    void translate(TranslateDirection dir, double dt);
+    void look(double x_offset, double y_offset, GLboolean constrain_pitch);
 
-    void EnableManualControl();
-    void DisableManualControl();
+    void enable_control();
+    void disable_control();
 
     glm::vec3 get_cam_pos() const;
 
 private:
     void updateCameraVectors();
 
-    bool m_manual_control_enabled = false;
+    bool m_control_enabled = false;
 
     glm::vec3 m_position = glm::vec3(0.0f, 0.0f, 0.0f);
     glm::vec3 m_front    = glm::vec3(0.0f, 0.0f, 0.0f);

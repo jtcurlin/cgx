@@ -2,22 +2,22 @@
 
 #include "core/systems/hierarchy_system.h"
 #include "core/components/transform.h"
+#include "ecs/common.h"
 
-#include "ecs/event_handler.h"
-#include "core/events/engine_events.h"
+#include "core/events/ecs_events.h"
 
 namespace cgx::core
 {
 HierarchySystem::HierarchySystem(ecs::ECSManager* ecs_manager)
     : System(ecs_manager)
 {
-    ecs::EventHandler::get_instance().add_listener(
-        events::hierarchy::PARENT_UPDATE,
-        [this](ecs::Event& event) {
+    EventHandler::get_instance().add_listener(
+        event::component::hierarchy::PARENT_UPDATE,
+        [this](event::Event& event) {
             this->on_parent_update(
-                event.get_param<ecs::Entity>(events::hierarchy::CHILD),
-                event.get_param<ecs::Entity>(events::hierarchy::OLD_PARENT),
-                event.get_param<ecs::Entity>(events::hierarchy::NEW_PARENT));
+                event.get_param<ecs::Entity>(event::component::hierarchy::CHILD),
+                event.get_param<ecs::Entity>(event::component::hierarchy::OLD_PARENT),
+                event.get_param<ecs::Entity>(event::component::hierarchy::NEW_PARENT));
         });
 }
 
@@ -64,7 +64,6 @@ void HierarchySystem::on_parent_update(const ecs::Entity child, const ecs::Entit
         auto& child_transform = m_ecs_manager->get_component<component::Transform>(child);
         child_transform.dirty = true;
     }
-
     sort_order_by_depth();
 }
 
@@ -92,13 +91,10 @@ void HierarchySystem::dfs_children(const ecs::Entity entity, std::unordered_set<
             dfs_children(child, visited);
         }
     }
-
 }
 
 const std::vector<ecs::Entity>& HierarchySystem::get_order() const
 {
     return m_order;
 }
-
-
 }

@@ -2,8 +2,8 @@
 
 #include "scene/scene.h"
 
-#include "core/events/engine_events.h"
-#include "ecs/event_handler.h"
+#include "core/events/ecs_events.h"
+#include "core/event_handler.h"
 
 namespace cgx::scene
 {
@@ -26,6 +26,7 @@ Node* Scene::add_node(const ecs::Entity entity, const std::string& tag, Node* pa
 {
     CGX_INFO("Adding node  entity={} ; tag={}", entity, tag);
     auto node = std::make_shared<Node>(entity, tag);
+    Node* node_ptr = node.get();
     if (parent) {
         CGX_INFO(" >> parent specified - setting parent to {}", parent->get_id());
         node->set_parent(parent);
@@ -34,11 +35,12 @@ Node* Scene::add_node(const ecs::Entity entity, const std::string& tag, Node* pa
         m_roots.push_back(std::move(node));
     }
 
-    ecs::Event event(events::entity::ACQUIRED);
-    event.set_param(events::entity::ID, entity);
-    ecs::EventHandler::get_instance().send_event(event);
+    core::event::Event event(core::event::entity::ACQUIRED);
+    event.set_param(core::event::entity::ID, entity);
+    core::EventHandler::get_instance().send_event(event);
 
-    return m_roots.back().get();
+    // return m_roots.back().get();
+    return node_ptr;
 }
 
 void Scene::remove_node(Node* node)
@@ -68,9 +70,9 @@ void Scene::remove_node(Node* node)
         node->remove();
     }
 
-    ecs::Event event(events::entity::RELEASED);
-    event.set_param(events::entity::ID, entity);
-    ecs::EventHandler::get_instance().send_event(event);
+    core::event::Event event(core::event::entity::RELEASED);
+    event.set_param(core::event::entity::ID, entity);
+    core::EventHandler::get_instance().send_event(event);
 }
 
 void Scene::remove_node_recursive(Node* node)

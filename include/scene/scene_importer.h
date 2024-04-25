@@ -32,7 +32,7 @@ public:
     SceneImporter(ecs::ECSManager* ecs_manager, asset::AssetManager* asset_manager);
     ~SceneImporter();
 
-    void import(const std::string& path, Scene* scene);
+    void import(const std::string& path, Scene* scene, Node* parent=nullptr);
 
 private:
     std::filesystem::path m_curr_path = "";

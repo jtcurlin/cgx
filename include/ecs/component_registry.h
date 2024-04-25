@@ -7,7 +7,7 @@
 
 #include "ecs/common.h"
 #include "ecs/component_array.h"
-#include "event_handler.h"
+#include "../core/event_handler.h"
 #include "utility/logging.h"
 
 #include <unordered_map>

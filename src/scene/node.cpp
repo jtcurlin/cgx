@@ -2,8 +2,13 @@
 
 #include "scene/node.h"
 
-#include "core/events/engine_events.h"
-#include "ecs/event_handler.h"
+#include "core/events/ecs_events.h"
+#include "core/event_handler.h"
+
+#include <iomanip>
+#include <sstream>
+
+#include "cgx.h"
 
 namespace cgx::scene
 {
@@ -25,11 +30,11 @@ void Node::handle_parent_update(Hierarchy* old_parent, Hierarchy* new_parent)
     const ecs::Entity new_parent_entity = new_parent_node ? new_parent_node->get_entity() : ecs::MAX_ENTITIES;
 
     CGX_INFO("Sending Event PARENT_UPDATE: child={}, old_parent={}, new_parent={}", get_entity(), old_parent_entity, new_parent_entity);
-    ecs::Event event(events::hierarchy::PARENT_UPDATE);
-    event.set_param(events::hierarchy::CHILD, get_entity());
-    event.set_param(events::hierarchy::OLD_PARENT, old_parent_entity);
-    event.set_param(events::hierarchy::NEW_PARENT, new_parent_entity);
-    ecs::EventHandler::get_instance().send_event(event);
+    core::event::Event event(core::event::component::hierarchy::PARENT_UPDATE);
+    event.set_param(core::event::component::hierarchy::CHILD, get_entity());
+    event.set_param(core::event::component::hierarchy::OLD_PARENT, old_parent_entity);
+    event.set_param(core::event::component::hierarchy::NEW_PARENT, new_parent_entity);
+    core::EventHandler::get_instance().send_event(event);
 }
 
 ecs::Entity Node::get_entity() const
@@ -42,4 +47,13 @@ core::ItemType::Type Node::get_item_type() const
     // return Hierarchy::get_item_type();
     return core::ItemType::Node;
 }
+
+std::string Node::get_default_tag()
+{
+    static size_t node_counter = 0;
+    std::stringstream tag_ss;
+    tag_ss << "Node " << std::setw(3) << std::setfill('0') << node_counter++;
+    return tag_ss.str();
+}
+
 }

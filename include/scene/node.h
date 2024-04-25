@@ -30,6 +30,8 @@ public:
 
     core::ItemType::Type get_item_type() const override;
 
+    static std::string get_default_tag();
+
 private:
     ecs::Entity m_entity;
 };

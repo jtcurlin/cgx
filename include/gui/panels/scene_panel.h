@@ -20,22 +20,26 @@ public:
 
     void render() override;
 
+    void render_scene_menu();
+
     void draw_node(scene::Node* node);
     void draw_node_context_menu(scene::Node* node);
-    void draw_new_node_menu();
+
     void draw_scene_import_popup();
+    void draw_add_scene_popup();
 
 private:
     std::unordered_map<size_t, NodeState> m_node_states;
 
-    size_t       m_current_node_id{scene::k_invalid_id};
-    scene::Node* m_node_to_birth{nullptr};
-    bool         m_adding_node{false};
-
-    char m_import_path_buffer[256]{};
+    bool m_adding_scene{false};
     bool m_importing_scene{false};
+    bool m_error_active{false};
 
-    void               on_node_added(scene::Node* node);
-    static std::string generate_default_node_tag();
+    scene::Node* m_node_to_birth{nullptr};
+    size_t       m_current_node_id{scene::k_invalid_id};
+
+    std::string m_error_message{};
+    char        m_input_buffer[256]{};
+
 };
 }

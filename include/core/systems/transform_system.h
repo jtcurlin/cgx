@@ -5,8 +5,6 @@
 #include "ecs/system.h"
 #include "core/components/transform.h"
 
-
-
 namespace cgx::core
 {
 class HierarchySystem;
@@ -29,6 +27,5 @@ public:
 
 private:
     HierarchySystem* m_hierarchy_system{nullptr};
-
 };
 }

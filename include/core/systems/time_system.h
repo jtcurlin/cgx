@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "../common.h"
+#include "core/common.h"
 #include <chrono>
 
 namespace cgx::core

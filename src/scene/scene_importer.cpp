@@ -30,7 +30,7 @@ SceneImporter::SceneImporter(ecs::ECSManager* ecs_manager, asset::AssetManager* 
 
 SceneImporter::~SceneImporter() = default;
 
-void SceneImporter::import(const std::string& path, Scene* scene)
+void SceneImporter::import(const std::string& path, Scene* scene, Node* parent)
 {
     m_curr_path = path;
 
@@ -39,7 +39,7 @@ void SceneImporter::import(const std::string& path, Scene* scene)
     std::string        err, warn;
 
     bool        success;
-    std::string extension = m_curr_path.extension().string();
+    const std::string extension = m_curr_path.extension().string();
     if (extension == ".gltf") {
         success = gltf_context.LoadASCIIFromFile(&gltf_model, &err, &warn, m_curr_path.string());
     }
@@ -56,9 +56,8 @@ void SceneImporter::import(const std::string& path, Scene* scene)
         return;
     }
 
-
     for (const auto& gltf_node : gltf_model.scenes[gltf_model.defaultScene].nodes) {
-        process_node(gltf_model, gltf_model.nodes[gltf_node], nullptr, scene);
+        process_node(gltf_model, gltf_model.nodes[gltf_node], parent, scene);
     }
 }
 
@@ -68,7 +67,7 @@ void SceneImporter::process_node(
     Node*                  parent_node,
     Scene*                 scene)
 {
-    const std::string node_tag = "todo"; // todo
+    const std::string node_tag = gltf_node.name.empty() ? Node::get_default_tag() : gltf_node.name;
 
     auto new_node_entity = m_ecs_manager->acquire_entity();
     m_ecs_manager->add_component<component::Hierarchy>(new_node_entity, component::Hierarchy{});

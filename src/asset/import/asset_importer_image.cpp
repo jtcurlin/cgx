@@ -19,7 +19,8 @@ AssetImporterImage::~AssetImporterImage() = default;
 
 AssetID AssetImporterImage::import(const std::string& source_path)
 {
-    stbi_set_flip_vertically_on_load(1);
+    // stbi_set_flip_vertically_on_load(1);
+    stbi_set_flip_vertically_on_load(0);
 
     stbi_uc* data = nullptr;
     int      width, height, num_channels;

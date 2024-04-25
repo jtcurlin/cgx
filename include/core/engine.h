@@ -29,11 +29,6 @@ class GUIContext;
 class ImGuiManager;
 }
 
-namespace cgx::core
-{
-class InputManager;
-}
-
 namespace cgx::asset
 {
 class AssetManager;
@@ -43,10 +38,8 @@ namespace cgx::core
 {
 class TimeSystem;
 class WindowManager;
-}
+class InputManager;
 
-namespace cgx::core
-{
 struct EngineSettings
 {
     std::string window_title{"CGX"};
@@ -59,6 +52,16 @@ struct EngineSettings
     std::filesystem::path data_dir{DATA_DIRECTORY};
 };
 
+enum class Mode
+{
+    Game,
+    GUI
+};
+
+}
+
+namespace cgx::core
+{
 class Engine
 {
 public:
@@ -77,14 +80,16 @@ protected:
 
     EngineSettings m_settings{};
     bool           m_is_running{false};
+    Mode           m_interface_mode{Mode::GUI};
+    Mode           m_control_mode{Mode::GUI};
 
-    std::unique_ptr<TimeSystem>          m_time_system;
-    std::shared_ptr<WindowManager>       m_window_manager;
-    std::unique_ptr<ecs::ECSManager>     m_ecs_manager;
-    std::shared_ptr<scene::SceneManager> m_scene_manager;
-    std::shared_ptr<asset::AssetManager> m_asset_manager;
-    std::unique_ptr<gui::GUIContext>     m_gui_context;
-    std::unique_ptr<gui::ImGuiManager>   m_imgui_manager;
+    std::unique_ptr<TimeSystem>           m_time_system;
+    std::shared_ptr<WindowManager>        m_window_manager;
+    std::unique_ptr<ecs::ECSManager>      m_ecs_manager;
+    std::shared_ptr<scene::SceneManager>  m_scene_manager;
+    std::shared_ptr<asset::AssetManager>  m_asset_manager;
+    std::unique_ptr<gui::GUIContext>      m_gui_context;
+    std::unique_ptr<gui::ImGuiManager>    m_imgui_manager;
     std::shared_ptr<render::RenderSystem> m_render_system;
 };
 }

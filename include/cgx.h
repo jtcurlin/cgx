@@ -33,8 +33,8 @@
 #include "ecs/entity_registry.h"
 #include "ecs/system.h"
 #include "ecs/system_registry.h"
-#include "ecs/event.h"
-#include "ecs/event_handler.h"
+#include "core/event.h"
+#include "core/event_handler.h"
 
 // gui
 #include "gui/gui_context.h"

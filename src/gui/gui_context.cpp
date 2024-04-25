@@ -6,7 +6,7 @@
 #include "asset/asset_manager.h"
 #include "render/render_system.h"
 #include "scene/scene_manager.h"
-#include "../../include/core/systems/time_system.h"
+#include "core/systems/time_system.h"
 
 namespace cgx::gui
 {

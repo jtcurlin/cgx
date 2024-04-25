@@ -2,6 +2,10 @@
 
 #include "gui/imgui_manager.h"
 
+#include "core/event_handler.h"
+#include "core/events/master_events.h"
+#include "core/window_manager.h"
+
 #include "gui/panels/asset_panel.h"
 #include "gui/panels/profiler_panel.h"
 #include "gui/panels/render_settings_panel.h"
@@ -9,7 +13,7 @@
 #include "gui/panels/viewport_panel.h"
 #include "gui/panels/properties_panel.h"
 
-#include "core/window_manager.h"
+#include "render/render_system.h"
 #include "utility/paths.h"
 
 #include <imgui.h>
@@ -18,10 +22,34 @@
 
 #include <filesystem>
 
+
 namespace cgx::gui
 {
 ImGuiManager::ImGuiManager(GUIContext* context)
     : m_context(context)
+{
+    init();
+    register_event_handlers();
+
+}
+
+ImGuiManager::~ImGuiManager()
+{
+    shutdown();
+}
+
+void ImGuiManager::shutdown()
+{
+    const std::string ini_path = std::string(DATA_DIRECTORY) + "/gui_layout.ini";
+    ImGui::SaveIniSettingsToDisk(ini_path.c_str());
+    CGX_INFO("Saved imgui configuration to disk @ {}", ini_path);
+
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplGlfw_Shutdown();
+    ImGui::DestroyContext();
+}
+
+void ImGuiManager::init()
 {
     IMGUI_CHECKVERSION();
 
@@ -46,15 +74,7 @@ ImGuiManager::ImGuiManager(GUIContext* context)
     const auto window_manager = m_context->get_window_manager();
     ImGui_ImplGlfw_InitForOpenGL(window_manager->get_glfw_window(), true);
     ImGui_ImplOpenGL3_Init("#version 330");
-}
 
-ImGuiManager::~ImGuiManager()
-{
-    shutdown();
-}
-
-void ImGuiManager::initialize()
-{
     register_panel(std::make_unique<AssetPanel>(m_context, this));
     register_panel(std::make_unique<ProfilerPanel>(m_context, this));
     register_panel(std::make_unique<RenderSettingsPanel>(m_context, this));
@@ -66,13 +86,32 @@ void ImGuiManager::initialize()
     ImGui::LoadIniSettingsFromDisk(ini_path.c_str());
 }
 
-void ImGuiManager::shutdown()
+void ImGuiManager::register_event_handlers()
 {
-    const std::string ini_path = std::string(DATA_DIRECTORY) + "/gui_layout.ini";
-    ImGui::SaveIniSettingsToDisk(ini_path.c_str());
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
+    auto& event_handler = core::EventHandler::get_instance();
+    event_handler.add_listener(
+        core::event::master::ACTIVATE_GUI_CONTROL_MODE,
+        [this](core::event::Event& event) {
+            this->enable_imgui_input();
+        });
+
+    event_handler.add_listener(
+        core::event::master::ACTIVATE_GAME_CONTROL_MODE,
+        [this](core::event::Event& event) {
+            this->disable_imgui_input();
+        });
+
+    event_handler.add_listener(
+        core::event::master::ACTIVATE_GUI_INTERFACE,
+        [this](core::event::Event& event) {
+            this->m_interface_enabled = true;
+        });
+
+    event_handler.add_listener(
+        core::event::master::ACTIVATE_GAME_INTERFACE,
+        [this](core::event::Event& event) {
+            this->m_interface_enabled = false;
+        });
 }
 
 void ImGuiManager::register_panel(std::unique_ptr<ImGuiPanel> panel)
@@ -97,33 +136,41 @@ void ImGuiManager::render()
 
     render_core_menu();
 
-    for (const auto& window : m_imgui_panels) {
-        if (window->is_visible()) {
-            window->Begin();
-            window->render();
-            window->End();
+    if (m_interface_enabled) {
+        for (const auto& window : m_imgui_panels) {
+            if (window->is_visible()) {
+                window->Begin();
+                window->render();
+                window->End();
+            }
         }
-    }
 
-    const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+        const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
-    std::string unique_id = "";
-    if (m_context->get_item_to_rename() != nullptr) {
-        CGX_INFO("Item to rename is not nullptr");
-        unique_id = "Rename Node##" + std::to_string(m_context->get_item_to_rename()->get_id());
-        ImGui::OpenPopup(unique_id.c_str());
-    }
-    if (ImGui::BeginPopupModal(unique_id.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        if (m_context->get_item_to_rename() != nullptr) {
+            const std::string unique_id = "Rename Node##" + std::to_string(m_context->get_item_to_rename()->get_id());
+            CGX_INFO("Item to rename is not nullptr");
+            ImGui::OpenPopup(unique_id.c_str());
+            if (ImGui::BeginPopupModal(unique_id.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
 
-        ImGui::InputText("Rename Node ##InputField", m_input_buffer, 256);
-        if (ImGui::Button("Ok ##Rename Node")) {
-            const auto item = m_context->get_item_to_rename();
-            item->set_tag(m_input_buffer);
-            m_context->set_item_to_rename(nullptr);
-            ImGui::CloseCurrentPopup();
+                ImGui::InputText("Rename Node ##InputField", m_input_buffer, 256);
+                if (ImGui::Button("Ok ##Rename Node")) {
+                    const auto item = m_context->get_item_to_rename();
+                    item->set_tag(m_input_buffer);
+                    m_context->set_item_to_rename(nullptr);
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::EndPopup();
+            }
         }
-        ImGui::EndPopup();
+
+    }
+    else {
+        ImVec2 image_size = ImGui::GetContentRegionAvail();
+
+        int framebuffer_tex_id = m_context->get_render_system()->getFramebuffer()->getTextureID();
+        ImGui::Image((void*) (intptr_t) framebuffer_tex_id, image_size, ImVec2(0, 1), ImVec2(1, 0));
     }
     end_render();
 }
@@ -193,7 +240,7 @@ void ImGuiManager::render_core_menu() const
 
 void ImGuiManager::load_fonts()
 {
-    const ImGuiIO&              io              = ImGui::GetIO();
+    const ImGuiIO&              io = ImGui::GetIO();
     const std::filesystem::path fonts_directory(std::string(DATA_DIRECTORY) + "/fonts");
 
     const std::string regular_text_path  = (fonts_directory / "sf_pro_display_regular.otf").string();
@@ -206,35 +253,35 @@ void ImGuiManager::load_fonts()
     // body font
     ImFontConfig body_config;
     body_config.MergeMode = false;
-    m_body_font      = io.Fonts->AddFontFromFileTTF(regular_text_path.c_str(), 16.0f, &body_config);
+    m_body_font           = io.Fonts->AddFontFromFileTTF(regular_text_path.c_str(), 16.0f, &body_config);
     body_config.MergeMode = true;
     io.Fonts->AddFontFromFileTTF(bold_icons_path.c_str(), 16.0f, &body_config, icon_ranges);
 
     // header font
     ImFontConfig header_config;
     header_config.MergeMode = false;
-    m_header_font    = io.Fonts->AddFontFromFileTTF(bold_text_path.c_str(), 17.0f, &header_config);
+    m_header_font           = io.Fonts->AddFontFromFileTTF(bold_text_path.c_str(), 17.0f, &header_config);
     header_config.MergeMode = true;
     io.Fonts->AddFontFromFileTTF(bold_icons_path.c_str(), 17.0f, &header_config, icon_ranges);
 
     // title font
     ImFontConfig title_config;
     title_config.MergeMode = false;
-    m_title_font     = io.Fonts->AddFontFromFileTTF(bold_text_path.c_str(), 20.0f, &title_config);
+    m_title_font           = io.Fonts->AddFontFromFileTTF(bold_text_path.c_str(), 20.0f, &title_config);
     title_config.MergeMode = true;
     io.Fonts->AddFontFromFileTTF(bold_icons_path.c_str(), 20.0f, &title_config, icon_ranges);
 
     // small font
     ImFontConfig small_config;
     small_config.MergeMode = false;
-    m_small_font     = io.Fonts->AddFontFromFileTTF(regular_text_path.c_str(), 14.0f, &small_config);
+    m_small_font           = io.Fonts->AddFontFromFileTTF(regular_text_path.c_str(), 14.0f, &small_config);
     small_config.MergeMode = true;
     io.Fonts->AddFontFromFileTTF(bold_icons_path.c_str(), 14.0f, &small_config, icon_ranges);
 
     io.Fonts->Build();
 }
 
-void ImGuiManager::enable_input()
+void ImGuiManager::enable_imgui_input()
 {
     ImGuiIO& io = ImGui::GetIO();
 
@@ -243,7 +290,7 @@ void ImGuiManager::enable_input()
     // io.MouseDrawCursor = true;
 }
 
-void ImGuiManager::disable_input()
+void ImGuiManager::disable_imgui_input()
 {
     ImGuiIO& io = ImGui::GetIO();
 
@@ -437,5 +484,10 @@ void ImGuiManager::set_style()
     style.ColorButtonPosition       = ImGuiDir_Left;
     style.ButtonTextAlign           = ImVec2(0.5f, 0.5f);
     style.SelectableTextAlign       = ImVec2(0.0f, 0.0f);
+}
+
+void ImGuiManager::toggle_interface()
+{
+    m_interface_enabled = !m_interface_enabled;
 }
 }

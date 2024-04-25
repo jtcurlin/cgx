@@ -13,12 +13,13 @@ void AspectRatioConstraint(ImGuiSizeCallbackData* data)
     data->DesiredSize.y      = data->DesiredSize.x / aspect_ratio;
 }
 
-ImGuiPanel::ImGuiPanel(std::string title, GUIContext* context, ImGuiManager* manager)
+ImGuiPanel::ImGuiPanel(std::string title, GUIContext* context, ImGuiManager* manager, ImGuiWindowFlags window_flags)
     : m_title(std::move(title))
     , m_context(context)
     , m_manager(manager)
+    , m_window_flags(window_flags)
 {
-    m_window_flags = ImGuiWindowFlags_NoCollapse;
+    m_window_flags |= ImGuiWindowFlags_NoCollapse;
 }
 
 void ImGuiPanel::Begin()

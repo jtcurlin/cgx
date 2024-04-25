@@ -3,7 +3,7 @@
 #include "gui/panels/profiler_panel.h"
 #include "gui/imgui_manager.h"
 
-#include "../../../include/core/systems/time_system.h"
+#include "core/systems/time_system.h"
 
 namespace cgx::gui
 {

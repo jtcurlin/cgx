@@ -9,7 +9,8 @@
 #include "core/systems/transform_system.h"
 #include "core/systems/hierarchy_system.h"
 
-#include "core/events/engine_events.h"
+#include "core/events/master_events.h"
+
 #include "core/components/render.h"
 #include "core/components/transform.h"
 #include "core/components/rigid_body.h"
@@ -20,7 +21,7 @@
 #include "asset/import/asset_importer_obj.h"
 
 #include "ecs/ecs_manager.h"
-#include "ecs/event_handler.h"
+#include "core/event_handler.h"
 
 #include "gui/gui_context.h"
 #include "gui/imgui_manager.h"
@@ -125,36 +126,58 @@ void Engine::render()
 
 void Engine::setup_engine_events()
 {
-    auto& input_manager = core::InputManager::GetSingleton();
-    auto& event_handler = ecs::EventHandler::get_instance();
+    auto& input_manager = InputManager::GetSingleton();
+    auto& event_handler = EventHandler::get_instance();
 
-    // 'esc' : quit engine & close window
-    const ecs::Event quit_event(events::engine::QUIT);
-    input_manager.bind_key_input_event(Key::key_escape, KeyAction::press, quit_event);
+    // on , : toggle gui interface
+    const event::Event toggle_interface_event(event::master::TOGGLE_INTERFACE_MODE);
+    input_manager.bind_key_input_event(Key::key_comma, KeyAction::press, toggle_interface_event);
     event_handler.add_listener(
-        events::engine::QUIT,
-        [this](ecs::Event& event) {
+        event::master::TOGGLE_INTERFACE_MODE,
+        [this](event::Event& event) {
+            switch (m_interface_mode) {
+                case Mode::Game: {
+                    EventHandler::get_instance().send_event(event::master::ACTIVATE_GUI_INTERFACE);
+                    m_interface_mode = Mode::GUI;
+                    break;
+                }
+                case Mode::GUI: {
+                    EventHandler::get_instance().send_event(event::master::ACTIVATE_GAME_INTERFACE);
+                    m_interface_mode = Mode::Game;
+                    break;
+                }
+                default: return;
+            }
+        });
+
+    // on . : toggle control mode
+    const event::Event toggle_control_event(event::master::TOGGLE_CONTROL_MODE);
+    input_manager.bind_key_input_event(Key::key_period, KeyAction::press, toggle_control_event);
+    event_handler.add_listener(
+        event::master::TOGGLE_CONTROL_MODE,
+        [this](event::Event& event) {
+            switch (m_control_mode) {
+                case Mode::Game: {
+                    EventHandler::get_instance().send_event(event::master::ACTIVATE_GUI_CONTROL_MODE);
+                    m_control_mode = Mode::GUI;
+                    break;
+                }
+                case Mode::GUI: {
+                    EventHandler::get_instance().send_event(event::master::ACTIVATE_GAME_CONTROL_MODE);
+                    m_control_mode = Mode::Game;
+                    break;
+                }
+                default: return;
+            }
+        });
+
+    // on ` : quit engine & close window
+    const event::Event quit_event(event::master::QUIT);
+    input_manager.bind_key_input_event(Key::key_fslash, KeyAction::press, quit_event);
+    event_handler.add_listener(
+        event::master::QUIT,
+        [this](event::Event& event) {
             this->m_is_running = false;
-        });
-
-    // 'm' : activate manual camera control (look/move around)
-    const ecs::Event enable_camera_control_event(events::engine::ENABLE_CAMERA_CONTROL);
-    input_manager.bind_key_input_event(Key::key_m, KeyAction::press, enable_camera_control_event);
-    event_handler.add_listener(
-        events::engine::ENABLE_CAMERA_CONTROL,
-        [this](ecs::Event& event) {
-            this->m_window_manager->disable_cursor();
-            this->m_imgui_manager->disable_input();
-        });
-
-    // 'g' : activate GUI control (normal cursor operation, fixed camera)
-    const ecs::Event disable_camera_control_event(events::engine::DISABLE_CAMERA_CONTROL);
-    input_manager.bind_key_input_event(Key::key_g, KeyAction::press, disable_camera_control_event);
-    event_handler.add_listener(
-        events::engine::DISABLE_CAMERA_CONTROL,
-        [this](ecs::Event& event) {
-            this->m_window_manager->enable_cursor();
-            this->m_imgui_manager->enable_input();
         });
 }
 
@@ -169,7 +192,6 @@ void Engine::setup_gui()
         m_time_system.get());
 
     m_imgui_manager = std::make_unique<gui::ImGuiManager>(m_gui_context.get());
-    m_imgui_manager->initialize();
 }
 
 }

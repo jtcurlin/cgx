@@ -19,7 +19,7 @@ namespace cgx::ecs
 class ECSManager;
 }
 
-namespace cgx::ecs
+namespace cgx::core
 {
 class EventHandler;
 }

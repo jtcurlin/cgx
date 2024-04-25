@@ -17,8 +17,10 @@ public:
     explicit ImGuiManager(GUIContext* context);
     ~ImGuiManager();
 
-    void initialize();
     void shutdown();
+
+    void init();
+    void register_event_handlers();
 
     void register_panel(std::unique_ptr<ImGuiPanel> panel);
 
@@ -31,8 +33,9 @@ public:
     void load_fonts();
     void set_style();
 
-    void enable_input();
-    void disable_input();
+    void toggle_interface();
+    void enable_imgui_input();
+    void disable_imgui_input();
 
     ImFont* m_title_font{};
     ImFont* m_header_font{};
@@ -40,7 +43,9 @@ public:
     ImFont* m_small_font{};
 
 private:
-    GUIContext* m_context{nullptr};
+    bool m_interface_enabled{true};
+
+    GUIContext*                              m_context{nullptr};
     std::vector<std::unique_ptr<ImGuiPanel>> m_imgui_panels;
 
     char m_input_buffer[256]{};

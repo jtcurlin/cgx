@@ -16,8 +16,9 @@
 #include "core/components/hierarchy.h"
 
 #include "ecs/ecs_manager.h"
-#include "ecs/event_handler.h"
-#include "core/events/engine_events.h"
+
+#include "core/event_handler.h"
+#include "core/events/ecs_events.h"
 
 #include "scene/node.h"
 
@@ -254,14 +255,14 @@ void PropertiesPanel::draw_render_component_editor(const scene::Node* node)
     }
 
     if (removed) {
-        ecs::Event event(events::component::REMOVED);
-        event.set_param(events::component::TYPE, m_context->get_ecs_manager()->get_component_type<component::Render>());
-        event.set_param(events::component::ENTITY_ID, node->get_entity());
+        core::event::Event event(core::event::component::REMOVED);
+        event.set_param(core::event::component::TYPE, m_context->get_ecs_manager()->get_component_type<component::Render>());
+        event.set_param(core::event::component::ENTITY_ID, node->get_entity());
     }
     if (updated) {
-        ecs::Event event(events::component::UPDATED);
-        event.set_param(events::component::TYPE, m_context->get_ecs_manager()->get_component_type<component::Render>());
-        event.set_param(events::component::ENTITY_ID, node->get_entity());
+        core::event::Event event(core::event::component::MODIFIED);
+        event.set_param(core::event::component::TYPE, m_context->get_ecs_manager()->get_component_type<component::Render>());
+        event.set_param(core::event::component::ENTITY_ID, node->get_entity());
     }
 }
 
@@ -307,20 +308,20 @@ void PropertiesPanel::draw_transform_component_editor(const scene::Node* node)
 
     }
     if (removed) {
-        ecs::Event event(events::component::REMOVED);
+        core::event::Event event(core::event::component::MODIFIED);
         event.set_param(
-            events::component::TYPE,
+            core::event::component::TYPE,
             m_context->get_ecs_manager()->get_component_type<component::Transform>());
-        event.set_param(events::component::ENTITY_ID, node->get_entity());
-        ecs::EventHandler::get_instance().send_event(event);
+        event.set_param(core::event::component::ENTITY_ID, node->get_entity());
+        core::EventHandler::get_instance().send_event(event);
     }
     if (updated) {
-        ecs::Event event(events::component::UPDATED);
+        core::event::Event event(core::event::component::MODIFIED);
         event.set_param(
-            events::component::TYPE,
+            core::event::component::TYPE,
             m_context->get_ecs_manager()->get_component_type<component::Transform>());
-        event.set_param(events::component::ENTITY_ID, node->get_entity());
-        ecs::EventHandler::get_instance().send_event(event);
+        event.set_param(core::event::component::ENTITY_ID, node->get_entity());
+        core::EventHandler::get_instance().send_event(event);
     }
 }
 
@@ -364,18 +365,18 @@ void PropertiesPanel::draw_rigidbody_component_editor(const scene::Node* node)
     }
 
     if (updated) {
-        ecs::Event event(events::component::UPDATED);
+        core::event::Event event(core::event::component::MODIFIED);
         event.set_param(
-            events::component::TYPE,
+            core::event ::component::TYPE,
             m_context->get_ecs_manager()->get_component_type<component::RigidBody>());
-        event.set_param(events::component::ENTITY_ID, node->get_entity());
+        event.set_param(core::event::component::ENTITY_ID, node->get_entity());
     }
     if (removed) {
-        ecs::Event event(events::component::REMOVED);
+        core::event::Event event(core::event::component::REMOVED);
         event.set_param(
-            events::component::TYPE,
+            core::event::component::TYPE,
             m_context->get_ecs_manager()->get_component_type<component::RigidBody>());
-        event.set_param(events::component::ENTITY_ID, node->get_entity());
+        event.set_param(core::event::component::ENTITY_ID, node->get_entity());
     }
 }
 

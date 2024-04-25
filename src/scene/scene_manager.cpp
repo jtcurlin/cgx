@@ -81,9 +81,14 @@ void SceneManager::set_active_scene(const std::string& label)
     m_active_scene = scene_it->second.get();
 }
 
-void SceneManager::import_scene(const std::string& path) const
+const std::unordered_map<std::string, std::unique_ptr<Scene>>& SceneManager::get_scenes()
+{
+    return m_scenes;
+}
+
+void SceneManager::import_scene(const std::string& path, Node* parent) const
 {
     auto importer = SceneImporter(m_ecs_manager, m_asset_manager);
-    importer.import(path, m_active_scene);
+    importer.import(path, m_active_scene, parent);
 }
 }

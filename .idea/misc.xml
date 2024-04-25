@@ -3,11 +3,26 @@
   <component name="CMakeWorkspace" PROJECT_DIR="$PROJECT_DIR$" />
   <component name="CidrRootsConfiguration">
     <sourceRoots>
+      <file path="$PROJECT_DIR$/examples/sandbox/include" />
+      <file path="$PROJECT_DIR$/examples/sandbox/src" />
       <file path="$PROJECT_DIR$/include" />
       <file path="$PROJECT_DIR$/src" />
     </sourceRoots>
-    <excludeRoots>
+    <libraryRoots>
       <file path="$PROJECT_DIR$/external" />
+      <file path="$PROJECT_DIR$/external/glad" />
+      <file path="$PROJECT_DIR$/external/glfw" />
+      <file path="$PROJECT_DIR$/external/glm" />
+      <file path="$PROJECT_DIR$/external/libsndfile" />
+      <file path="$PROJECT_DIR$/external/openal-soft" />
+      <file path="$PROJECT_DIR$/external/spdlog" />
+      <file path="$PROJECT_DIR$/external/stb" />
+      <file path="$PROJECT_DIR$/external/tinygltfloader" />
+      <file path="$PROJECT_DIR$/external/tinyobjloader" />
+    </libraryRoots>
+    <excludeRoots>
+      <file path="$PROJECT_DIR$/.vscode" />
+      <file path="$PROJECT_DIR$/external/imgui" />
     </excludeRoots>
   </component>
 </project>

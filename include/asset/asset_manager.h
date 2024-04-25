@@ -4,15 +4,13 @@
 
 #include "core/common.h"
 #include "asset/asset.h"
-#include "asset/import/asset_importer.h"
 
-#include "../ecs/event_handler.h"
-
+#include <filesystem>
 #include <unordered_map>
-
 
 namespace cgx::asset
 {
+class AssetImporter;
 
 class AssetManager : public std::enable_shared_from_this<AssetManager>
 {

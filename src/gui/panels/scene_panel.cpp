@@ -6,33 +6,89 @@
 #include "scene/node.h"
 #include "scene/scene_manager.h"
 
-#include "iomanip"
+#include <filesystem>
+#include <iomanip>
 
 namespace cgx::gui
 {
 ScenePanel::ScenePanel(GUIContext* context, ImGuiManager* manager)
-    : ImGuiPanel("Scene", context, manager) {}
+    : ImGuiPanel("Scene", context, manager, ImGuiWindowFlags_MenuBar)
+{}
 
 ScenePanel::~ScenePanel() = default;
 
 void ScenePanel::render()
 {
-    ImGui::SetWindowFontScale(1.0f);
-    if (ImGui::Button("Import GLTF Scene")) {
-        m_importing_scene = true;
+    if (ImGui::BeginMenuBar()) {
+        render_scene_menu();
+        ImGui::EndMenuBar();
     }
-    if (ImGui::Button("\uf0fe  Add Root Node")) {
-        m_adding_node = true;
-    }
-    ImGui::SetWindowFontScale(1.0f);
 
     auto roots = m_context->get_scene_manager()->get_active_scene()->get_roots();
     for (auto* root_node : roots) {
         draw_node(root_node);
     }
 
-    draw_new_node_menu();
     draw_scene_import_popup();
+    if (m_adding_scene) {
+        draw_add_scene_popup();
+    }
+}
+
+void ScenePanel::render_scene_menu()
+{
+    if (ImGui::BeginMenu("Scene")) {
+
+        if (ImGui::BeginMenu("Select Active Scene")) {
+            for (const auto& scene_pair : m_context->get_scene_manager()->get_scenes()) {
+                std::string scene_label = scene_pair.first + "##SelectActiveSceneList";
+                if (ImGui::MenuItem(scene_label.c_str())) {
+                    m_context->get_scene_manager()->set_active_scene(scene_label);
+                }
+            }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Remove Scene")) {
+            for (const auto& scene_pair : m_context->get_scene_manager()->get_scenes()) {
+                std::string scene_label = scene_pair.first + "##RemoveSceneList";
+                if (ImGui::MenuItem(scene_label.c_str())) {
+                    // todo: remove selected scene (scene_pair.second)
+                }
+            }
+            ImGui::EndMenu();
+        }
+        if (ImGui::BeginMenu("Import Scene")) {
+            if (ImGui::MenuItem("As New Scene")) {
+                // todo
+            }
+            if (ImGui::MenuItem("Into Active Scene")) {
+                m_importing_scene = true;
+
+            }
+            ImGui::EndMenu();
+        }
+        if (ImGui::MenuItem("Add New Scene")) {
+            m_adding_scene = true;
+        }
+        ImGui::EndMenu();
+    }
+
+    if (ImGui::BeginMenu("Add Node")) {
+        if (ImGui::MenuItem("\uf6cf  Entity Node")) {
+            auto* new_node = m_context->get_scene_manager()->add_node(nullptr, scene::Node::get_default_tag());
+            m_context->set_item_to_inspect(new_node);
+        }
+        if (ImGui::MenuItem("\uf03d   Camera Node")) {
+            auto* new_node = m_context->get_scene_manager()->add_node(nullptr, scene::Node::get_default_tag());
+            m_context->set_item_to_inspect(new_node);
+        }
+        if (ImGui::MenuItem("\uf4a1   Light Node")) {
+            auto* new_node = m_context->get_scene_manager()->add_node(nullptr, scene::Node::get_default_tag());
+            m_context->set_item_to_inspect(new_node);
+        }
+        ImGui::EndMenu();
+    }
+
 }
 
 void ScenePanel::draw_node(scene::Node* node)
@@ -57,7 +113,7 @@ void ScenePanel::draw_node(scene::Node* node)
 
     if (node_opened) {
         for (const auto& child : node->get_children()) {
-            auto casted_child = dynamic_cast<scene::Node*>(child.get());
+            const auto casted_child = dynamic_cast<scene::Node*>(child.get());
             CGX_ASSERT(casted_child, "attempt to draw non-node hierarchy element");
             draw_node(casted_child);
         }
@@ -71,76 +127,47 @@ void ScenePanel::draw_node_context_menu(scene::Node* node)
 {
     CGX_ASSERT(node, "attempt to draw context menu for invalid node");
     if (ImGui::BeginPopupContextItem("NodeContextMenu")) {
-
         if (ImGui::MenuItem("Inspect")) {
             m_context->set_item_to_inspect(node);
             ImGui::CloseCurrentPopup();
         }
-        else if (ImGui::MenuItem("Rename")) {
+        if (ImGui::BeginMenu("Add Child")) {
+            bool node_added = false;
+            if (ImGui::MenuItem("\uf6cf  Entity Node")) {
+                auto* new_node = m_context->get_scene_manager()->add_node(node, scene::Node::get_default_tag());
+                m_context->set_item_to_inspect(new_node);
+                node_added = true;
+            }
+            if (ImGui::MenuItem("\uf03d   Camera Node")) {
+                auto* new_node = m_context->get_scene_manager()->add_node(node, scene::Node::get_default_tag());
+                m_context->set_item_to_inspect(new_node);
+                node_added = true;
+            }
+            if (ImGui::MenuItem("\uf4a1   Light Node")) {
+                auto* new_node = m_context->get_scene_manager()->add_node(node, scene::Node::get_default_tag());
+                m_context->set_item_to_inspect(new_node);
+                node_added = true;
+            }
+            if (node_added) {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndMenu();
+        }
+        if (ImGui::MenuItem("Rename")) {
             m_context->set_item_to_rename(node);
             ImGui::CloseCurrentPopup();
         }
-        else if (ImGui::MenuItem("Add Child")) {
-            m_node_to_birth = node;
-            m_adding_node   = true;
+        if (ImGui::MenuItem("Import Child")) {
+            m_node_to_birth   = node;
+            m_importing_scene = true;
             ImGui::CloseCurrentPopup();
         }
-        else if (ImGui::MenuItem("Remove")) {
+        if (ImGui::MenuItem("Remove")) {
             node->remove();
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
     }
-}
-
-void ScenePanel::draw_new_node_menu()
-{
-    if (m_adding_node) {
-        ImGui::OpenPopup("Add Node ##NewNodeMenu");
-    }
-    const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-
-    // Open a modal popup to block interactions with other UI elements
-    ImGui::PushFont(m_manager->m_title_font);
-    if (ImGui::BeginPopupModal("Add Node ##NewNodeMenu", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-        // Display buttons for each type of node
-        ImGui::PushFont(m_manager->m_header_font);
-        if (ImGui::MenuItem("\uf6cf   Entity Node")) {
-            scene::Node* new_node = nullptr;
-            new_node = m_context->get_scene_manager()->add_node(m_node_to_birth, generate_default_node_tag());
-            on_node_added(new_node);
-            m_node_to_birth = nullptr;
-            m_adding_node   = false;
-            ImGui::CloseCurrentPopup();
-        }
-        else if (ImGui::MenuItem("\uf03d   Camera Node")) {
-            scene::Node* new_node = nullptr;
-            new_node = m_context->get_scene_manager()->add_node(m_node_to_birth, generate_default_node_tag());
-            on_node_added(new_node);
-            m_node_to_birth = nullptr;
-            m_adding_node   = false;
-            ImGui::CloseCurrentPopup();
-        }
-        else if (ImGui::MenuItem("\uf4a1   Light Node")) {
-            scene::Node* new_node = nullptr;
-            new_node = m_context->get_scene_manager()->add_node(m_node_to_birth, generate_default_node_tag());
-            on_node_added(new_node);
-            m_node_to_birth = nullptr;
-            m_adding_node   = false;
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::Separator();
-        if (ImGui::MenuItem("Cancel")) {
-            m_node_to_birth = nullptr;
-            m_adding_node   = false;
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::PopFont();
-        ImGui::EndPopup();
-    }
-
-    ImGui::PopFont();
 }
 
 void ScenePanel::draw_scene_import_popup()
@@ -154,13 +181,112 @@ void ScenePanel::draw_scene_import_popup()
     // Open a modal popup to block interactions with other UI elements
     ImGui::PushFont(m_manager->m_title_font);
     if (ImGui::BeginPopupModal("Add Scene ##ImportSceneMenu", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-        ImGui::PushFont(m_manager->m_header_font);
-        ImGui::InputText("Enter GLTF/GLB Path (relative to data directory)", m_import_path_buffer, 256);
-        if (ImGui::Button("Ok ##ImportSceneMenu")) {
-            auto* scene_manager = m_context->get_scene_manager();
-            std::string path = std::string(DATA_DIRECTORY) + "/" + m_import_path_buffer;
-            scene_manager->import_scene(path);
+        bool success = false;
+        bool exited  = false;
+
+        ImGui::PushFont(m_manager->m_body_font);
+
+        ImGui::TextUnformatted("Enter .gltf/.glb path");
+        ImGui::SetNextItemWidth(300.0f);
+        if (ImGui::InputText("##ImportScenePathInput", m_input_buffer, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
+
+            const std::filesystem::path base_data_path(std::string(DATA_DIRECTORY));
+            const std::filesystem::path full_path = base_data_path / m_input_buffer;
+            const std::string           extension = full_path.extension().string();
+
+            if (!std::filesystem::exists(full_path)) {
+                m_error_message = "Specified path does not exist.";
+                m_error_active  = true;
+            }
+            else if (extension != ".gltf" && extension != ".glb") {
+                m_error_message = "Specified file is not of type .gltf or .glb";
+                m_error_active  = true;
+            }
+            else {
+                const auto* scene_manager = m_context->get_scene_manager();
+                scene_manager->import_scene(full_path.string(), m_node_to_birth);
+                success = true;
+            }
+        }
+        ImGui::SetItemTooltip("Press enter to import path, escape to cancel.");
+
+        if (m_error_active) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
+            ImGui::TextUnformatted(m_error_message.c_str());
+            ImGui::PopStyleColor();
+        }
+
+        if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+            exited = true;
+        }
+
+        if (success || exited) {
+            m_node_to_birth   = nullptr;
             m_importing_scene = false;
+            m_error_active    = false;
+            m_input_buffer[0] = '\0';
+            m_error_message   = "";
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::PopFont();
+        ImGui::EndPopup();
+    }
+    ImGui::PopFont();
+}
+
+void ScenePanel::draw_add_scene_popup()
+{
+    bool success = false;
+    bool exited  = false;
+
+    ImGui::OpenPopup("Add Scene ##AddSceneMenu");
+
+    const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+    ImGui::PushFont(m_manager->m_title_font);
+    if (ImGui::BeginPopupModal("Add Scene ##AddSceneMenu", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+        ImGui::PushFont(m_manager->m_body_font);
+
+        ImGui::TextUnformatted("Enter Label");
+        ImGui::SetNextItemWidth(300.0f);
+        if (ImGui::InputText("##AddScene-LabelInput", m_input_buffer, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
+
+            const auto& scenes = m_context->get_scene_manager()->get_scenes();
+            if (std::strlen(m_input_buffer) == 0) {
+                m_error_message = "Please specify a valid scene label.";
+                m_error_active  = true;
+            }
+            else if (scenes.find(std::string(m_input_buffer)) != scenes.end()) {
+                m_error_message = "Specified scene label is already in use.";
+                m_error_active  = true;
+            }
+            else {
+                auto*      scene_manager = m_context->get_scene_manager();
+                const auto scene_label   = std::string(m_input_buffer);
+                scene_manager->add_scene(scene_label);
+                scene_manager->set_active_scene(scene_label);
+                success = true;
+            }
+        }
+        ImGui::SetItemTooltip("Press enter to add scene, escape to cancel.");
+
+        if (m_error_active) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
+            ImGui::TextUnformatted(m_error_message.c_str());
+            ImGui::PopStyleColor();
+        }
+
+        if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
+            exited = true;
+        }
+
+        if (success || exited) {
+            m_adding_scene    = false;
+            m_error_active    = false;
+            m_input_buffer[0] = '\0';
+            m_error_message   = "";
             ImGui::CloseCurrentPopup();
         }
         ImGui::PopFont();
@@ -168,21 +294,4 @@ void ScenePanel::draw_scene_import_popup()
     }
     ImGui::PopFont();
 }
-
-void ScenePanel::on_node_added(scene::Node* node)
-{
-    m_context->set_item_to_inspect(node);
-    m_node_states[node->get_id()] = NodeState{};
-}
-
-std::string ScenePanel::generate_default_node_tag()
-{
-    static size_t s_node_counter = 0;
-    CGX_ASSERT(s_node_counter <= 999, "exceeded default node tag count");
-
-    std::stringstream name_ss;
-    name_ss << "node_" << std::setw(3) << std::setfill('0') << std::to_string(s_node_counter++);
-    return name_ss.str();
-}
-
 }

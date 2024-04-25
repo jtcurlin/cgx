@@ -9,7 +9,7 @@
 #include "core/components/transform.h"
 #include "core/components/render.h"
 #include "ecs/component_registry.h"
-#include "ecs/event_handler.h"
+#include "../../include/core/event_handler.h"
 #include "scene/scene.h"
 #include "utility/error.h"
 
@@ -45,7 +45,7 @@ void RenderSystem::initialize()
 
 void RenderSystem::update(const float dt)
 {
-    m_camera->Update(dt);
+    m_camera->update(dt);
 }
 
 void RenderSystem::render()
@@ -75,9 +75,9 @@ void RenderSystem::render()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     CGX_CHECK_GL_ERROR;
 
-    m_view_mat = m_camera->getViewMatrix();
+    m_view_mat = m_camera->get_view_matrix();
     m_proj_mat = glm::perspective(
-        glm::radians(m_camera->getZoom()),
+        glm::radians(m_camera->get_zoom()),
         static_cast<float>(m_settings.render_width) / static_cast<float>(m_settings.render_height),
         0.1f,
         100.0f);
@@ -112,6 +112,7 @@ void RenderSystem::render()
         model_mat = scale(model_mat, transform_c.local_scale);        // apply scale transformation
 
         // activate shader program, set shader data, draw
+
         render_c.shader->use();
         bool pbr = false;
         render_c.shader->set_mat4("proj", m_proj_mat);

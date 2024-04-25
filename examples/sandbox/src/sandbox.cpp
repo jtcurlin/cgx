@@ -46,8 +46,7 @@ void Sandbox::load_assets() const
     std::filesystem::path kenney = asset_dir / "kenney";
     const std::vector<std::string> model_filenames{
         "misc/soccerball/ball.obj",
-        (kenney / "city/obj/large_buildingA.obj").string()
-        // "holodeck/holodeck.obj"
+        (kenney / "city/obj/large_buildingA.obj").string(),
     };
     for (const auto& filename : model_filenames) {
         std::filesystem::path model_path = asset_dir / filename;

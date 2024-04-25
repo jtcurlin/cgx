@@ -1,5 +1,5 @@
 # Copyright © 2024 Jacob Curlin
-# setup external dependencies
+# macros for setup of setup external dependencies
 
 include(FetchContent)
 
@@ -26,7 +26,7 @@ macro(link_opengl TARGET ACCESS)
         target_link_libraries(${TARGET} ${ACCESS} OpenGL::GL)
         add_dependencies(${TARGET} OpenGL::GL)
         message(STATUS " >>  [dependency : opengl] loaded & linked successfully")
-   else()
+    else()
         message(FATAL_ERROR " >  [dependency : opengl] not found on this system")
     endif()
 endmacro()

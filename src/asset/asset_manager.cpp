@@ -1,7 +1,9 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "asset/asset_manager.h"
-#include "core/events/engine_events.h"
+#include "core/event_handler.h"
+#include "core/events/asset_events.h"
+#include "asset/import/asset_importer.h"
 
 namespace cgx::asset
 {
@@ -30,10 +32,10 @@ void AssetManager::register_importer(const std::shared_ptr<AssetImporter>& impor
     // need to pass shared pointer to this assetmanager instance)
     m_importers.push_back(importer);
 
-    auto&      event_handler = ecs::EventHandler::get_instance();
-    ecs::Event event(events::asset::IMPORTER_REGISTERED);
-    event.set_param(events::asset::IMPORTER_LABEL, importer->get_label());
-    event.set_param(events::asset::IMPORTER_SUPPORTED_EXTENSIONS, extensions);
+    auto&      event_handler = core::EventHandler::get_instance();
+    core::event::Event event(core::event::importer::REGISTERED);
+    event.set_param(core::event::importer::LABEL, importer->get_label());
+    event.set_param(core::event::importer::SUPPORTED_EXTENSIONS, extensions);
     event_handler.send_event(event);
 }
 
@@ -94,12 +96,13 @@ AssetID AssetManager::add_asset(const std::shared_ptr<Asset>& asset)
     m_name_to_id[asset->get_tag()].push_back(asset->get_id());
     m_assets[asset->get_id()] = asset;
 
-    auto&      event_handler = ecs::EventHandler::get_instance();
-    ecs::Event event(events::asset::ASSET_ADDED);
-    event.set_param(events::asset::ASSET_ID, asset->get_id());
-    event.set_param(events::asset::ASSET_NAME, asset->get_tag());
-    event.set_param(events::asset::ASSET_PATH, asset->get_internal_path());
-    event.set_param(events::asset::ASSET_TYPE, asset->get_asset_type());
+    auto&      event_handler = core::EventHandler::get_instance();
+    core::event::Event event(core::event::asset::ADDED);
+    event.set_param(core::event::asset::ID, asset->get_id());
+    event.set_param(core::event::asset::TYPE, asset->get_asset_type());
+    event.set_param(core::event::asset::TAG, asset->get_tag());
+    event.set_param(core::event::asset::INTERNAL_PATH, asset->get_internal_path());
+    event.set_param(core::event::asset::EXTERNAL_PATH, asset->get_external_path());
     event_handler.send_event(event);
 
     return asset->get_id();
@@ -109,6 +112,11 @@ bool AssetManager::remove_asset(AssetID asset_id)
 {
     if (const auto asset_it = m_assets.find(asset_id) ; asset_it != m_assets.end()) {
         const auto& asset = asset_it->second;
+
+        const std::string asset_typename = asset->get_asset_typename();
+        const std::string asset_tag = asset->get_tag();
+        const std::string asset_internal_path = asset->get_internal_path();
+        const std::string asset_external_path = asset->get_external_path();
 
         // remove asset's entry from type->id map if present
         if (auto& asset_ids = m_type_to_id[asset->get_asset_type()] ; !asset_ids.empty()) {
@@ -131,9 +139,13 @@ bool AssetManager::remove_asset(AssetID asset_id)
         m_assets.erase(asset_id);
 
         // dispatch resource-removed event
-        auto&      event_handler = ecs::EventHandler::get_instance();
-        ecs::Event event(events::asset::ASSET_REMOVED);
-        event.set_param(events::asset::ASSET_ID, asset_id);
+        auto&      event_handler = core::EventHandler::get_instance();
+        core::event::Event event(core::event::asset::REMOVED);
+        event.set_param(core::event::asset::ID, asset_id);
+        event.set_param(core::event::asset::TYPE, asset_typename);
+        event.set_param(core::event::asset::TAG, asset_tag);
+        event.set_param(core::event::asset::INTERNAL_PATH, asset_internal_path);
+        event.set_param(core::event::asset::EXTERNAL_PATH, asset_external_path);
         event_handler.send_event(event);
         return true;
     }

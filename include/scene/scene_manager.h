@@ -4,7 +4,8 @@
 
 #include "scene/scene.h"
 
-namespace cgx::asset {
+namespace cgx::asset
+{
 class AssetManager;
 }
 
@@ -32,13 +33,15 @@ public:
     [[nodiscard]] Scene* get_active_scene() const;
     void                 set_active_scene(const std::string& label);
 
-    void import_scene(const std::string& path) const;
+    const std::unordered_map<std::string, std::unique_ptr<Scene>>& get_scenes();
+
+    void import_scene(const std::string& path, Node* parent = nullptr) const;
 
 private:
     Scene*                                                  m_active_scene{nullptr};
     std::unordered_map<std::string, std::unique_ptr<Scene>> m_scenes{};
 
     asset::AssetManager* m_asset_manager;
-    ecs::ECSManager* m_ecs_manager;
+    ecs::ECSManager*     m_ecs_manager;
 };
 }
