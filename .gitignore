@@ -1,3 +1,4 @@
+.DS_Store
 build/
 cmake-build-debug/
 .vscode/
@@ -7,5 +8,3 @@ imgui.ini
 include/utility/paths.h
 CMakeUserPresets.json
 
-# external/*
-# !external/CMakeLists.txt
