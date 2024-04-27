@@ -8,17 +8,32 @@
 #include <iomanip>
 #include <sstream>
 
-#include "cgx.h"
-
 namespace cgx::scene
 {
 
-Node::Node(const ecs::Entity entity, const std::string& tag)
-    : Hierarchy{tag}
+std::string NodeType::get_typename(const Type type)
+{
+    static const std::unordered_map<Type, std::string> type_names = {
+        {Mesh, "Mesh"}, {Camera, "Camera"}
+    };
+    const auto it = type_names.find(type);
+    return it != type_names.end() ? it->second : "Unknown";
+}
+
+std::string NodeType::get_lower_typename(const Type type)
+{
+    static const std::unordered_map<Type, std::string> type_names = {
+        {Mesh, "mesh"}, {Camera, "camera"},
+    };
+    const auto it = type_names.find(type);
+    return it != type_names.end() ? it->second : "unknown";
+}
+
+
+Node::Node(std::string tag, const ecs::Entity entity)
+    : Hierarchy{std::move(tag)}
     , m_entity{entity}
 {}
-
-Node::~Node() = default;
 
 void Node::handle_parent_update(Hierarchy* old_parent, Hierarchy* new_parent)
 {
@@ -44,16 +59,11 @@ ecs::Entity Node::get_entity() const
 
 core::ItemType::Type Node::get_item_type() const
 {
-    // return Hierarchy::get_item_type();
     return core::ItemType::Node;
 }
 
-std::string Node::get_default_tag()
+std::string Node::get_node_typename() const
 {
-    static size_t node_counter = 0;
-    std::stringstream tag_ss;
-    tag_ss << "Node " << std::setw(3) << std::setfill('0') << node_counter++;
-    return tag_ss.str();
+    return NodeType::get_typename(get_node_type());
 }
-
 }

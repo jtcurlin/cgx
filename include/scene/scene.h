@@ -16,7 +16,7 @@ public:
 
     [[nodiscard]] std::vector<Node*> get_roots() const;
 
-    Node* add_node(ecs::Entity entity, const std::string& tag, Node* parent=nullptr);
+    Node* add_node(NodeType::Type type, std::string tag, ecs::Entity entity, Node* parent=nullptr);
 
     void remove_node(Node* node);
     void remove_node_recursive(Node* node);

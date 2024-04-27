@@ -21,6 +21,7 @@
 #include "scene/node.h"
 
 #include "stb_image.h"
+#include "scene/mesh_node.h"
 
 namespace cgx::scene
 {
@@ -67,11 +68,13 @@ void SceneImporter::process_node(
     Node*                  parent_node,
     Scene*                 scene)
 {
-    const std::string node_tag = gltf_node.name.empty() ? Node::get_default_tag() : gltf_node.name;
+
+    static int unnamed_mesh_count = 0;
+    const std::string node_tag = gltf_node.name.empty() ? "Imported Mesh" + unnamed_mesh_count++ : gltf_node.name;
 
     auto new_node_entity = m_ecs_manager->acquire_entity();
     m_ecs_manager->add_component<component::Hierarchy>(new_node_entity, component::Hierarchy{});
-    auto node = scene->add_node(new_node_entity, node_tag, parent_node);
+    auto node = scene->add_node(NodeType::Type::Mesh, node_tag, new_node_entity, parent_node);
 
     glm::vec3 translation(0.0f);
     glm::vec3 rotation(0.0f);
@@ -99,7 +102,7 @@ void SceneImporter::process_node(
     }
 
     component::Transform tc = {
-        .translate = translation, .rotate = rotation, .scale = scale, .world_matrix = glm::mat4(1.0f), .dirty = true
+        .translation = translation, .rotation = rotation, .scale = scale, .world_matrix = glm::mat4(1.0f), .dirty = true
     };
     m_ecs_manager->add_component<component::Transform>(node->get_entity(), tc);
 

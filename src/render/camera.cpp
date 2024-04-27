@@ -31,7 +31,7 @@ Camera::Camera(glm::vec3 position, glm::vec3 up, float yaw, float pitch)
 void Camera::update(const double dt)
 {
     if (m_control_enabled) {
-        auto& input_manager = core::InputManager::GetSingleton();
+        auto& input_manager = core::InputManager::get_instance();
 
         double x_offset, y_offset;
         input_manager.get_mouse_offset(x_offset, y_offset);
@@ -123,7 +123,7 @@ void Camera::enable_control()
 {
     m_control_enabled = true;
 
-    auto& input_manager = core::InputManager::GetSingleton();
+    auto& input_manager = core::InputManager::get_instance();
 
     // extra pre-call to getMouseOffset to 'reset' the current offset created by mouse movements
     // while camera control disabled

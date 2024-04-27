@@ -5,6 +5,10 @@
 
 #include "asset/asset_manager.h"
 #include "core/components/hierarchy.h"
+#include "core/components/transform.h"
+#include "core/components/render.h"
+#include "core/components/camera.h"
+#include "core/components/controllable.h"
 #include "ecs/ecs_manager.h"
 
 namespace cgx::scene
@@ -18,11 +22,29 @@ SceneManager::SceneManager(ecs::ECSManager* ecs_manager, asset::AssetManager* as
 
 SceneManager::~SceneManager() = default;
 
-Node* SceneManager::add_node(Node* parent, const std::string& tag) const
+Node* SceneManager::add_node(const NodeType::Type type, std::string tag, Node* parent) const
 {
     const auto entity = m_ecs_manager->acquire_entity();
     m_ecs_manager->add_component<component::Hierarchy>(entity, component::Hierarchy{});
-    return m_active_scene->add_node(entity, tag, parent);
+
+    switch (type) {
+        case NodeType::Type::Mesh: {
+            m_ecs_manager->add_component<component::Render>(entity, component::Render{});
+            m_ecs_manager->add_component<component::Transform>(entity, component::Transform{});
+            break;
+        }
+        case NodeType::Type::Camera: {
+            CGX_ASSERT(parent == nullptr, "Non-root camera nodes are not yet supported");
+            m_ecs_manager->add_component<component::Camera>(entity, component::Camera{});
+            m_ecs_manager->add_component<component::Transform>(
+                entity,
+                component::Transform{.translation = glm::vec3(0.0f, 0.0f, 3.0f)});
+            m_ecs_manager->add_component<component::Controllable>(entity, component::Controllable{});
+            break;
+        }
+    }
+
+    return m_active_scene->add_node(type, std::move(tag), entity, parent);
 }
 
 void SceneManager::remove_node(Node* node) const

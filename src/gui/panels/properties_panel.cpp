@@ -14,6 +14,8 @@
 #include "core/components/rigid_body.h"
 #include "core/components/transform.h"
 #include "core/components/hierarchy.h"
+#include "core/components/camera.h"
+#include "core/components/controllable.h"
 
 #include "ecs/ecs_manager.h"
 
@@ -183,6 +185,18 @@ void PropertiesPanel::draw_node_properties(const scene::Node* node)
                 ImGui::CloseCurrentPopup();
             }
         }
+        if (!ecs_manager->has_component<component::RigidBody>(entity)) {
+            if (ImGui::Selectable("Camera Component")) {
+                ecs_manager->add_component<component::Camera>(entity, component::Camera{});
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        if (!ecs_manager->has_component<component::RigidBody>(entity)) {
+            if (ImGui::Selectable("Controllable Component")) {
+                ecs_manager->add_component<component::Controllable>(entity, component::Controllable{});
+                ImGui::CloseCurrentPopup();
+            }
+        }
         ImGui::EndPopup();
     }
     ImGui::Separator();
@@ -191,7 +205,7 @@ void PropertiesPanel::draw_node_properties(const scene::Node* node)
 
 
     ImGui::PushFont(m_manager->m_header_font);
-    std::string entity_id_text = "Entity #" + std::to_string(node->get_entity());
+    const std::string entity_id_text = "Entity #" + std::to_string(node->get_entity());
 
     ImGui::TreeNodeEx(
         entity_id_text.c_str(),
@@ -203,11 +217,17 @@ void PropertiesPanel::draw_node_properties(const scene::Node* node)
         if (ecs_manager->has_component<component::Hierarchy>(entity)) {
             draw_hierarchy_component_editor(node);
         }
-        if (ecs_manager->has_component<component::Render>(entity)) {
-            draw_render_component_editor(node);
-        }
         if (ecs_manager->has_component<component::Transform>(entity)) {
             draw_transform_component_editor(node);
+        }
+        if (ecs_manager->has_component<component::Camera>(entity)) {
+            draw_camera_component_editor(node);
+        }
+        if (ecs_manager->has_component<component::Controllable>(entity)) {
+            draw_controllable_component_editor(node);
+        }
+        if (ecs_manager->has_component<component::Render>(entity)) {
+            draw_render_component_editor(node);
         }
         if (ecs_manager->has_component<component::RigidBody>(entity)) {
             draw_rigidbody_component_editor(node);
@@ -285,8 +305,8 @@ void PropertiesPanel::draw_transform_component_editor(const scene::Node* node)
         if (ImGui::MenuItem("Reset ##TransformComponent")) {
             auto& component = m_context->get_ecs_manager()->get_component<component::Transform>(node->get_entity());
 
-            component.translate = glm::vec3(0.0f);
-            component.rotate    = glm::vec3(0.0f);
+            component.translation = glm::vec3(0.0f);
+            component.rotation    = glm::vec3(0.0f);
             component.scale     = glm::vec3(1.0f);
             updated             = true;
         }
@@ -297,8 +317,8 @@ void PropertiesPanel::draw_transform_component_editor(const scene::Node* node)
     if (editor_opened) {
         auto& component = m_context->get_ecs_manager()->get_component<component::Transform>(node->get_entity());
 
-        updated |= ImGui::InputFloat3("Position##TransformComponent", &component.translate[0]);
-        updated |= ImGui::InputFloat3("Rotation##TransformComponent", &component.rotate[0]);
+        updated |= ImGui::InputFloat3("Position##TransformComponent", &component.translation[0]);
+        updated |= ImGui::InputFloat3("Rotation##TransformComponent", &component.rotation[0]);
         updated |= ImGui::InputFloat3("Scale##TransformComponent", &component.scale[0]);
 
         if (updated) {
@@ -377,6 +397,113 @@ void PropertiesPanel::draw_rigidbody_component_editor(const scene::Node* node)
             core::event::component::TYPE,
             m_context->get_ecs_manager()->get_component_type<component::RigidBody>());
         event.set_param(core::event::component::ENTITY_ID, node->get_entity());
+    }
+}
+
+void PropertiesPanel::draw_camera_component_editor(const scene::Node* node)
+{
+    constexpr ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
+                                         ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_SpanAvailWidth |
+                                         ImGuiTreeNodeFlags_NoTreePushOnOpen;
+
+    bool editor_opened = ImGui::TreeNodeEx("Camera Component", flags);
+    bool updated       = false;
+    bool removed       = false;
+
+    if (ImGui::BeginPopupContextItem("Camera Component Context Popup")) {
+        if (ImGui::MenuItem("Remove ##CameraComponent")) {
+            m_context->get_ecs_manager()->remove_component<component::Camera>(node->get_entity());
+            removed       = true;
+            editor_opened = false;
+        }
+        if (ImGui::MenuItem("Reset ##CameraComponent")) {
+            auto& component = m_context->get_ecs_manager()->get_component<component::Camera>(node->get_entity());
+
+            component = component::Camera{};
+            updated             = true;
+        }
+        ImGui::EndPopup();
+    }
+    ImGui::SetItemTooltip("right click for options");
+
+    if (editor_opened) {
+        auto& component = m_context->get_ecs_manager()->get_component<component::Camera>(node->get_entity());
+
+        updated |= ImGui::InputFloat("FOV ##CameraComponent", &component.fov);
+        updated |= ImGui::InputFloat("Aspect Ratio ##CameraComponent", &component.aspect_ratio);
+        updated |= ImGui::InputFloat("Near Plane ##CameraComponent", &component.near_plane);
+        updated |= ImGui::InputFloat("Far Plane ##CameraComponent", &component.far_plane);
+        updated |= ImGui::InputFloat("Zoom ##CameraComponent", &component.zoom);
+    }
+
+    if (removed) {
+        core::event::Event event(core::event::component::MODIFIED);
+        event.set_param(
+            core::event::component::TYPE,
+            m_context->get_ecs_manager()->get_component_type<component::Camera>());
+        event.set_param(core::event::component::ENTITY_ID, node->get_entity());
+        core::EventHandler::get_instance().send_event(event);
+    }
+    if (updated) {
+        core::event::Event event(core::event::component::MODIFIED);
+        event.set_param(
+            core::event::component::TYPE,
+            m_context->get_ecs_manager()->get_component_type<component::Camera>());
+        event.set_param(core::event::component::ENTITY_ID, node->get_entity());
+        core::EventHandler::get_instance().send_event(event);
+    }
+}
+
+void PropertiesPanel::draw_controllable_component_editor(const scene::Node* node)
+{
+    constexpr ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
+                                         ImGuiTreeNodeFlags_Bullet | ImGuiTreeNodeFlags_SpanAvailWidth |
+                                         ImGuiTreeNodeFlags_NoTreePushOnOpen;
+
+    bool editor_opened = ImGui::TreeNodeEx("Controllable Component", flags);
+    bool updated       = false;
+    bool removed       = false;
+
+    if (ImGui::BeginPopupContextItem("Controllable Component Context Popup")) {
+        if (ImGui::MenuItem("Remove ##ControllableComponent")) {
+            m_context->get_ecs_manager()->remove_component<component::Controllable>(node->get_entity());
+            removed       = true;
+            editor_opened = false;
+        }
+        if (ImGui::MenuItem("Reset ##ControllableComponent")) {
+            auto& component = m_context->get_ecs_manager()->get_component<component::Controllable>(node->get_entity());
+
+            component = component::Controllable{};
+            updated             = true;
+        }
+        ImGui::EndPopup();
+    }
+    ImGui::SetItemTooltip("right click for options");
+
+    if (editor_opened) {
+        auto& component = m_context->get_ecs_manager()->get_component<component::Controllable>(node->get_entity());
+
+        updated |= ImGui::Checkbox("Enable Position Control", &component.position_control_active);
+        updated |= ImGui::Checkbox("Enable Orientation Control", &component.orientation_control_active);
+
+        updated |= ImGui::InputFloat3("Movement Speed ##ControllableComponent", &component.movement_speed[0]);
+        updated |= ImGui::InputFloat3("Rotation Speed ##ControllableComponent", &component.rotation_speed[0]);
+    }
+    if (removed) {
+        core::event::Event event(core::event::component::MODIFIED);
+        event.set_param(
+            core::event::component::TYPE,
+            m_context->get_ecs_manager()->get_component_type<component::Controllable>());
+        event.set_param(core::event::component::ENTITY_ID, node->get_entity());
+        core::EventHandler::get_instance().send_event(event);
+    }
+    if (updated) {
+        core::event::Event event(core::event::component::MODIFIED);
+        event.set_param(
+            core::event::component::TYPE,
+            m_context->get_ecs_manager()->get_component_type<component::Controllable>());
+        event.set_param(core::event::component::ENTITY_ID, node->get_entity());
+        core::EventHandler::get_instance().send_event(event);
     }
 }
 

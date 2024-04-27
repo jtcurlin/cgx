@@ -20,7 +20,7 @@ public:
 
     void render() override;
 
-    void render_scene_menu();
+    void render_scene_menu_bar();
 
     void draw_node(scene::Node* node);
     void draw_node_context_menu(scene::Node* node);

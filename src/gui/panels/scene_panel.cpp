@@ -9,18 +9,19 @@
 #include <filesystem>
 #include <iomanip>
 
+#include "scene/camera_node.h"
+
 namespace cgx::gui
 {
 ScenePanel::ScenePanel(GUIContext* context, ImGuiManager* manager)
-    : ImGuiPanel("Scene", context, manager, ImGuiWindowFlags_MenuBar)
-{}
+    : ImGuiPanel("Scene", context, manager, ImGuiWindowFlags_MenuBar) {}
 
 ScenePanel::~ScenePanel() = default;
 
 void ScenePanel::render()
 {
     if (ImGui::BeginMenuBar()) {
-        render_scene_menu();
+        render_scene_menu_bar();
         ImGui::EndMenuBar();
     }
 
@@ -35,7 +36,7 @@ void ScenePanel::render()
     }
 }
 
-void ScenePanel::render_scene_menu()
+void ScenePanel::render_scene_menu_bar()
 {
     if (ImGui::BeginMenu("Scene")) {
 
@@ -74,18 +75,29 @@ void ScenePanel::render_scene_menu()
     }
 
     if (ImGui::BeginMenu("Add Node")) {
-        if (ImGui::MenuItem("\uf6cf  Entity Node")) {
-            auto* new_node = m_context->get_scene_manager()->add_node(nullptr, scene::Node::get_default_tag());
+        if (ImGui::MenuItem("\uf6cf  Mesh Node")) {
+            auto* new_node = m_context->get_scene_manager()->add_node(
+                scene::NodeType::Type::Mesh,
+                "New Mesh",
+                nullptr);
             m_context->set_item_to_inspect(new_node);
         }
         if (ImGui::MenuItem("\uf03d   Camera Node")) {
-            auto* new_node = m_context->get_scene_manager()->add_node(nullptr, scene::Node::get_default_tag());
+            auto* new_node = m_context->get_scene_manager()->add_node(
+                scene::NodeType::Type::Camera,
+                "New Camera",
+                nullptr);
             m_context->set_item_to_inspect(new_node);
         }
+        /*
         if (ImGui::MenuItem("\uf4a1   Light Node")) {
-            auto* new_node = m_context->get_scene_manager()->add_node(nullptr, scene::Node::get_default_tag());
+            auto* new_node = m_context->get_scene_manager()->add_node(
+                scene::NodeType::Type::Light,
+                scene::Node::get_default_tag(),
+                nullptr);
             m_context->set_item_to_inspect(new_node);
         }
+        */
         ImGui::EndMenu();
     }
 
@@ -100,8 +112,24 @@ void ScenePanel::draw_node(scene::Node* node)
     ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_None;
     node_flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
     node_flags |= node_state.is_expanded ? ImGuiTreeNodeFlags_DefaultOpen : 0;
+    node_flags |= node == m_context->get_item_to_inspect() ? ImGuiTreeNodeFlags_Selected : 0;
 
-    const std::string icon = "\uf6cf " + node->get_tag();
+    std::string icon;
+    switch (node->get_node_type()) {
+        case scene::NodeType::Type::Mesh: {
+            icon = "\uf6cf  " + node->get_tag();
+            break;
+        }
+        case scene::NodeType::Type::Camera: {
+            icon = "\uf03d  " + node->get_tag();
+            break;
+        }
+        default: {
+            CGX_FATAL("Unrecognized node type");
+            std::exit(1);
+        }
+    }
+
 
     const bool node_opened = ImGui::TreeNodeEx(icon.c_str(), node_flags);
 
@@ -133,21 +161,32 @@ void ScenePanel::draw_node_context_menu(scene::Node* node)
         }
         if (ImGui::BeginMenu("Add Child")) {
             bool node_added = false;
-            if (ImGui::MenuItem("\uf6cf  Entity Node")) {
-                auto* new_node = m_context->get_scene_manager()->add_node(node, scene::Node::get_default_tag());
+            if (ImGui::MenuItem("\uf6cf  Mesh Node")) {
+                auto* new_node = m_context->get_scene_manager()->add_node(
+                    scene::NodeType::Type::Mesh,
+                    "New Mesh",
+                    node);
                 m_context->set_item_to_inspect(new_node);
                 node_added = true;
             }
             if (ImGui::MenuItem("\uf03d   Camera Node")) {
-                auto* new_node = m_context->get_scene_manager()->add_node(node, scene::Node::get_default_tag());
+                auto* new_node = m_context->get_scene_manager()->add_node(
+                    scene::NodeType::Type::Camera,
+                    "New Camera",
+                    node);
                 m_context->set_item_to_inspect(new_node);
                 node_added = true;
             }
+            /*
             if (ImGui::MenuItem("\uf4a1   Light Node")) {
-                auto* new_node = m_context->get_scene_manager()->add_node(node, scene::Node::get_default_tag());
+                auto* new_node = m_context->get_scene_manager()->add_node(
+                    scene::NodeType::Type::Light,
+                    scene::Node::get_default_tag(),
+                    node);
                 m_context->set_item_to_inspect(new_node);
                 node_added = true;
             }
+            */
             if (node_added) {
                 ImGui::CloseCurrentPopup();
             }

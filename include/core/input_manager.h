@@ -17,7 +17,7 @@ public:
     InputManager(const InputManager&)            = delete;
     InputManager& operator=(const InputManager&) = delete;
 
-    static InputManager& GetSingleton()
+    static InputManager& get_instance()
     {
         static InputManager s_instance;
         return s_instance;
@@ -44,6 +44,8 @@ public:
     void get_mouse_position(double& x_pos, double& y_pos) const;
     void get_mouse_offset(double& x_offset, double& y_offset);
 
+    void reset();
+
 private:
     InputManager(); // default constructor (singleton)
     ~InputManager();
@@ -55,6 +57,6 @@ private:
 
     double m_mouse_x{0.0};
     double m_mouse_y{0.0};
-    bool   m_first_mouse{true};
+    bool   m_reset_mouse{true};
 };
 }

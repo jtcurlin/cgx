@@ -28,6 +28,8 @@ public:
     std::vector<AssetID>        getAllIDs();
     const std::vector<AssetID>& getAllIDs(AssetType::Type type_filter);
 
+    const std::vector<AssetID> get_ids_by_tag() const;
+
     std::shared_ptr<Asset>                                     get_asset(AssetID asset_id);
     const std::unordered_map<AssetID, std::shared_ptr<Asset>>& get_assets() const;
     const std::vector<std::shared_ptr<AssetImporter>>&         get_importers() const;

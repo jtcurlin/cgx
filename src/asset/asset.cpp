@@ -8,23 +8,22 @@ namespace cgx::asset
 
 std::string AssetType::get_typename(const Type type)
 {
-    static const std::unordered_map<Type, std::string> typeNames = {
+    static const std::unordered_map<Type, std::string> type_names = {
         {Mesh, "Mesh"}, {Model, "Model"}, {Material, "Material"}, {Texture, "Texture"}, {Shader, "Shader"},
         {Cubemap, "Cubemap"},
     };
-    const auto it = typeNames.find(type);
-    return it != typeNames.end() ? it->second : "Unknown";
+    const auto it = type_names.find(type);
+    return it != type_names.end() ? it->second : "Unknown";
 }
 
 std::string AssetType::get_lower_typename(const Type type)
 {
-    static const std::unordered_map<Type, std::string> typeNames = {
+    static const std::unordered_map<Type, std::string> type_names = {
         {Mesh, "mesh"}, {Model, "model"}, {Material, "material"}, {Texture, "texture"}, {Shader, "shader"},
         {Cubemap, "cubemap"},
     };
-    const auto it = typeNames.find(type);
-    return it != typeNames.end() ? it->second : "unknown";
-
+    const auto it = type_names.find(type);
+    return it != type_names.end() ? it->second : "unknown";
 }
 
 Asset::Asset(std::string tag, std::string internal_path, std::string external_path)

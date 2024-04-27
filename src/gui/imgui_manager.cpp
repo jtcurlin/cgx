@@ -22,6 +22,8 @@
 
 #include <filesystem>
 
+#include "core/input_manager.h"
+
 
 namespace cgx::gui
 {
@@ -30,7 +32,6 @@ ImGuiManager::ImGuiManager(GUIContext* context)
 {
     init();
     register_event_handlers();
-
 }
 
 ImGuiManager::~ImGuiManager()
@@ -84,11 +85,20 @@ void ImGuiManager::init()
 
     const std::string ini_path = std::string(DATA_DIRECTORY) + "/gui_layout.ini";
     ImGui::LoadIniSettingsFromDisk(ini_path.c_str());
+
 }
 
 void ImGuiManager::register_event_handlers()
 {
     auto& event_handler = core::EventHandler::get_instance();
+    // auto& input_manager = core::InputManager::get_instance();
+
+    event_handler.add_listener(
+        core::event::master::TOGGLE_INTERFACE_MODE,
+        [this](core::event::Event& event) {
+            m_interface_enabled = !m_interface_enabled;
+        });
+
     event_handler.add_listener(
         core::event::master::ACTIVATE_GUI_CONTROL_MODE,
         [this](core::event::Event& event) {
@@ -99,18 +109,6 @@ void ImGuiManager::register_event_handlers()
         core::event::master::ACTIVATE_GAME_CONTROL_MODE,
         [this](core::event::Event& event) {
             this->disable_imgui_input();
-        });
-
-    event_handler.add_listener(
-        core::event::master::ACTIVATE_GUI_INTERFACE,
-        [this](core::event::Event& event) {
-            this->m_interface_enabled = true;
-        });
-
-    event_handler.add_listener(
-        core::event::master::ACTIVATE_GAME_INTERFACE,
-        [this](core::event::Event& event) {
-            this->m_interface_enabled = false;
         });
 }
 
@@ -130,48 +128,27 @@ void ImGuiManager::register_panel(std::unique_ptr<ImGuiPanel> panel)
     }
 }
 
+ImGuiPanel* ImGuiManager::get_panel(const std::string& panel_title)
+{
+    for (auto& panel : m_imgui_panels) {
+        if (panel_title == panel->get_title()) {
+            return panel.get();
+        }
+    }
+    return nullptr;
+}
+
 void ImGuiManager::render()
 {
     begin_render();
 
-    render_core_menu();
-
     if (m_interface_enabled) {
-        for (const auto& window : m_imgui_panels) {
-            if (window->is_visible()) {
-                window->Begin();
-                window->render();
-                window->End();
-            }
-        }
-
-        const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-        ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-
-        if (m_context->get_item_to_rename() != nullptr) {
-            const std::string unique_id = "Rename Node##" + std::to_string(m_context->get_item_to_rename()->get_id());
-            CGX_INFO("Item to rename is not nullptr");
-            ImGui::OpenPopup(unique_id.c_str());
-            if (ImGui::BeginPopupModal(unique_id.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-
-                ImGui::InputText("Rename Node ##InputField", m_input_buffer, 256);
-                if (ImGui::Button("Ok ##Rename Node")) {
-                    const auto item = m_context->get_item_to_rename();
-                    item->set_tag(m_input_buffer);
-                    m_context->set_item_to_rename(nullptr);
-                    ImGui::CloseCurrentPopup();
-                }
-                ImGui::EndPopup();
-            }
-        }
-
+        draw_editor();
     }
-    else {
-        ImVec2 image_size = ImGui::GetContentRegionAvail();
-
-        int framebuffer_tex_id = m_context->get_render_system()->getFramebuffer()->getTextureID();
-        ImGui::Image((void*) (intptr_t) framebuffer_tex_id, image_size, ImVec2(0, 1), ImVec2(1, 0));
+    if (!m_interface_enabled) {
+        draw_fullscreen_render();
     }
+
     end_render();
 }
 
@@ -181,39 +158,105 @@ void ImGuiManager::begin_render()
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
 
-    // Dock Space
-    static bool               dockSpaceOpen   = true;
-    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
-    ImGuiWindowFlags          window_flags    = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+    // create/configure a primary dockspace window
+    static bool        open            = true;
+    ImGuiWindowFlags   window_flags    = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+    ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_None;
 
+    // center dockspace and size to match window viewport
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
     ImGui::SetNextWindowPos(viewport->Pos);
     ImGui::SetNextWindowSize(viewport->Size);
     ImGui::SetNextWindowViewport(viewport->ID);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+
+    // disable 'window' functionality of the dockspace window
     window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
             ImGuiWindowFlags_NoMove;
     window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
-
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin("DockSpace Demo", &dockSpaceOpen, window_flags);
-    ImGui::PopStyleVar(3);
-
-    // DockSpace
-    if (const ImGuiIO& io = ImGui::GetIO() ; io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
-        const ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
-        ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+    if (!m_interface_enabled) {
+        dockspace_flags |= ImGuiDockNodeFlags_PassthruCentralNode;
+        window_flags |= ImGuiWindowFlags_NoBackground;
     }
 
-    ImGui::End(); // End the DockSpace window
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+    ImGui::Begin("primary_dockspace_window", &open, window_flags);
+    ImGui::PopStyleVar(3);
+
+    // submit the dockspace
+    if (const ImGuiIO& io = ImGui::GetIO() ; io.ConfigFlags & ImGuiConfigFlags_DockingEnable) {
+        static ImGuiID dockspace_id = ImGui::GetID("primary_dockspace");
+        ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), dockspace_flags);
+    }
+}
+
+void ImGuiManager::draw_editor()
+{
+    draw_main_menu_bar();
+
+    static ImGuiID dockspace_id = ImGui::GetID("primary_dockspace");
+    for (const auto& window : m_imgui_panels) {
+        if (window->is_visible()) {
+            ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_FirstUseEver);
+            window->Begin();
+            window->render();
+            window->End();
+        }
+    }
+
+    const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+
+    // rename item popup
+    if (m_context->get_item_to_rename() != nullptr) {
+        const std::string unique_id = "Rename Item ## CoreRenamePopup" + std::to_string(
+                                          m_context->get_item_to_rename()->get_id());
+        CGX_INFO("Item to rename is not nullptr");
+        ImGui::OpenPopup(unique_id.c_str());
+        if (ImGui::BeginPopupModal(unique_id.c_str(), nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
+            if (ImGui::InputText(
+                "Enter Tag ##CoreRenamePopup",
+                m_input_buffer,
+                256,
+                ImGuiInputTextFlags_EnterReturnsTrue)) {
+                const auto item = m_context->get_item_to_rename();
+                item->set_tag(m_input_buffer);
+                m_context->set_item_to_rename(nullptr);
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+    }
+}
+
+void ImGuiManager::draw_fullscreen_render()
+{
+    const ImGuiViewport* viewport = ImGui::GetMainViewport();
+    ImGui::SetNextWindowPos(viewport->Pos);
+    ImGui::SetNextWindowSize(viewport->Size);
+    ImGui::SetNextWindowViewport(viewport->ID);
+
+    static ImGuiID dockspace_id = ImGui::GetID("primary_dockspace");
+    ImGui::SetNextWindowDockID(dockspace_id);
+
+    constexpr ImGuiWindowFlags window_flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoDocking |
+                                              ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoNav;
+
+    ImGui::Begin("fullscreen_render_window", nullptr, window_flags);
+
+    const ImVec2   image_size         = ImGui::GetContentRegionAvail();
+    const uint32_t framebuffer_tex_id = m_context->get_render_system()->getFramebuffer()->getTextureID();
+    ImGui::Image((void*) (intptr_t) framebuffer_tex_id, image_size, ImVec2(0, 1), ImVec2(1, 0));
+
+    ImGui::End();
 }
 
 void ImGuiManager::end_render()
 {
+    ImGui::End();
     ImGui::Render();
-    // ImGuiIO& io = ImGui::GetIO();
-    // (void) io;
+
     if (ImGuiIO& io = ImGui::GetIO() ; io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
         GLFWwindow* backup_current_context = glfwGetCurrentContext();
         ImGui::UpdatePlatformWindows();
@@ -223,16 +266,28 @@ void ImGuiManager::end_render()
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
-void ImGuiManager::render_core_menu() const
+void ImGuiManager::draw_main_menu_bar()
 {
     if (ImGui::BeginMainMenuBar()) {
         if (ImGui::BeginMenu("Engine")) {
-            for (const auto& window : m_imgui_panels) {
-                if (ImGui::MenuItem(window->get_title().c_str(), "", window->is_visible())) {
-                    window->show();
-                }
+            if (ImGui::MenuItem("Interface", "tab", m_interface_enabled)) {
+                m_interface_enabled = !m_interface_enabled;
+            }
+
+            if (ImGui::MenuItem("Quit", "end")) {
+                core::EventHandler::get_instance().send_event(core::event::master::QUIT);
             }
             ImGui::EndMenu();
+        }
+        if (m_interface_enabled) {
+            if (ImGui::BeginMenu("Panels")) {
+                for (const auto& window : m_imgui_panels) {
+                    if (ImGui::MenuItem(window->get_title().c_str(), "", window->is_visible())) {
+                        window->show();
+                    }
+                }
+                ImGui::EndMenu();
+            }
         }
         ImGui::EndMainMenuBar();
     }

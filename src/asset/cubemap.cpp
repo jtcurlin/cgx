@@ -25,7 +25,7 @@ Cubemap::Cubemap(std::string tag, std::string path, const std::vector<std::strin
     for (size_t i = 0 ; i < 6 ; ++i) {
         stbi_uc* data = nullptr;
 
-        stbi_set_flip_vertically_on_load(1);
+        stbi_set_flip_vertically_on_load(0);
         data = stbi_load(face_texture_paths[i].c_str(), &width, &height, &num_channels, 0);
 
         if (data) {

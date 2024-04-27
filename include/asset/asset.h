@@ -37,10 +37,12 @@ class Asset : public core::Item
 public:
     Asset(std::string tag, std::string internal_path, std::string external_path);
 
-    std::string get_path_prefix() const override;
+    core::ItemType::Type    get_item_type() const override;
+
     virtual AssetType::Type get_asset_type() const = 0;
     virtual std::string     get_asset_typename() const;
-    core::ItemType::Type    get_item_type() const override;
+
+    std::string get_path_prefix() const override;
 
 private:
     static std::size_t generate_id(const std::string& path);

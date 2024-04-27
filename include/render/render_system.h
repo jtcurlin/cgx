@@ -3,6 +3,7 @@
 #pragma once
 
 #include "asset/cubemap.h"
+#include "core/components/camera.h"
 #include "ecs/system.h"
 
 #include "render/camera.h"
@@ -40,8 +41,6 @@ struct RenderSettings
     bool     m_render_test_enabled{false};
     uint32_t m_render_test_shader{};
     uint32_t m_render_test_vao{};
-
-    bool m_skybox_enabled{false};
 };
 
 class RenderSystem : public ecs::System
@@ -68,15 +67,15 @@ public:
 
     RenderSettings& get_render_settings();
 
-    Camera* get_camera() const;
-
+    [[nodiscard]] ecs::Entity get_camera() const;
+    void set_camera(ecs::Entity camera_entity);
 
 private:
-    std::unique_ptr<Camera>      m_camera;
+    ecs::Entity m_camera{ecs::MAX_ENTITIES};
     std::shared_ptr<Framebuffer> m_framebuffer;
 
-    glm::mat4 m_view_mat{};
-    glm::mat4 m_proj_mat{};
+    glm::mat4 m_view_mat{glm::mat4(1.0f)};
+    glm::mat4 m_proj_mat{glm::mat4(1.0f)};
 
     std::shared_ptr<asset::Cubemap> m_skybox_cubemap{};
 

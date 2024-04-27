@@ -56,6 +56,8 @@ target_sources(cgx PRIVATE
         ${SOURCE_DIR}/asset/phong_material.cpp
         ${SOURCE_DIR}/asset/shader.cpp
         ${SOURCE_DIR}/asset/texture.cpp
+        ${SOURCE_DIR}/core/systems/camera_system.cpp
+        ${SOURCE_DIR}/core/systems/control_system.cpp
         ${SOURCE_DIR}/core/systems/hierarchy_system.cpp
         ${SOURCE_DIR}/core/systems/physics_system.cpp
         ${SOURCE_DIR}/core/systems/time_system.cpp
@@ -84,6 +86,8 @@ target_sources(cgx PRIVATE
         ${SOURCE_DIR}/render/framebuffer.cpp
         ${SOURCE_DIR}/render/render_system.cpp
         ${SOURCE_DIR}/scene/node.cpp
+        ${SOURCE_DIR}/scene/camera_node.cpp
+        ${SOURCE_DIR}/scene/mesh_node.cpp
         ${SOURCE_DIR}/scene/scene.cpp
         ${SOURCE_DIR}/scene/scene_importer.cpp
         ${SOURCE_DIR}/scene/scene_manager.cpp

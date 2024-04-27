@@ -22,15 +22,6 @@ void RenderSettingsPanel::render()
     draw_skybox_menu();
     ImGui::Checkbox("Enable MSAA", &render_settings.msaa_enabled);
     ImGui::Checkbox("Enable Rendering Test", &render_settings.m_render_test_enabled);
-
-    // Adjust spacing as necessary
-    ImGui::SetNextItemWidth(ImGui::GetFontSize() * 3);
-    ImGui::InputFloat(
-        "Camera Movement Speed",
-        &m_context->get_render_system()->get_camera()->m_movement_speed,
-        0.0f,
-        100.0f,
-        "%.2f");
 }
 
 void RenderSettingsPanel::draw_skybox_menu() const

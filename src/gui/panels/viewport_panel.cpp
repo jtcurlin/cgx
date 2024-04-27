@@ -1,13 +1,15 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "gui/panels/viewport_panel.h"
+#include "scene/scene_manager.h"
+#include "scene/scene.h"
 #include "render/render_system.h"
 #include "utility/error.h"
 
 namespace cgx::gui
 {
 ViewportPanel::ViewportPanel(GUIContext* context, ImGuiManager* manager)
-    : ImGuiPanel("Viewport", context, manager)
+    : ImGuiPanel("Viewport", context, manager, ImGuiWindowFlags_MenuBar)
 {
     m_enforce_aspect_ratio = true;
     m_window_flags |= ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
@@ -41,8 +43,31 @@ void ViewportPanel::on_end()
     ImGui::PopStyleVar(1);
 }
 
+void ViewportPanel::set_camera(std::shared_ptr<scene::CameraNode> camera_node)
+{
+    m_active_camera_node = std::move(camera_node);
+    m_context->get_render_system()->set_camera(m_active_camera_node->get_entity());
+}
+
 void ViewportPanel::render()
 {
+    if (ImGui::BeginMenuBar()) {
+        const std::string active_node_tag = m_active_camera_node ? m_active_camera_node->get_tag() : "[No Camera]";
+        const std::string label = "Camera";
+        if (ImGui::BeginMenu(label.c_str())) {
+            auto root_nodes = m_context->get_scene_manager()->get_active_scene()->get_roots();
+            for (const auto& node : root_nodes) {
+                if (node->get_node_type() == scene::NodeType::Type::Camera) {
+                    if (ImGui::MenuItem(node->get_tag().c_str(), "", m_active_camera_node.get() == node)) {
+                        set_camera(dynamic_pointer_cast<scene::CameraNode>(node->get_shared()));
+                    }
+                }
+            }
+            ImGui::EndMenu();
+        }
+        ImGui::EndMenuBar();
+    }
+
     const ImVec2 window_size = ImGui::GetContentRegionAvail();
 
     const float desired_aspect_ratio = m_tex_width / m_tex_height;
@@ -70,4 +95,5 @@ void ViewportPanel::render()
 
     ImGui::Image((void*) (intptr_t) m_texture_id, render_size, ImVec2(0, 1), ImVec2(1, 0));
 }
+
 }

@@ -70,10 +70,10 @@ void TransformSystem::update_world_matrix(component::Transform& transform, const
 {
     auto local_matrix = glm::mat4(1.0f);
     local_matrix = glm::scale(local_matrix, transform.scale);
-    local_matrix = glm::rotate(local_matrix, glm::radians(transform.rotate.x), glm::vec3(1.0f, 0.0f, 0.0f));
-    local_matrix = glm::rotate(local_matrix, glm::radians(transform.rotate.y), glm::vec3(0.0f, 1.0f, 0.0f));
-    local_matrix = glm::rotate(local_matrix, glm::radians(transform.rotate.z), glm::vec3(0.0f, 0.0f, 1.0f));
-    local_matrix = glm::translate(local_matrix, transform.translate);
+    local_matrix = glm::translate(local_matrix, transform.translation);
+    local_matrix = glm::rotate(local_matrix, glm::radians(transform.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+    local_matrix = glm::rotate(local_matrix, glm::radians(transform.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+    local_matrix = glm::rotate(local_matrix, glm::radians(transform.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
 
     transform.world_matrix = parent_matrix * local_matrix;
 }

@@ -22,7 +22,7 @@ public:
     explicit SceneManager(ecs::ECSManager* ecs_manager, asset::AssetManager* asset_manager);
     ~SceneManager();
 
-    [[nodiscard]] Node* add_node(Node* parent, const std::string& tag) const;
+    [[nodiscard]] Node* add_node(NodeType::Type type, std::string tag, Node* parent=nullptr) const;
 
     void remove_node(Node* node) const;
     void remove_node_recursive(Node* node) const;

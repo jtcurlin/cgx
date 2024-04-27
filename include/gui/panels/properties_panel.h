@@ -47,6 +47,8 @@ public:
     void draw_render_component_editor(const scene::Node* node);
     void draw_transform_component_editor(const scene::Node* node);
     void draw_rigidbody_component_editor(const scene::Node* node);
+    void draw_camera_component_editor(const scene::Node* node);
+    void draw_controllable_component_editor(const scene::Node* node);
 
     void draw_model_asset_editor(asset::Model* model);
     void draw_mesh_asset_editor(asset::Mesh* mesh);

@@ -2,6 +2,8 @@
 
 #include "sandbox.h"
 
+#include "core/components/controllable.h"
+
 Sandbox::Sandbox() = default;
 
 Sandbox::~Sandbox() = default;
@@ -9,6 +11,25 @@ Sandbox::~Sandbox() = default;
 void Sandbox::initialize()
 {
     Engine::initialize();
+    m_scene_manager->add_scene("Default Scene");
+    m_scene_manager->set_active_scene("Default Scene");
+
+    auto* default_camera_node = m_scene_manager->add_node(
+        cgx::scene::NodeType::Type::Camera,
+        "Default Camera",
+        nullptr);
+    auto& controllable_c = m_ecs_manager->get_component<cgx::component::Controllable>(default_camera_node->get_entity());
+    controllable_c.orientation_control_active = true;
+    controllable_c.position_control_active = true;
+
+    auto* viewport_panel        = m_imgui_manager->get_panel("Viewport");
+    auto* casted_viewport_panel = dynamic_cast<cgx::gui::ViewportPanel*>(viewport_panel);
+    if (casted_viewport_panel) {
+        auto node_sptr        = default_camera_node->get_shared();
+        auto camera_node_sptr = dynamic_pointer_cast<cgx::scene::CameraNode>(node_sptr);
+        casted_viewport_panel->set_camera(camera_node_sptr);
+    }
+
     load_assets();
 }
 
@@ -27,26 +48,11 @@ void Sandbox::load_assets() const
     std::filesystem::path asset_dir(std::string(DATA_DIRECTORY) + "/assets");
     std::filesystem::path shader_dir(std::string(DATA_DIRECTORY) + "/shaders");
 
-    std::filesystem::path grid_tex_path = asset_dir / "kenney/prototype_textures/png/Dark/texture_13.png";
-    const std::vector<std::string> grid_skybox_face_paths = {
-        grid_tex_path.string(),
-        grid_tex_path.string(),
-        grid_tex_path.string(),
-        grid_tex_path.string(),
-        grid_tex_path.string(),
-        grid_tex_path.string(),
-    };
-    m_asset_manager->add_asset(
-        std::make_shared<cgx::asset::Cubemap>("skybox01", "cgx://asset/cubemap/skybox01", grid_skybox_face_paths));
-
-    auto ids = m_asset_manager->getAllIDs(cgx::asset::AssetType::Cubemap);
-
 
     // load models
-    std::filesystem::path kenney = asset_dir / "kenney";
+    std::filesystem::path          kenney = asset_dir / "kenney";
     const std::vector<std::string> model_filenames{
-        "misc/soccerball/ball.obj",
-        (kenney / "city/obj/large_buildingA.obj").string(),
+        "misc/soccerball/ball.obj", (kenney / "city/obj/large_buildingA.obj").string(),
     };
     for (const auto& filename : model_filenames) {
         std::filesystem::path model_path = asset_dir / filename;
@@ -61,8 +67,32 @@ void Sandbox::load_assets() const
         m_asset_manager->add_asset(shader);
     }
 
-    /*
+    std::filesystem::path grid_tex_path(
+        std::string(DATA_DIRECTORY) + "/assets/kenney/prototype_textures/png/Dark/texture_13.png");
+    const std::vector<std::string> grid_skybox_face_paths = {
+        grid_tex_path.string(), grid_tex_path.string(), grid_tex_path.string(), grid_tex_path.string(),
+        grid_tex_path.string(), grid_tex_path.string(),
+    };
+    m_asset_manager->add_asset(
+        std::make_shared<cgx::asset::Cubemap>(
+            "grid_cubemap",
+            "/assets/misc/skybox_2",
+            grid_skybox_face_paths));
 
+    // load skybox 2
+    const std::vector<std::string> skybox_2_face_paths = {
+        (asset_dir / "misc/skybox_2/px.png").string(), (asset_dir / "misc/skybox_2/nx.png").string(),
+        (asset_dir / "misc/skybox_2/py.png").string(), (asset_dir / "misc/skybox_2/ny.png").string(),
+        (asset_dir / "misc/skybox_2/pz.png").string(), (asset_dir / "misc/skybox_2/nz.png").string()
+    };
+    auto default_skybox_id = m_asset_manager->add_asset(
+        std::make_shared<cgx::asset::Cubemap>("Default Skybox", "cgx://asset/cubemap/default_skybox", skybox_2_face_paths));
+
+    auto default_skybox = std::dynamic_pointer_cast<cgx::asset::Cubemap>(m_asset_manager->get_asset(default_skybox_id));
+    m_render_system->set_skybox_cubemap(default_skybox);
+
+
+    /*
     // load skybox 1
     const std::vector<std::string> skybox_1_face_paths = {
         (asset_dir / "skybox_mountains/right.jpg").string(), (asset_dir / "skybox_mountains/left.jpg").string(),
@@ -71,16 +101,6 @@ void Sandbox::load_assets() const
     };
     m_asset_manager->add_asset(
         std::make_shared<cgx::asset::Cubemap>("skybox01", "cgx://asset/cubemap/skybox01", skybox_1_face_paths));
-
-    // load skybox 2
-    const std::vector<std::string> skybox_2_face_paths = {
-        (asset_dir / "skybox_2/px.png").string(), (asset_dir / "skybox_2/nx.png").string(),
-        (asset_dir / "skybox_2/py.png").string(), (asset_dir / "skybox_2/ny.png").string(),
-        (asset_dir / "skybox_2/pz.png").string(), (asset_dir / "skybox_2/nz.png").string()
-    };
-    m_asset_manager->add_asset(
-        std::make_shared<cgx::asset::Cubemap>("skybox02", "cgx://asset/cubemap/skybox02", skybox_2_face_paths));
-
     */
 
     geometry_test();
@@ -172,7 +192,6 @@ void Sandbox::audio_test()
     sf_close(sndfile);
 }
 */
-
 
 void Sandbox::geometry_test() const
 {

@@ -1,6 +1,8 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "render/render_system.h"
+
+
 #include "render/camera.h"
 #include "render/framebuffer.h"
 
@@ -9,12 +11,16 @@
 #include "core/components/transform.h"
 #include "core/components/render.h"
 #include "ecs/component_registry.h"
-#include "../../include/core/event_handler.h"
+#include "core/event_handler.h"
 #include "scene/scene.h"
 #include "utility/error.h"
 
-#include "glad/glad.h"
-#include "glm/glm.hpp"
+#include <glad/glad.h>
+#define GLM_ENABLE_EXPERIMENTAL
+#include <glm/glm.hpp>
+#include <glm/gtx/string_cast.hpp>
+
+#include <iostream>
 
 namespace cgx::render
 {
@@ -28,7 +34,7 @@ void RenderSystem::initialize()
     glEnable(GL_DEPTH_TEST);
     CGX_CHECK_GL_ERROR;
 
-    m_camera = std::make_unique<Camera>();
+    // m_camera = std::make_unique<Camera>();
 
     m_framebuffer = std::make_shared<Framebuffer>(m_settings.render_width, m_settings.render_height);
     m_framebuffer->setClearColor(0.1f, 0.1f, 0.1f, 1.0f);
@@ -45,7 +51,7 @@ void RenderSystem::initialize()
 
 void RenderSystem::update(const float dt)
 {
-    m_camera->update(dt);
+    // m_camera->update(dt);
 }
 
 void RenderSystem::render()
@@ -75,16 +81,28 @@ void RenderSystem::render()
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     CGX_CHECK_GL_ERROR;
 
-    m_view_mat = m_camera->get_view_matrix();
-    m_proj_mat = glm::perspective(
-        glm::radians(m_camera->get_zoom()),
-        static_cast<float>(m_settings.render_width) / static_cast<float>(m_settings.render_height),
-        0.1f,
-        100.0f);
+    static auto default_proj = glm::perspective(
+            glm::radians(45.0f),
+            static_cast<float>(m_settings.render_width) / static_cast<float>(m_settings.render_height),
+            0.1f,
+            100.0f);
 
-    // CGX_INFO("Rendering Models (Count={}", m_entities.size());
+    if (m_camera != ecs::MAX_ENTITIES) {
+        const auto& camera_c = get_component<component::Camera>(m_camera);
+        m_view_mat           = camera_c.view_matrix;
+        m_proj_mat           = glm::perspective(
+            glm::radians(camera_c.zoom),
+            static_cast<float>(m_settings.render_width) / static_cast<float>(m_settings.render_height),
+            camera_c.near_plane,
+            camera_c.far_plane);
+    }
+    else {
+        m_view_mat = glm::mat4(1.0f);
+        m_proj_mat = default_proj;
+
+    }
+
     for (auto& entity : m_entities) {
-        glm::mat4 model_mat(1.0f);
 
         auto& render_c    = get_component<component::Render>(entity);
         auto& transform_c = get_component<component::Transform>(entity);
@@ -92,65 +110,6 @@ void RenderSystem::render()
         if (!(render_c.model && render_c.shader)) {
             continue;
         }
-
-        /*
-        // apply rotations transformations around each axis
-        model_mat = glm::rotate(
-            model_mat,
-            glm::radians(transform_c.local_rotation.x),
-            glm::vec3(1.0f, 0.0f, 0.0f)); // X-axis
-        model_mat = glm::rotate(
-            model_mat,
-            glm::radians(transform_c.local_rotation.y),
-            glm::vec3(0.0f, 1.0f, 0.0f)); // Y-axis
-        model_mat = glm::rotate(
-            model_mat,
-            glm::radians(transform_c.local_rotation.z),
-            glm::vec3(0.0f, 0.0f, 1.0f)); // Z-axis
-
-        model_mat = translate(model_mat, transform_c.local_position); // apply position transformation
-        model_mat = scale(model_mat, transform_c.local_scale);        // apply scale transformation
-
-        // activate shader program, set shader data, draw
-
-        render_c.shader->use();
-        bool pbr = false;
-        render_c.shader->set_mat4("proj", m_proj_mat);
-        render_c.shader->set_mat4("view", m_view_mat);
-        render_c.shader->set_mat4("model", transform_c.world_matrix);
-
-        if (pbr) {
-            // Light positions
-             static std::vector<glm::vec3> lightPositions = {
-                glm::vec3(-3.0f, 3.0f, 3.0f),
-                glm::vec3(3.0f, 3.0f, 3.0f),
-                glm::vec3(-3.0f, -3.0f, 3.0f),
-                glm::vec3(3.0f, -3.0f, 3.0f)
-            };
-
-            // Light colors
-            static std::vector<glm::vec3> lightColors = {
-                glm::vec3(150.0f, 150.0f, 150.0f), // White light
-                glm::vec3(150.0f, 150.5f, 150.0f), // Orange light
-                glm::vec3(150.0f, 150.0f, 150.0f), // Green light
-                glm::vec3(150.0f, 150.0f, 150.0f)  // Blue light
-            };
-
-            for (size_t i = 0; i < lightPositions.size(); ++i) {
-                render_c.shader->set_vec3("lightPositions[" + std::to_string(i) + "]", lightPositions[i]);
-                render_c.shader->set_vec3("lightColors[" + std::to_string(i) + "]", lightColors[i]);
-            }
-
-            render_c.shader->set_vec3("camPos", m_camera->get_cam_pos());
-        }
-        else {
-             // shader->setVec3("light.position", (m_ecsHandler->GetComponent<TransformComponent>(light))) /TODO
-            render_c.shader->set_vec3("light.position", 1.0f, 1.0f, 1.0f);
-            render_c.shader->set_vec3("light.ambient", 0.2f, 0.2f, 0.2f);
-            render_c.shader->set_vec3("light.diffuse", 0.5f, 0.5f, 0.5f);
-            render_c.shader->set_vec3("light.specular", 1.0f, 1.0f, 1.0f);
-        }
-        */
 
         render_c.shader->use();
         render_c.shader->set_mat4("proj", m_proj_mat);
@@ -168,8 +127,6 @@ void RenderSystem::render()
         glDrawArrays(GL_TRIANGLES, 0, 3);
         glBindVertexArray(0);
     }
-
-    // if (m_render_settings->skybox) { SkyboxRender(); }
 
     if (m_settings.msaa_enabled) {
         glBindFramebuffer(GL_READ_FRAMEBUFFER, m_msaa_framebuffer);
@@ -228,6 +185,7 @@ const std::shared_ptr<asset::Cubemap>& RenderSystem::get_skybox_cubemap() const
 void RenderSystem::set_skybox_cubemap(const std::shared_ptr<asset::Cubemap>& cubemap)
 {
     m_skybox_cubemap = cubemap;
+    m_settings.skybox_enabled = true;
 }
 
 void RenderSystem::init_msaa()
@@ -345,8 +303,13 @@ RenderSettings& RenderSystem::get_render_settings()
     return m_settings;
 }
 
-Camera* RenderSystem::get_camera() const
+ecs::Entity RenderSystem::get_camera() const
 {
-    return m_camera.get();
+    return m_camera;
+}
+
+void RenderSystem::set_camera(ecs::Entity camera_entity)
+{
+    m_camera = camera_entity;
 }
 }

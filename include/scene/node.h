@@ -16,13 +16,24 @@ namespace cgx::scene
 using NodeID                  = std::size_t;
 constexpr NodeID k_invalid_id = core::k_invalid_id;
 
+struct NodeType
+{
+    enum Type
+    {
+        Mesh,
+        Camera
+    };
+
+    static std::string get_typename(Type type);
+    static std::string get_lower_typename(Type type);
+};
+
 std::string get_node_typename();
 
-class Node final : public core::Hierarchy
+class Node : public core::Hierarchy
 {
 public:
-    Node(ecs::Entity entity, const std::string& tag);
-    ~Node() override;
+    Node(std::string tag, ecs::Entity entity);
 
     void handle_parent_update(Hierarchy* old_parent, Hierarchy* new_parent) override;
 
@@ -30,7 +41,8 @@ public:
 
     core::ItemType::Type get_item_type() const override;
 
-    static std::string get_default_tag();
+    virtual NodeType::Type get_node_type() const = 0;
+    virtual std::string get_node_typename() const;
 
 private:
     ecs::Entity m_entity;

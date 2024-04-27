@@ -8,6 +8,8 @@
 #include "core/systems/physics_system.h"
 #include "core/systems/transform_system.h"
 #include "core/systems/hierarchy_system.h"
+#include "core/systems/camera_system.h"
+#include "core/systems/control_system.h"
 
 #include "core/events/master_events.h"
 
@@ -15,6 +17,8 @@
 #include "core/components/transform.h"
 #include "core/components/rigid_body.h"
 #include "core/components/point_light.h"
+#include "core/components/camera.h"
+#include "core/components/controllable.h"
 
 #include "asset/asset_manager.h"
 #include "asset/import/asset_importer_image.h"
@@ -58,15 +62,17 @@ void Engine::initialize()
         m_settings.window_height,
         m_settings.window_title);
 
-    InputManager::GetSingleton().initialize(m_window_manager);
+    InputManager::get_instance().initialize(m_window_manager);
 
     m_ecs_manager = std::make_unique<ecs::ECSManager>();
 
+    m_ecs_manager->register_component<component::Camera>();
+    m_ecs_manager->register_component<component::Controllable>();
     m_ecs_manager->register_component<component::Hierarchy>();
-    m_ecs_manager->register_component<component::Transform>();
+    m_ecs_manager->register_component<component::PointLight>();
     m_ecs_manager->register_component<component::RigidBody>();
     m_ecs_manager->register_component<component::Render>();
-    m_ecs_manager->register_component<component::PointLight>();
+    m_ecs_manager->register_component<component::Transform>();
 
     auto m_hierarchy_system = m_ecs_manager->register_system<HierarchySystem>(); {
         ecs::Signature signature;
@@ -80,6 +86,19 @@ void Engine::initialize()
         m_ecs_manager->set_system_signature<TransformSystem>(signature);
     }
     m_transform_system->initialize(m_hierarchy_system.get());
+
+    m_ecs_manager->register_system<CameraSystem>(); {
+        ecs::Signature signature;
+        signature.set(m_ecs_manager->get_component_type<component::Camera>());
+        signature.set(m_ecs_manager->get_component_type<component::Transform>());
+        m_ecs_manager->set_system_signature<CameraSystem>(signature);
+    }
+
+    m_ecs_manager->register_system<ControlSystem>(); {
+        ecs::Signature signature;
+        signature.set(m_ecs_manager->get_component_type<component::Controllable>());
+        m_ecs_manager->set_system_signature<ControlSystem>(signature);
+    }
 
     m_ecs_manager->register_system<PhysicsSystem>(); {
         ecs::Signature signature;
@@ -103,8 +122,7 @@ void Engine::initialize()
     m_asset_manager->register_importer(std::make_shared<asset::AssetImporterOBJ>());
 
     m_scene_manager = std::make_shared<scene::SceneManager>(m_ecs_manager.get(), m_asset_manager.get());
-    m_scene_manager->add_scene("main_scene");
-    m_scene_manager->set_active_scene("main_scene");
+
 
     setup_gui();
 }
@@ -126,33 +144,16 @@ void Engine::render()
 
 void Engine::setup_engine_events()
 {
-    auto& input_manager = InputManager::GetSingleton();
+    auto& input_manager = InputManager::get_instance();
     auto& event_handler = EventHandler::get_instance();
 
     // on , : toggle gui interface
     const event::Event toggle_interface_event(event::master::TOGGLE_INTERFACE_MODE);
-    input_manager.bind_key_input_event(Key::key_comma, KeyAction::press, toggle_interface_event);
-    event_handler.add_listener(
-        event::master::TOGGLE_INTERFACE_MODE,
-        [this](event::Event& event) {
-            switch (m_interface_mode) {
-                case Mode::Game: {
-                    EventHandler::get_instance().send_event(event::master::ACTIVATE_GUI_INTERFACE);
-                    m_interface_mode = Mode::GUI;
-                    break;
-                }
-                case Mode::GUI: {
-                    EventHandler::get_instance().send_event(event::master::ACTIVATE_GAME_INTERFACE);
-                    m_interface_mode = Mode::Game;
-                    break;
-                }
-                default: return;
-            }
-        });
+    input_manager.bind_key_input_event(Key::key_tab, KeyAction::press, toggle_interface_event);
 
     // on . : toggle control mode
     const event::Event toggle_control_event(event::master::TOGGLE_CONTROL_MODE);
-    input_manager.bind_key_input_event(Key::key_period, KeyAction::press, toggle_control_event);
+    input_manager.bind_key_input_event(Key::key_comma, KeyAction::press, toggle_control_event);
     event_handler.add_listener(
         event::master::TOGGLE_CONTROL_MODE,
         [this](event::Event& event) {
@@ -173,7 +174,7 @@ void Engine::setup_engine_events()
 
     // on ` : quit engine & close window
     const event::Event quit_event(event::master::QUIT);
-    input_manager.bind_key_input_event(Key::key_fslash, KeyAction::press, quit_event);
+    input_manager.bind_key_input_event(Key::key_end, KeyAction::press, quit_event);
     event_handler.add_listener(
         event::master::QUIT,
         [this](event::Event& event) {

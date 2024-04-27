@@ -23,12 +23,15 @@ public:
     void register_event_handlers();
 
     void register_panel(std::unique_ptr<ImGuiPanel> panel);
+    ImGuiPanel* get_panel(const std::string& label);
 
     void render();
     void begin_render();
     void end_render();
 
-    void render_core_menu() const;
+    void draw_editor();
+    void draw_fullscreen_render();
+    void draw_main_menu_bar();
 
     void load_fonts();
     void set_style();

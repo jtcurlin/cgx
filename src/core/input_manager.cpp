@@ -81,16 +81,23 @@ void InputManager::get_mouse_offset(double& x_offset, double& y_offset)
     double x_pos, y_pos;
     get_mouse_position(x_pos, y_pos);
 
-    if (m_first_mouse) {
+    if (m_reset_mouse) {
         m_mouse_x     = x_pos;
         m_mouse_y     = y_pos;
-        m_first_mouse = false;
+        m_reset_mouse = false;
+        x_offset = 0.0;
+        y_offset = 0.0;
     }
+    else {
+        x_offset = x_pos - m_mouse_x;
+        y_offset = m_mouse_y - y_pos;
+        m_mouse_x = x_pos;
+        m_mouse_y = y_pos;
+    }
+}
 
-    x_offset = x_pos - m_mouse_x;
-    y_offset = m_mouse_y - y_pos;
-
-    m_mouse_x = x_pos;
-    m_mouse_y = y_pos;
+void InputManager::reset()
+{
+    m_reset_mouse = true;
 }
 }
