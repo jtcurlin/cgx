@@ -1,10 +1,13 @@
 // Copyright © 2024 Jacob Curlin
 
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include "core/systems/control_system.h"
 
 #include "core/components/controllable.h"
 #include "core/components/transform.h"
 #include <glm/glm.hpp>
+#include <glm/gtx/quaternion.hpp>
 
 #include "core/input_manager.h"
 #include "core/events/master_events.h"
@@ -41,17 +44,17 @@ void ControlSystem::update(const float dt)
                 component::Controllable>(entity)) {
             auto& controllable = m_ecs_manager->get_component<component::Controllable>(entity);
             auto& transform    = m_ecs_manager->get_component<component::Transform>(entity);
-            if (controllable.position_control_active) {
-                update_position(transform, controllable.movement_speed, dt);
+            if (controllable.enable_translation) {
+                update_position(transform, controllable.movement_speed, dt, controllable.use_relative_movement);
             }
-            if (controllable.orientation_control_active) {
+            if (controllable.enable_rotation) {
                 update_orientation(transform, controllable.rotation_speed, dt);
             }
         }
     }
 }
 
-void ControlSystem::update_position(component::Transform& transform, const glm::vec3& movement_speed, const float dt)
+void ControlSystem::update_position(component::Transform& transform, const glm::vec3& movement_speed, const float dt, bool relative)
 {
     const auto& input_manager = InputManager::get_instance();
 
@@ -69,6 +72,12 @@ void ControlSystem::update_position(component::Transform& transform, const glm::
     if (input_manager.is_key_pressed(Key::key_d)) {
         movement.x += movement_speed.x * dt;
     }
+
+    if (relative) {
+        glm::mat4 rotation_matrix = glm::toMat4(glm::quat(glm::radians(transform.rotation)));
+        movement = glm::vec3(rotation_matrix * glm::vec4(movement, 0.0f));
+    }
+
     if (input_manager.is_key_pressed(Key::key_space)) {
         movement.y += movement_speed.y * dt;
     }

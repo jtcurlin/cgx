@@ -5,6 +5,8 @@
 #include "asset/asset.h"
 #include <vector>
 
+#include "asset/material.h"
+
 namespace cgx::asset
 {
 class Mesh;

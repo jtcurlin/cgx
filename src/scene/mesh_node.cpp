@@ -3,7 +3,6 @@
 #include "scene/mesh_node.h"
 
 #include <iomanip>
-#include <sstream>
 
 namespace cgx::scene
 {

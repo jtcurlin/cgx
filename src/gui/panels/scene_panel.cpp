@@ -3,13 +3,13 @@
 #include "gui/panels/scene_panel.h"
 
 #include "gui/imgui_manager.h"
+#include "gui/panels/dialog_panel.h"
 #include "scene/node.h"
 #include "scene/scene_manager.h"
 
 #include <filesystem>
-#include <iomanip>
+#include <imguifiledialog/ImGuiFileDialog.h>
 
-#include "scene/camera_node.h"
 
 namespace cgx::gui
 {
@@ -25,12 +25,26 @@ void ScenePanel::render()
         ImGui::EndMenuBar();
     }
 
-    auto roots = m_context->get_scene_manager()->get_active_scene()->get_roots();
-    for (auto* root_node : roots) {
-        draw_node(root_node);
+    ImDrawList* draw_list       = ImGui::GetWindowDrawList();
+    ImVec2      window_pos      = ImGui::GetWindowPos();
+    ImVec2      window_size     = ImGui::GetWindowSize();
+    ImVec2      separator_start = ImVec2(window_pos.x, window_pos.y + ImGui::GetFrameHeightWithSpacing());
+    ImVec2      separator_end   = ImVec2(window_pos.x + window_size.x, separator_start.y);
+    draw_list->AddLine(separator_start, separator_end, ImGui::GetColorU32(ImGuiCol_Separator));
+
+    auto root_node = m_context->get_scene_manager()->get_active_scene()->get_root();
+    for (auto& node : root_node->get_children()) {
+        draw_node(dynamic_cast<scene::Node*>(node.get()));
     }
 
-    draw_scene_import_popup();
+    if (m_importing_scene) {
+        std::string selected_file;
+        if (DialogPanel::draw_file_import_dialog("Select Scene File", ".glb,.gltf", selected_file)) {
+            m_context->get_scene_manager()->import_scene(selected_file);
+            m_importing_scene = false;
+        }
+    }
+
     if (m_adding_scene) {
         draw_add_scene_popup();
     }
@@ -39,9 +53,10 @@ void ScenePanel::render()
 void ScenePanel::render_scene_menu_bar()
 {
     if (ImGui::BeginMenu("Scene")) {
+        auto scene_manager = m_context->get_scene_manager();
 
         if (ImGui::BeginMenu("Select Active Scene")) {
-            for (const auto& scene_pair : m_context->get_scene_manager()->get_scenes()) {
+            for (const auto& scene_pair : scene_manager->get_scenes()) {
                 std::string scene_label = scene_pair.first + "##SelectActiveSceneList";
                 if (ImGui::MenuItem(scene_label.c_str())) {
                     m_context->get_scene_manager()->set_active_scene(scene_label);
@@ -50,7 +65,7 @@ void ScenePanel::render_scene_menu_bar()
             ImGui::EndMenu();
         }
         if (ImGui::BeginMenu("Remove Scene")) {
-            for (const auto& scene_pair : m_context->get_scene_manager()->get_scenes()) {
+            for (const auto& scene_pair : scene_manager->get_scenes()) {
                 std::string scene_label = scene_pair.first + "##RemoveSceneList";
                 if (ImGui::MenuItem(scene_label.c_str())) {
                     // todo: remove selected scene (scene_pair.second)
@@ -64,7 +79,6 @@ void ScenePanel::render_scene_menu_bar()
             }
             if (ImGui::MenuItem("Into Active Scene")) {
                 m_importing_scene = true;
-
             }
             ImGui::EndMenu();
         }
@@ -75,18 +89,18 @@ void ScenePanel::render_scene_menu_bar()
     }
 
     if (ImGui::BeginMenu("Add Node")) {
+        const auto scene_manager = m_context->get_scene_manager();
+        const auto root_node     = scene_manager->get_active_scene()->get_root();
+
         if (ImGui::MenuItem("\uf6cf  Mesh Node")) {
-            auto* new_node = m_context->get_scene_manager()->add_node(
-                scene::NodeType::Type::Mesh,
-                "New Mesh",
-                nullptr);
+            auto* new_node = scene_manager->add_node(scene::NodeType::Type::Mesh, "New Mesh", root_node);
             m_context->set_item_to_inspect(new_node);
         }
         if (ImGui::MenuItem("\uf03d   Camera Node")) {
             auto* new_node = m_context->get_scene_manager()->add_node(
                 scene::NodeType::Type::Camera,
                 "New Camera",
-                nullptr);
+                root_node);
             m_context->set_item_to_inspect(new_node);
         }
         /*
@@ -105,7 +119,9 @@ void ScenePanel::render_scene_menu_bar()
 
 void ScenePanel::draw_node(scene::Node* node)
 {
-    if (!node) return;
+    CGX_VERIFY(node);
+    CGX_VERIFY(node->get_node_type() != scene::NodeType::Type::Root);
+
     ImGui::PushID(node);
     auto& node_state = m_node_states[node->get_id()];
 
@@ -114,24 +130,25 @@ void ScenePanel::draw_node(scene::Node* node)
     node_flags |= node_state.is_expanded ? ImGuiTreeNodeFlags_DefaultOpen : 0;
     node_flags |= node == m_context->get_item_to_inspect() ? ImGuiTreeNodeFlags_Selected : 0;
 
-    std::string icon;
+    bool node_opened = false;
     switch (node->get_node_type()) {
         case scene::NodeType::Type::Mesh: {
-            icon = "\uf6cf  " + node->get_tag();
+            const std::string icon = "\uf6cf  " + node->get_tag();
+            node_opened            = ImGui::TreeNodeEx(icon.c_str(), node_flags);
             break;
         }
         case scene::NodeType::Type::Camera: {
-            icon = "\uf03d  " + node->get_tag();
+            const std::string icon = "\uf03d  " + node->get_tag();
+            node_opened            = ImGui::TreeNodeEx(icon.c_str(), node_flags);
             break;
+        }
+        case scene::NodeType::Type::Root: {
+            CGX_FATAL("attempting to render root");
         }
         default: {
             CGX_FATAL("Unrecognized node type");
-            std::exit(1);
         }
     }
-
-
-    const bool node_opened = ImGui::TreeNodeEx(icon.c_str(), node_flags);
 
     if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
         node_state.is_expanded = !node_state.is_expanded;
@@ -154,7 +171,9 @@ void ScenePanel::draw_node(scene::Node* node)
 void ScenePanel::draw_node_context_menu(scene::Node* node)
 {
     CGX_ASSERT(node, "attempt to draw context menu for invalid node");
-    if (ImGui::BeginPopupContextItem("NodeContextMenu")) {
+
+    const std::string unique_id = "NodeContextMenu##" + std::to_string(node->get_id());
+    if (ImGui::BeginPopupContextItem(unique_id.c_str())) {
         if (ImGui::MenuItem("Inspect")) {
             m_context->set_item_to_inspect(node);
             ImGui::CloseCurrentPopup();
@@ -197,87 +216,31 @@ void ScenePanel::draw_node_context_menu(scene::Node* node)
             ImGui::CloseCurrentPopup();
         }
         if (ImGui::MenuItem("Import Child")) {
+            m_node_to_birth = node;
+            // m_dialog_panel->m_file_import_dialog("Import Scene", ".glb,.gltf", [this](const std::string& file_path))
+
             m_node_to_birth   = node;
             m_importing_scene = true;
             ImGui::CloseCurrentPopup();
         }
         if (ImGui::MenuItem("Remove")) {
-            node->remove();
+            if (m_context->get_item_to_inspect() == node) {
+                m_context->set_item_to_inspect(nullptr);
+            }
+            m_context->get_scene_manager()->remove_node(node);
+            CGX_INFO("Clicked Remove on Node {}!", node->get_tag());
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();
     }
 }
 
-void ScenePanel::draw_scene_import_popup()
-{
-    if (m_importing_scene) {
-        ImGui::OpenPopup("Add Scene ##ImportSceneMenu");
-    }
-    const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
-    ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-
-    // Open a modal popup to block interactions with other UI elements
-    ImGui::PushFont(m_manager->m_title_font);
-    if (ImGui::BeginPopupModal("Add Scene ##ImportSceneMenu", nullptr, ImGuiWindowFlags_AlwaysAutoResize)) {
-        bool success = false;
-        bool exited  = false;
-
-        ImGui::PushFont(m_manager->m_body_font);
-
-        ImGui::TextUnformatted("Enter .gltf/.glb path");
-        ImGui::SetNextItemWidth(300.0f);
-        if (ImGui::InputText("##ImportScenePathInput", m_input_buffer, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
-
-            const std::filesystem::path base_data_path(std::string(DATA_DIRECTORY));
-            const std::filesystem::path full_path = base_data_path / m_input_buffer;
-            const std::string           extension = full_path.extension().string();
-
-            if (!std::filesystem::exists(full_path)) {
-                m_error_message = "Specified path does not exist.";
-                m_error_active  = true;
-            }
-            else if (extension != ".gltf" && extension != ".glb") {
-                m_error_message = "Specified file is not of type .gltf or .glb";
-                m_error_active  = true;
-            }
-            else {
-                const auto* scene_manager = m_context->get_scene_manager();
-                scene_manager->import_scene(full_path.string(), m_node_to_birth);
-                success = true;
-            }
-        }
-        ImGui::SetItemTooltip("Press enter to import path, escape to cancel.");
-
-        if (m_error_active) {
-            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));
-            ImGui::TextUnformatted(m_error_message.c_str());
-            ImGui::PopStyleColor();
-        }
-
-        if (ImGui::IsKeyPressed(ImGuiKey_Escape)) {
-            exited = true;
-        }
-
-        if (success || exited) {
-            m_node_to_birth   = nullptr;
-            m_importing_scene = false;
-            m_error_active    = false;
-            m_input_buffer[0] = '\0';
-            m_error_message   = "";
-            ImGui::CloseCurrentPopup();
-        }
-
-        ImGui::PopFont();
-        ImGui::EndPopup();
-    }
-    ImGui::PopFont();
-}
 
 void ScenePanel::draw_add_scene_popup()
 {
-    bool success = false;
-    bool exited  = false;
+    bool success   = false;
+    bool exited    = false;
+    bool attempted = false;
 
     ImGui::OpenPopup("Add Scene ##AddSceneMenu");
 
@@ -291,7 +254,11 @@ void ScenePanel::draw_add_scene_popup()
         ImGui::TextUnformatted("Enter Label");
         ImGui::SetNextItemWidth(300.0f);
         if (ImGui::InputText("##AddScene-LabelInput", m_input_buffer, 256, ImGuiInputTextFlags_EnterReturnsTrue)) {
+            attempted = true;
+        }
+        ImGui::SetItemTooltip("Press enter to add scene, escape to cancel.");
 
+        if (attempted) {
             const auto& scenes = m_context->get_scene_manager()->get_scenes();
             if (std::strlen(m_input_buffer) == 0) {
                 m_error_message = "Please specify a valid scene label.";
@@ -309,7 +276,6 @@ void ScenePanel::draw_add_scene_popup()
                 success = true;
             }
         }
-        ImGui::SetItemTooltip("Press enter to add scene, escape to cancel.");
 
         if (m_error_active) {
             ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.0f, 0.0f, 1.0f));

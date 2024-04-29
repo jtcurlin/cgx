@@ -18,9 +18,9 @@ set(EXTERNAL_DIR "${CMAKE_SOURCE_DIR}/external")
 
 # configure paths.h before setting up dependent targets
 if (USE_SOURCE_DIR_DATA)
-    set(DATA_DIRECTORY "${CMAKE_BINARY_DIR}/data")
-else ()
     set(DATA_DIRECTORY "${CMAKE_SOURCE_DIR}/data")
+else ()
+    set(DATA_DIRECTORY "${CMAKE_BINARY_DIR}/data")
 endif ()
 configure_file(
         ${INCLUDE_DIR}/utility/paths.h.in
@@ -41,6 +41,7 @@ link_imgui(cgx PUBLIC)
 link_stb(cgx PUBLIC)
 link_tinyobjloader(cgx PUBLIC)
 link_tinygltfloader(cgx PUBLIC)
+link_imguifiledialog(cgx PUBLIC)
 
 target_sources(cgx PRIVATE
         ${SOURCE_DIR}/asset/import/asset_importer.cpp
@@ -73,6 +74,7 @@ target_sources(cgx PRIVATE
         ${SOURCE_DIR}/ecs/entity_registry.cpp
         ${SOURCE_DIR}/ecs/system_registry.cpp
         ${SOURCE_DIR}/gui/panels/asset_panel.cpp
+        ${SOURCE_DIR}/gui/panels/dialog_panel.cpp
         ${SOURCE_DIR}/gui/panels/input_panel.cpp
         ${SOURCE_DIR}/gui/panels/profiler_panel.cpp
         ${SOURCE_DIR}/gui/panels/properties_panel.cpp
@@ -88,6 +90,7 @@ target_sources(cgx PRIVATE
         ${SOURCE_DIR}/scene/node.cpp
         ${SOURCE_DIR}/scene/camera_node.cpp
         ${SOURCE_DIR}/scene/mesh_node.cpp
+        ${SOURCE_DIR}/scene/root_node.cpp
         ${SOURCE_DIR}/scene/scene.cpp
         ${SOURCE_DIR}/scene/scene_importer.cpp
         ${SOURCE_DIR}/scene/scene_manager.cpp

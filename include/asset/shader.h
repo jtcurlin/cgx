@@ -14,13 +14,25 @@ class PropertiesPanel;
 
 namespace cgx::asset
 {
+
+struct ShaderType
+{
+    enum Type
+    {
+        PBR,
+        Phong,
+        Cubemap,
+        Unknown
+    };
+};
+
 class Shader final : public Asset
 {
     friend class gui::PropertiesPanel;
 
 public:
-    Shader(std::string tag, std::string source_path);
-    Shader(std::string tag, std::string vertex_code, std::string fragment_code);
+    Shader(std::string tag, std::string source_path, ShaderType::Type type);
+    Shader(std::string tag, std::string vertex_code, std::string fragment_code, ShaderType::Type type);
     ~Shader() override;
 
     bool is_initialized() const
@@ -31,8 +43,12 @@ public:
     bool init();
     void use() const;
 
+    ShaderType::Type get_type() const;
+    void set_type(ShaderType::Type type);
+
 private:
-    bool m_initialized = false;
+    ShaderType::Type m_type;
+    bool             m_initialized = false;
 
     unsigned int m_program_id{0};
     std::string  m_vert_path{};
@@ -42,7 +58,7 @@ private:
 
     static bool check_compile_errors(unsigned int shader, const std::string& type);
 
-    std::string get_path_prefix() const override;
+    std::string     get_path_prefix() const override;
     AssetType::Type get_asset_type() const override;
 
 public:

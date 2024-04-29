@@ -11,6 +11,8 @@
 #include <string>
 #include <vector>
 
+#include "asset/material.h"
+
 namespace cgx::asset
 {
 struct Vertex
@@ -41,7 +43,6 @@ struct hash<cgx::asset::Vertex>
 
 namespace cgx::asset
 {
-class Material;
 class Shader;
 
 class Mesh final : public Asset

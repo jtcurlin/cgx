@@ -21,7 +21,8 @@ struct NodeType
     enum Type
     {
         Mesh,
-        Camera
+        Camera,
+        Root
     };
 
     static std::string get_typename(Type type);
@@ -45,6 +46,6 @@ public:
     virtual std::string get_node_typename() const;
 
 private:
-    ecs::Entity m_entity;
+    ecs::Entity m_entity{ecs::MAX_ENTITIES};
 };
 }

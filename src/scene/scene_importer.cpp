@@ -70,7 +70,7 @@ void SceneImporter::process_node(
 {
 
     static int unnamed_mesh_count = 0;
-    const std::string node_tag = gltf_node.name.empty() ? "Imported Mesh" + unnamed_mesh_count++ : gltf_node.name;
+    const std::string node_tag = gltf_node.name.empty() ? "Imported Mesh" + std::to_string(unnamed_mesh_count++) : gltf_node.name;
 
     auto new_node_entity = m_ecs_manager->acquire_entity();
     m_ecs_manager->add_component<component::Hierarchy>(new_node_entity, component::Hierarchy{});
@@ -116,7 +116,7 @@ void SceneImporter::process_node(
             tag_ss << std::setw(3) << std::setfill('0') << ++model_count;
             source_path_ss << m_curr_path.string() << ":" << tag_ss.str();
             auto model_asset    = std::make_shared<asset::Model>(tag_ss.str(), source_path_ss.str(), meshes);
-            auto model_asset_id = m_asset_manager->add_asset(model_asset);
+            m_asset_manager->add_asset(model_asset);
 
             component::Render rc{};
             rc.model = model_asset;
@@ -331,6 +331,7 @@ std::vector<std::shared_ptr<asset::Mesh>> SceneImporter::process_mesh(
                     }
                     break;
                 case TINYGLTF_COMPONENT_TYPE_UNSIGNED_INT:
+                    indices.resize(indices_count);
                     std::memcpy(indices.data(), indices_data, indices_count * sizeof(uint32_t));
                     break;
                 default: CGX_ERROR("Unsupported index component type: {}", indices_component_type);

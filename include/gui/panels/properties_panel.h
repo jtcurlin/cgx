@@ -78,6 +78,5 @@ public:
             ImGui::EndCombo();
         }
     }
-
 };
 }

@@ -25,7 +25,6 @@ public:
     void draw_node(scene::Node* node);
     void draw_node_context_menu(scene::Node* node);
 
-    void draw_scene_import_popup();
     void draw_add_scene_popup();
 
 private:

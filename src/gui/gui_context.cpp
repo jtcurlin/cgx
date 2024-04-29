@@ -90,4 +90,50 @@ core::Item* GUIContext::get_item_to_inspect() const
 {
     return m_item_to_inspect;
 }
+
+void GUIContext::activate_file_import_dialog(const FileImportDialogConfig& config)
+{
+    m_file_import_config = config;
+    m_file_import_active = true;
+}
+
+void GUIContext::activate_text_input_dialog(const TextInputDialogConfig& config)
+{
+    m_text_input_config = config;
+    m_text_input_active = true;
+}
+
+void GUIContext::deactivate_file_import_dialog()
+{
+    m_file_import_config = FileImportDialogConfig{};
+    m_file_import_active = false;
+}
+
+void GUIContext::deactivate_text_input_dialog()
+{
+    m_text_input_config = TextInputDialogConfig{};
+    m_text_input_active = false;
+}
+
+bool GUIContext::is_file_import_active() const
+{
+    return m_file_import_active;
+}
+
+bool GUIContext::is_text_input_active() const
+{
+    return m_text_input_active;
+}
+
+const FileImportDialogConfig& GUIContext::get_file_import_config() const
+{
+    return m_file_import_config;
+}
+
+const TextInputDialogConfig& GUIContext::get_text_input_dialog_config() const
+{
+    return m_text_input_config;
+}
+
+
 }

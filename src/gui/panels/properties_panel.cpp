@@ -325,7 +325,7 @@ void PropertiesPanel::draw_transform_component_editor(const scene::Node* node)
             component.dirty = true;
         }
 
-
+        ImGui::Separator();
     }
     if (removed) {
         core::event::Event event(core::event::component::MODIFIED);
@@ -380,7 +380,6 @@ void PropertiesPanel::draw_rigidbody_component_editor(const scene::Node* node)
         updated |= ImGui::InputFloat3("Angular Velocity ##RigidBodyComponent", &component.angular_velocity[0]);
         updated |= ImGui::InputFloat3("Scale Rate ##RigidBodyComponent", &component.scale_rate[0]);
         updated |= ImGui::InputFloat3("Acceleration ##RigidBodyComponent", &component.acceleration[0]);
-
         ImGui::Separator();
     }
 
@@ -434,6 +433,7 @@ void PropertiesPanel::draw_camera_component_editor(const scene::Node* node)
         updated |= ImGui::InputFloat("Near Plane ##CameraComponent", &component.near_plane);
         updated |= ImGui::InputFloat("Far Plane ##CameraComponent", &component.far_plane);
         updated |= ImGui::InputFloat("Zoom ##CameraComponent", &component.zoom);
+        ImGui::Separator();
     }
 
     if (removed) {
@@ -483,11 +483,13 @@ void PropertiesPanel::draw_controllable_component_editor(const scene::Node* node
     if (editor_opened) {
         auto& component = m_context->get_ecs_manager()->get_component<component::Controllable>(node->get_entity());
 
-        updated |= ImGui::Checkbox("Enable Position Control", &component.position_control_active);
-        updated |= ImGui::Checkbox("Enable Orientation Control", &component.orientation_control_active);
+        updated |= ImGui::Checkbox("Enable Position Control", &component.enable_translation);
+        updated |= ImGui::Checkbox("  Relative", &component.use_relative_movement);
+        updated |= ImGui::Checkbox("Enable Orientation Control", &component.enable_rotation);
 
         updated |= ImGui::InputFloat3("Movement Speed ##ControllableComponent", &component.movement_speed[0]);
         updated |= ImGui::InputFloat3("Rotation Speed ##ControllableComponent", &component.rotation_speed[0]);
+        ImGui::Separator();
     }
     if (removed) {
         core::event::Event event(core::event::component::MODIFIED);

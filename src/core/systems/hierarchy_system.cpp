@@ -32,12 +32,7 @@ void HierarchySystem::on_entity_added(const ecs::Entity entity)
 }
 
 void HierarchySystem::on_entity_removed(const ecs::Entity entity)
-{
-    const auto& transform = m_ecs_manager->get_component<component::Hierarchy>(entity);
-
-    // update removed's entity's parent to [none], effectively removing it from the hierarchy
-    on_parent_update(entity, transform.parent, ecs::MAX_ENTITIES);
-}
+{}
 
 void HierarchySystem::on_parent_update(const ecs::Entity child, const ecs::Entity old_parent, const ecs::Entity new_parent)
 {

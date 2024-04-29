@@ -11,8 +11,9 @@ namespace fs = std::filesystem;
 
 namespace cgx::asset
 {
-Shader::Shader(std::string tag, std::string source_path)
+Shader::Shader(std::string tag, std::string source_path, ShaderType::Type type)
     : Asset(tag, get_path_prefix() + tag, source_path)
+    , m_type(type)
 {
     const fs::path    shader_root_path{m_external_path};
     const std::string base_shader_filename = shader_root_path.filename().string();
@@ -56,8 +57,9 @@ Shader::Shader(std::string tag, std::string source_path)
     }
 }
 
-Shader::Shader(std::string tag, std::string vertex_code, std::string fragment_code)
+Shader::Shader(std::string tag, std::string vertex_code, std::string fragment_code, ShaderType::Type type)
     : Asset(tag, get_path_prefix() + tag, get_path_prefix() + tag )
+    , m_type(type)
     , m_vert_code{std::move(vertex_code)}
     , m_frag_code{std::move(fragment_code)}
 
@@ -126,6 +128,16 @@ void Shader::use() const
 {
     glUseProgram(m_program_id);
     CGX_CHECK_GL_ERROR;
+}
+
+ShaderType::Type Shader::get_type() const
+{
+    return m_type;
+}
+
+void Shader::set_type(const ShaderType::Type type)
+{
+    m_type = type;
 }
 
 bool Shader::check_compile_errors(const unsigned int shader, const std::string& type)

@@ -11,16 +11,18 @@ Sandbox::~Sandbox() = default;
 void Sandbox::initialize()
 {
     Engine::initialize();
+
     m_scene_manager->add_scene("Default Scene");
     m_scene_manager->set_active_scene("Default Scene");
 
     auto* default_camera_node = m_scene_manager->add_node(
         cgx::scene::NodeType::Type::Camera,
         "Default Camera",
-        nullptr);
-    auto& controllable_c = m_ecs_manager->get_component<cgx::component::Controllable>(default_camera_node->get_entity());
-    controllable_c.orientation_control_active = true;
-    controllable_c.position_control_active = true;
+        m_scene_manager->get_active_scene()->get_root());
+    auto& controllable_c = m_ecs_manager->get_component<
+        cgx::component::Controllable>(default_camera_node->get_entity());
+    controllable_c.enable_rotation = true;
+    controllable_c.enable_translation    = true;
 
     auto* viewport_panel        = m_imgui_manager->get_panel("Viewport");
     auto* casted_viewport_panel = dynamic_cast<cgx::gui::ViewportPanel*>(viewport_panel);
@@ -63,7 +65,7 @@ void Sandbox::load_assets() const
     const std::vector<std::string> shader_names = {"model", "lighting", "pbr", "basic_diffuse"};
     for (const auto& name : shader_names) {
         std::filesystem::path shader_path = shader_dir / name;
-        auto                  shader      = std::make_shared<cgx::asset::Shader>(name, shader_path.string());
+        auto shader = std::make_shared<cgx::asset::Shader>(name, shader_path.string(), cgx::asset::ShaderType::Unknown);
         m_asset_manager->add_asset(shader);
     }
 
@@ -74,10 +76,7 @@ void Sandbox::load_assets() const
         grid_tex_path.string(), grid_tex_path.string(),
     };
     m_asset_manager->add_asset(
-        std::make_shared<cgx::asset::Cubemap>(
-            "grid_cubemap",
-            "/assets/misc/skybox_2",
-            grid_skybox_face_paths));
+        std::make_shared<cgx::asset::Cubemap>("grid_cubemap", "/assets/misc/skybox_2", grid_skybox_face_paths));
 
     // load skybox 2
     const std::vector<std::string> skybox_2_face_paths = {
@@ -86,7 +85,10 @@ void Sandbox::load_assets() const
         (asset_dir / "misc/skybox_2/pz.png").string(), (asset_dir / "misc/skybox_2/nz.png").string()
     };
     auto default_skybox_id = m_asset_manager->add_asset(
-        std::make_shared<cgx::asset::Cubemap>("Default Skybox", "cgx://asset/cubemap/default_skybox", skybox_2_face_paths));
+        std::make_shared<cgx::asset::Cubemap>(
+            "Default Skybox",
+            "cgx://asset/cubemap/default_skybox",
+            skybox_2_face_paths));
 
     auto default_skybox = std::dynamic_pointer_cast<cgx::asset::Cubemap>(m_asset_manager->get_asset(default_skybox_id));
     m_render_system->set_skybox_cubemap(default_skybox);

@@ -39,6 +39,5 @@ private:
     std::shared_ptr<Texture> m_diffuse_map{nullptr};
     std::shared_ptr<Texture> m_specular_map{nullptr};
     std::shared_ptr<Texture> m_normal_map{nullptr};
-
 };
 }

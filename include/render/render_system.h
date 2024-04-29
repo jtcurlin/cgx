@@ -72,6 +72,7 @@ public:
 
 private:
     ecs::Entity m_camera{ecs::MAX_ENTITIES};
+
     std::shared_ptr<Framebuffer> m_framebuffer;
 
     glm::mat4 m_view_mat{glm::mat4(1.0f)};

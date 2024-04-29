@@ -14,7 +14,7 @@ public:
     explicit Scene(std::string label);
     ~Scene();
 
-    [[nodiscard]] std::vector<Node*> get_roots() const;
+    [[nodiscard]] Node* get_root() const;
 
     Node* add_node(NodeType::Type type, std::string tag, ecs::Entity entity, Node* parent=nullptr);
 
@@ -22,7 +22,8 @@ public:
     void remove_node_recursive(Node* node);
 
 private:
+    std::shared_ptr<Node> m_root;
     std::string                        m_label;
-    std::vector<std::shared_ptr<Node>> m_roots{};
+    // std::vector<std::shared_ptr<Node>> m_roots{};
 };
 }

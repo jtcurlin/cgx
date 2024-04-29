@@ -7,22 +7,20 @@
 #include "core/event_handler.h"
 #include "scene/camera_node.h"
 #include "scene/mesh_node.h"
+#include "scene/root_node.h"
 
 namespace cgx::scene
 {
 Scene::Scene(std::string label) : m_label(std::move(label))
 {
+    m_root = std::make_shared<RootNode>("Scene " + label + " Root");
     CGX_INFO("scene '{}' : initialized", m_label);
 }
 Scene::~Scene() = default;
 
-std::vector<Node*> Scene::get_roots() const
+Node* Scene::get_root() const
 {
-    std::vector<Node*> roots;
-    for (auto& root : m_roots) {
-        roots.push_back(root.get());
-    }
-    return roots;
+    return m_root.get();
 }
 
 Node* Scene::add_node(const NodeType::Type type, std::string tag, const ecs::Entity entity, Node* parent)
@@ -41,82 +39,26 @@ Node* Scene::add_node(const NodeType::Type type, std::string tag, const ecs::Ent
         }
         default: {
             CGX_FATAL("Unknown node type specified");
-            std::exit(1);
-            break;
         }
     }
 
-    Node* node_ptr = node.get();
-    if (parent) {
-        CGX_INFO(" >> parent specified - setting parent to {}", parent->get_id());
-        node->set_parent(parent);
-    }
-    else {
-        m_roots.push_back(std::move(node));
-    }
-
-    core::event::Event event(core::event::entity::ACQUIRED);
-    event.set_param(core::event::entity::ID, entity);
-    core::EventHandler::get_instance().send_event(event);
-
-    // return m_roots.back().get();
-    return node_ptr;
+    node->set_parent(parent);
+    return node.get();
 }
 
 void Scene::remove_node(Node* node)
 {
     CGX_ASSERT(node, "attempt to remove invalid node");
-    auto entity = node->get_entity();
+    CGX_ASSERT(node != m_root.get(), "attempted to remove scene root node");
 
-    auto root_node_it = std::find_if(
-        m_roots.begin(),
-        m_roots.end(),
-        [node](const std::shared_ptr<Node>& root_node) {
-            return root_node.get() == node;
-        });
-
-    if (root_node_it != m_roots.end()) {
-        const std::vector<std::shared_ptr<core::Hierarchy>>& children = node->get_mutable_children();
-
-        for (const auto&   child : children) {
-            if (child->get_item_type() == core::ItemType::Node) {
-                auto child_node = dynamic_cast<Node*>(child.get());
-                if (child_node->get_node_type() == NodeType::Type::Mesh) {
-                    auto child_mesh_node = dynamic_cast<MeshNode*>(child_node);
-                    m_roots.push_back(std::make_unique<MeshNode>(*child_mesh_node));
-                }
-                else if (child_node->get_node_type() == NodeType::Type::Camera) {
-                    auto child_camera_node = dynamic_cast<CameraNode*>(child_node);
-                    m_roots.push_back(std::make_unique<CameraNode>(*child_camera_node));
-                }
-            }
-        }
-        node->remove();
-        m_roots.erase(root_node_it);
-    }
-    else {
-        node->remove();
-    }
-
-    core::event::Event event(core::event::entity::RELEASED);
-    event.set_param(core::event::entity::ID, entity);
-    core::EventHandler::get_instance().send_event(event);
+    node->remove();
 }
 
 void Scene::remove_node_recursive(Node* node)
 {
     CGX_ASSERT(node, "attempt to recursively remove invalid node");
-
-    auto root_node_it = std::find_if(
-        m_roots.begin(),
-        m_roots.end(),
-        [node](const std::shared_ptr<Node>& root_node) {
-            return root_node.get() == node;
-        });
+    CGX_ASSERT(node != m_root.get(), "attempted to remove scene root node");
 
     node->recursive_remove();
-    if (root_node_it != m_roots.end()) {
-        m_roots.erase(root_node_it);
-    }
 }
 }

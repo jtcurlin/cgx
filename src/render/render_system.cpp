@@ -88,7 +88,7 @@ void RenderSystem::render()
             100.0f);
 
     if (m_camera != ecs::MAX_ENTITIES) {
-        const auto& camera_c = get_component<component::Camera>(m_camera);
+        auto& camera_c = get_component<component::Camera>(m_camera);
         m_view_mat           = camera_c.view_matrix;
         m_proj_mat           = glm::perspective(
             glm::radians(camera_c.zoom),

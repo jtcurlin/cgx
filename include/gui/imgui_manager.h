@@ -8,6 +8,7 @@
 
 #include <vector>
 #include <memory>
+#include <__filesystem/path.h>
 
 namespace cgx::gui
 {
@@ -52,7 +53,6 @@ private:
     std::vector<std::unique_ptr<ImGuiPanel>> m_imgui_panels;
 
     char m_input_buffer[256]{};
-
     void clear_inputs(ImGuiIO& io);
 };
 }

@@ -384,6 +384,38 @@ macro(link_libsndfile TARGET ACCESS)
     message(STATUS " >> [dependency : libsndfile] loaded successfully")
 endmacro()
 
+# =====================================================
+# imgui file dialog
 
+macro(link_imguifiledialog TARGET ACCESS)
+    set(imguifiledialog_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/external/imguifiledialog")
+    set(imguifiledialog_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/external/imguifiledialog")
+
+    check_directory("${imguifiledialog_SOURCE_DIR}")
+    if (PREFER_BUNDLED_DEPENDENCIES AND EXISTS "${imguifiledialog_SOURCE_DIR}")
+        message(STATUS " >  [dependency : ImGuiFileDialog] using bundled library @ ${imguifiledialog_SOURCE_DIR}")
+    elseif (FETCH_EXTERNAL_DEPENDENCIES)
+        FetchContent_Declare(
+                imguifiledialog
+                GIT_REPOSITORY https://github.com/aiekick/ImGuiFileDialog.git
+                GIT_TAG v0.6.7
+                SOURCE_DIR "${imguifiledialog_SOURCE_DIR}"
+                BINARY_DIR "${imguifiledialog_BINARY_DIR}"
+        )
+        FetchContent_GetProperties(imguifiledialog)
+
+        if (NOT imguifiledialog_POPULATED)
+            FetchContent_Populate(imguifiledialog)
+        endif()
+    else()
+        file(REMOVE_RECURSE "${imguifiledialog_SOURCE_DIR}")
+        message(FATAL_ERROR "!> [dependency : ImGuiFileDialog] external fetching disabled, ImGuiFileDialog not found @ ${imguifiledialog_SOURCE_DIR}")
+    endif()
+
+    add_subdirectory(${imguifiledialog_SOURCE_DIR} ${imguifiledialog_BINARY_DIR})
+    target_include_directories(ImGuiFileDialog PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/external/imgui")
+    target_link_libraries(${TARGET} ${ACCESS} ImGuiFileDialog)
+    message(STATUS " >> [dependency : ImGuiFileDialog] loaded successfully")
+endmacro()
 
 

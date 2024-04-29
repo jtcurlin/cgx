@@ -8,9 +8,7 @@
 namespace cgx::core
 {
 PhysicsSystem::PhysicsSystem(ecs::ECSManager* ecs_manager)
-    : System(ecs_manager)
-{
-}
+    : System(ecs_manager) {}
 
 PhysicsSystem::~PhysicsSystem() = default;
 

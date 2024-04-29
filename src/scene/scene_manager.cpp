@@ -34,14 +34,15 @@ Node* SceneManager::add_node(const NodeType::Type type, std::string tag, Node* p
             break;
         }
         case NodeType::Type::Camera: {
-            CGX_ASSERT(parent == nullptr, "Non-root camera nodes are not yet supported");
             m_ecs_manager->add_component<component::Camera>(entity, component::Camera{});
             m_ecs_manager->add_component<component::Transform>(
                 entity,
                 component::Transform{.translation = glm::vec3(0.0f, 0.0f, 3.0f)});
-            m_ecs_manager->add_component<component::Controllable>(entity, component::Controllable{});
+            m_ecs_manager->add_component<component::Controllable>(entity, component::Controllable{.use_relative_movement=true});
             break;
         }
+        default:
+            CGX_FATAL("unsupported node type");
     }
 
     return m_active_scene->add_node(type, std::move(tag), entity, parent);
@@ -49,10 +50,12 @@ Node* SceneManager::add_node(const NodeType::Type type, std::string tag, Node* p
 
 void SceneManager::remove_node(Node* node) const
 {
+    CGX_INFO("SceneManager : Removing Node '{}' (entity={})", node->get_tag(), node->get_entity());
     CGX_ASSERT(node, "attempt to remove invalid node");
 
-    m_ecs_manager->release_entity(node->get_entity());
+    const auto entity = node->get_entity();
     m_active_scene->remove_node(node);
+    m_ecs_manager->release_entity(entity);
 }
 
 void SceneManager::remove_node_recursive(Node* node) const
@@ -67,6 +70,7 @@ void SceneManager::remove_node_recursive(Node* node) const
             return true;
         });
 
+    // todo: release entities for recursively removed children
     m_ecs_manager->release_entity(node->get_entity());
     m_active_scene->remove_node_recursive(node);
 }
@@ -108,9 +112,12 @@ const std::unordered_map<std::string, std::unique_ptr<Scene>>& SceneManager::get
     return m_scenes;
 }
 
-void SceneManager::import_scene(const std::string& path, Node* parent) const
+void SceneManager::import_scene(const std::string& path, Node* root) const
 {
+    if (root == nullptr) {
+        root = get_active_scene()->get_root();
+    }
     auto importer = SceneImporter(m_ecs_manager, m_asset_manager);
-    importer.import(path, m_active_scene, parent);
+    importer.import(path, m_active_scene, root);
 }
 }

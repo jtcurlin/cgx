@@ -38,6 +38,11 @@ void ImGuiPanel::Begin()
         ImGui::SetNextWindowSizeConstraints(ImVec2(m_min_size[0], m_min_size[1]), ImVec2(m_max_size[0], m_max_size[1]));
     }
 
+    if (!ImGui::IsWindowDocked()) {
+        const auto dockspace_id = ImGui::GetID("primary_dockspace");
+        ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_FirstUseEver);
+    }
+
     ImGui::Begin(m_title.c_str(), &keep_visible, m_window_flags);
 
     if (!keep_visible) {

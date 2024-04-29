@@ -1,7 +1,7 @@
 // Copyright © 2024 Jacob Curlin
 
 #version 330 core
-out vec4 FragColor;
+out vec4 out_color;
 
 #define AMBIENT_MAP_BIT 1
 #define DIFFUSE_MAP_BIT 2
@@ -31,31 +31,31 @@ struct Light {
     vec3 specular;              // strength factor of specular lighting
 };
 
-in vec3 FragPos;
-in vec3 Normal;
-in vec2 TexCoords;
+in vec3 position;
+in vec3 normal;
+in vec2 uv;
 
-uniform vec3 viewPos;            
+uniform vec3 view_pos;
 uniform Material material;
 uniform Light light;
 
 void main()
 {
     // ambient 
-    vec3 ambient = light.ambient * ((material.map_bitset & DIFFUSE_MAP_BIT) != 0 ? texture(material.diffuse_map, TexCoords).rgb : material.diffuse_color);
+    vec3 ambient = light.ambient * ((material.map_bitset & DIFFUSE_MAP_BIT) != 0 ? texture(material.diffuse_map, uv).rgb : material.diffuse_color);
 
     // diffuse 
-    vec3 norm = normalize(Normal);
-    vec3 lightDir = normalize(light.position - FragPos);
-    float diff = max(dot(norm, lightDir), 0.0);
-    vec3 diffuse = light.diffuse * diff * ((material.map_bitset & DIFFUSE_MAP_BIT) != 0 ? texture(material.diffuse_map, TexCoords).rgb : material.diffuse_color);
+    vec3 norm = normalize(normal);
+    vec3 light_dir = normalize(light.position - position);
+    float diff_factor = max(dot(norm, light_dir), 0.0);
+    vec3 diffuse = light.diffuse * diff_factor * ((material.map_bitset & DIFFUSE_MAP_BIT) != 0 ? texture(material.diffuse_map, uv).rgb : material.diffuse_color);
 
     // specular
-    vec3 viewDir = normalize(viewPos - FragPos);
-    vec3 reflectDir = reflect(-lightDir, norm);
-    float spec = pow(max(dot(viewDir, reflectDir), 0.0), material.shininess);
-    vec3 specular = light.specular * spec * ((material.map_bitset & SPECULAR_MAP_BIT) != 0 ? texture(material.specular_map, TexCoords).rgb : material.specular_color);
+    vec3 view_dir = normalize(view_pos - position);
+    vec3 reflect_dir = reflect(-light_dir, norm);
+    float spec_factor = pow(max(dot(view_dir, reflect_dir), 0.0), material.shininess);
+    vec3 specular = light.specular * spec_factor * ((material.map_bitset & SPECULAR_MAP_BIT) != 0 ? texture(material.specular_map, uv).rgb : material.specular_color);
 
     vec3 result = ambient + diffuse + specular;
-    FragColor = vec4(result, 1.0);
+    out_color = vec4(result, 1.0);
 }

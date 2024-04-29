@@ -22,7 +22,7 @@ public:
 
     void update(float dt) override;
 
-    static void update_position(component::Transform& transform, const glm::vec3& movement_speed, float dt);
+    static void update_position(component::Transform& transform, const glm::vec3& movement_speed, float dt, bool relative);
     static void update_orientation(component::Transform& transform, const glm::vec2& rotation_speed, float dt);
 
     void on_entity_added(ecs::Entity entity) override;

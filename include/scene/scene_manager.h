@@ -35,7 +35,7 @@ public:
 
     const std::unordered_map<std::string, std::unique_ptr<Scene>>& get_scenes();
 
-    void import_scene(const std::string& path, Node* parent = nullptr) const;
+    void import_scene(const std::string& path, Node* root = nullptr) const;
 
 private:
     Scene*                                                  m_active_scene{nullptr};

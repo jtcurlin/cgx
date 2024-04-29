@@ -55,11 +55,13 @@ void ViewportPanel::render()
         const std::string active_node_tag = m_active_camera_node ? m_active_camera_node->get_tag() : "[No Camera]";
         const std::string label = "Camera";
         if (ImGui::BeginMenu(label.c_str())) {
-            auto root_nodes = m_context->get_scene_manager()->get_active_scene()->get_roots();
-            for (const auto& node : root_nodes) {
-                if (node->get_node_type() == scene::NodeType::Type::Camera) {
-                    if (ImGui::MenuItem(node->get_tag().c_str(), "", m_active_camera_node.get() == node)) {
-                        set_camera(dynamic_pointer_cast<scene::CameraNode>(node->get_shared()));
+            auto root_node = m_context->get_scene_manager()->get_active_scene()->get_root();
+            for (const auto& child : root_node->get_children()) {
+                auto child_node = std::dynamic_pointer_cast<scene::Node>(child);
+                if (child_node->get_node_type() == scene::NodeType::Type::Camera) {
+                    auto child_camera_node = std::dynamic_pointer_cast<scene::CameraNode>(child_node);
+                    if (ImGui::MenuItem(child_camera_node->get_tag().c_str(), "", m_active_camera_node.get() == child_camera_node.get())) {
+                        set_camera(child_camera_node);
                     }
                 }
             }

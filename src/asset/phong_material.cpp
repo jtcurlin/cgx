@@ -45,7 +45,6 @@ void PhongMaterial::bind(Shader* shader) const
     }
     CGX_ASSERT(s, "no valid shader provided for binding");
 
-
     s->use();
     s->set_vec3("material.ambient_color", m_ambient_color);
     CGX_CHECK_GL_ERROR;

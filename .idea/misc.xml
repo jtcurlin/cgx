@@ -14,6 +14,7 @@
       <file path="$PROJECT_DIR$/external/glfw" />
       <file path="$PROJECT_DIR$/external/glm" />
       <file path="$PROJECT_DIR$/external/imgui" />
+      <file path="$PROJECT_DIR$/external/imguifiledialog" />
       <file path="$PROJECT_DIR$/external/libsndfile" />
       <file path="$PROJECT_DIR$/external/openal-soft" />
       <file path="$PROJECT_DIR$/external/spdlog" />

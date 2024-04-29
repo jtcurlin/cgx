@@ -13,7 +13,7 @@ Cubemap::Cubemap(std::string tag, std::string path, const std::vector<std::strin
     : Asset(tag, get_path_prefix() + tag, std::move(path))
     , m_mesh(geometry::create_cube())
     , m_shader(
-        std::make_shared<Shader>("skybox", std::string(SKYBOX_VERT_SHADER_CODE), std::string(SKYBOX_FRAG_SHADER_CODE)))
+        std::make_shared<Shader>("skybox", std::string(SKYBOX_VERT_SHADER_CODE), std::string(SKYBOX_FRAG_SHADER_CODE), ShaderType::Cubemap))
 {
     CGX_ASSERT(face_texture_paths.size() == 6, "cubemap constructed w/ num texture image paths != 6");
 

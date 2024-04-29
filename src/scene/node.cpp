@@ -45,6 +45,7 @@ void Node::handle_parent_update(Hierarchy* old_parent, Hierarchy* new_parent)
     const ecs::Entity new_parent_entity = new_parent_node ? new_parent_node->get_entity() : ecs::MAX_ENTITIES;
 
     CGX_INFO("Sending Event PARENT_UPDATE: child={}, old_parent={}, new_parent={}", get_entity(), old_parent_entity, new_parent_entity);
+
     core::event::Event event(core::event::component::hierarchy::PARENT_UPDATE);
     event.set_param(core::event::component::hierarchy::CHILD, get_entity());
     event.set_param(core::event::component::hierarchy::OLD_PARENT, old_parent_entity);
@@ -66,4 +67,8 @@ std::string Node::get_node_typename() const
 {
     return NodeType::get_typename(get_node_type());
 }
+
+
+
+
 }
