@@ -21,7 +21,6 @@
 #include <glm/gtx/string_cast.hpp>
 
 #include <iostream>
-#include <__filesystem/path.h>
 
 namespace cgx::render
 {
@@ -38,9 +37,7 @@ void RenderSystem::initialize()
     const std::string default_shader_path = std::string(DATA_DIRECTORY) + "/shaders/default";
     CGX_INFO("Default Shader Path : {}", default_shader_path);
     m_default_shader = std::make_unique<asset::Shader>(
-        "default_shader",
-        default_shader_path,
-        asset::ShaderType::Unknown);
+        "default_shader", default_shader_path, asset::ShaderType::Unknown);
 
     // m_camera = std::make_unique<Camera>();
 
@@ -126,12 +123,12 @@ void RenderSystem::render()
             continue;
         }
 
-        shader->use();
-        shader->set_mat4("u_proj", m_proj_mat);
-        shader->set_mat4("u_view", m_view_mat);
-        shader->set_mat4("u_model", transform_c.world_matrix);
+        render_c.shader->use();
+        render_c.shader->set_mat4("proj", m_proj_mat);
+        render_c.shader->set_mat4("view", m_view_mat);
+        render_c.shader->set_mat4("model", transform_c.world_matrix);
 
-        shader->set_vec3("light_direction", normalize(glm::vec3(1.0, 1.0, 1.0)));
+        shader->set_vec3("light_direction", glm::normalize(glm::vec3(1.0, 1.0, 1.0)));
 
         model->draw(shader);
     }
