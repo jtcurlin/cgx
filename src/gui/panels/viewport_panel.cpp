@@ -43,9 +43,10 @@ void ViewportPanel::on_end()
     ImGui::PopStyleVar(1);
 }
 
-void ViewportPanel::set_camera(std::shared_ptr<scene::CameraNode> camera_node)
+void ViewportPanel::set_camera(std::shared_ptr<scene::Node> node)
 {
-    m_active_camera_node = std::move(camera_node);
+    CGX_ASSERT(node->is_camera(), "attempt to set non-camera node to active viewport camera");
+    m_active_camera_node = std::move(node);
     m_context->get_render_system()->set_camera(m_active_camera_node->get_entity());
 }
 
@@ -58,10 +59,9 @@ void ViewportPanel::render()
             auto root_node = m_context->get_scene_manager()->get_active_scene()->get_root();
             for (const auto& child : root_node->get_children()) {
                 auto child_node = std::dynamic_pointer_cast<scene::Node>(child);
-                if (child_node->get_node_type() == scene::NodeType::Type::Camera) {
-                    auto child_camera_node = std::dynamic_pointer_cast<scene::CameraNode>(child_node);
-                    if (ImGui::MenuItem(child_camera_node->get_tag().c_str(), "", m_active_camera_node.get() == child_camera_node.get())) {
-                        set_camera(child_camera_node);
+                if (child_node->is_camera()) {
+                    if (ImGui::MenuItem(child_node->get_tag().c_str(), "", m_active_camera_node.get() == child_node.get())) {
+                        set_camera(child_node);
                     }
                 }
             }

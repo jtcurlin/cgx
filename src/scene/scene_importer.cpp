@@ -34,7 +34,7 @@ SceneImporter::SceneImporter(ecs::ECSManager* ecs_manager, asset::AssetManager* 
 
 SceneImporter::~SceneImporter() = default;
 
-void SceneImporter::import(const std::string& path, Scene* scene, Node* parent)
+void SceneImporter::import(const std::string& path, Node* parent)
 {
     m_curr_path = path;
 
@@ -61,28 +61,22 @@ void SceneImporter::import(const std::string& path, Scene* scene, Node* parent)
     }
 
     for (const auto& gltf_node : gltf_model.scenes[gltf_model.defaultScene].nodes) {
-        process_node(gltf_model, gltf_model.nodes[gltf_node], parent, scene);
+        process_node(gltf_model, gltf_model.nodes[gltf_node], parent);
     }
 }
 
 void SceneImporter::process_node(
     const tinygltf::Model& gltf_model,
     const tinygltf::Node&  gltf_node,
-    Node*                  parent_node,
-    Scene*                 scene)
+    Node*                  parent)
 {
+    NodeFlag flags = NodeFlag::None;
+    auto entity = m_ecs_manager->acquire_entity();
 
-    static int        unnamed_mesh_count = 0;
-    const std::string node_tag           = gltf_node.name.empty()
-                                               ? "Imported Mesh" + std::to_string(unnamed_mesh_count++)
-                                               : gltf_node.name;
-
+    m_ecs_manager->add_component<component::Hierarchy>(entity, component::Hierarchy{});
     if (gltf_node.camera >= 0) {
+        flags = flags | NodeFlag::Camera;
         auto& gltf_camera = gltf_model.cameras[gltf_node.camera];
-
-        auto new_entity = m_ecs_manager->acquire_entity();
-        m_ecs_manager->add_component<component::Hierarchy>(new_entity, component::Hierarchy{});
-        new_node = scene->add_node(NodeType::Type::Camera, gltf_camera.name, new_entity, parent_node);
 
         component::Camera camera;
 
@@ -101,15 +95,12 @@ void SceneImporter::process_node(
             camera.far_plane  = static_cast<float>(gltf_camera.orthographic.zfar);
         }
 
-        m_ecs_manager->add_component<component::Camera>(new_entity, camera);
-        m_ecs_manager->add_component<component::Controllable>(new_entity, component::Controllable{.use_relative_movement=true});
+        m_ecs_manager->add_component<component::Camera>(entity, camera);
+        m_ecs_manager->add_component<component::Controllable>(entity, component::Controllable{});
     }
-    else if (gltf_node.mesh >= 0) {
+    if (gltf_node.mesh >= 0) {
+        flags = flags | NodeFlag::Mesh;
         const auto& gltf_mesh = gltf_model.meshes[gltf_node.mesh];
-
-        auto new_entity = m_ecs_manager->acquire_entity();
-        m_ecs_manager->add_component<component::Hierarchy>(new_entity, component::Hierarchy{});
-        new_node = scene->add_node(NodeType::Type::Mesh, node_tag, new_entity, parent_node);
 
         auto        meshes    = process_mesh(gltf_model, gltf_mesh);
 
@@ -123,16 +114,14 @@ void SceneImporter::process_node(
 
             component::Render rc{};
             rc.model = model_asset;
-            m_ecs_manager->add_component<component::Render>(new_node->get_entity(), rc);
+            m_ecs_manager->add_component<component::Render>(entity, rc);
         }
     }
 
-    glm::vec3 translation(0.0f);
-    glm::vec3 rotation(0.0f);
-    glm::vec3 scale(1.0f);
+    component::Transform transform;
 
     if (!gltf_node.translation.empty()) {
-        translation = glm::vec3(
+        transform.translation = glm::vec3(
             static_cast<float>(gltf_node.translation[0]),
             static_cast<float>(gltf_node.translation[1]),
             static_cast<float>(gltf_node.translation[2]));
@@ -149,45 +138,31 @@ void SceneImporter::process_node(
             static_cast<float>(gltf_node.rotation[2]) // z
         );
 
-        glm::vec3 euler_angles = glm::eulerAngles(quaternion);
-        euler_angles           = glm::degrees(euler_angles);
-        rotation               = euler_angles;
+        glm::vec3 euler_angles = eulerAngles(quaternion);
+        euler_angles           = degrees(euler_angles);
+        transform.rotation               = euler_angles;
     }
 
     if (!gltf_node.scale.empty()) {
-        scale = glm::vec3(
+        transform.scale = glm::vec3(
             static_cast<float>(gltf_node.scale[0]),
             static_cast<float>(gltf_node.scale[1]),
             static_cast<float>(gltf_node.scale[2]));
     }
 
-    component::Transform tc = {
-        .translation = translation, .rotation = rotation, .scale = scale, .world_matrix = glm::mat4(1.0f), .dirty = true
-    };
+    transform.world_matrix = glm::mat4(1.0f);
+    transform.dirty = true;
 
-    m_ecs_manager->add_component<component::Transform>(node->get_entity(), tc);
+    m_ecs_manager->add_component<component::Transform>(entity, transform);
 
-    if (gltf_node.mesh >= 0) {
-        const auto& gltf_mesh = gltf_model.meshes[gltf_node.mesh];
-        auto        meshes    = process_mesh(gltf_model, gltf_mesh);
+    std::string tag = !gltf_node.name.empty() ? gltf_node.name : "[Untagged Node]"; // todo: derive tag
 
-        if (!meshes.empty()) {
-            static size_t     model_count = 0;
-            std::stringstream tag_ss, source_path_ss;
-            tag_ss << std::setw(3) << std::setfill('0') << ++model_count;
-            source_path_ss << m_curr_path.string() << ":" << tag_ss.str();
-            auto model_asset = std::make_shared<asset::Model>(tag_ss.str(), source_path_ss.str(), meshes);
-            m_asset_manager->add_asset(model_asset);
-
-            component::Render rc{};
-            rc.model = model_asset;
-            m_ecs_manager->add_component<component::Render>(node->get_entity(), rc);
-        }
-    }
+    const auto node = std::make_shared<Node>(std::move(tag), entity, flags);
+    node->set_parent(parent);
 
     for (const auto& child_node_index : gltf_node.children) {
         const auto& child_gltf_node = gltf_model.nodes[child_node_index];
-        process_node(gltf_model, child_gltf_node, new_node, scene);
+        process_node(gltf_model, child_gltf_node, node.get());
     }
 }
 
@@ -304,8 +279,7 @@ std::shared_ptr<asset::Texture> SceneImporter::process_texture(
             case 4:
                 num_channels = 4;
                 break;
-            default:
-                CGX_ERROR("Unsupported image component: {}", image_component);
+            default: CGX_ERROR("Unsupported image component: {}", image_component);
                 return nullptr;
         }
 
@@ -323,20 +297,19 @@ std::shared_ptr<asset::Texture> SceneImporter::process_texture(
             case 4:
                 format = GL_RGBA;
                 break;
-            default:
-                CGX_ERROR("Unsupported number of channels: {}", num_channels);
+            default: CGX_ERROR("Unsupported number of channels: {}", num_channels);
                 return nullptr;
         }
 
         auto texture = std::make_shared<asset::Texture>(
             texture_source.name,
-            "",  // Empty source path for embedded textures
+            "",
+            // Empty source path for embedded textures
             image_width,
             image_height,
             num_channels,
             format,
-            const_cast<unsigned char*>(image_data.data())
-        );
+            const_cast<unsigned char*>(image_data.data()));
 
         if (gltf_texture.sampler >= 0) {
             const auto& texture_sampler = gltf_model.samplers[gltf_texture.sampler];
@@ -347,12 +320,13 @@ std::shared_ptr<asset::Texture> SceneImporter::process_texture(
         }
 
         return texture;
-    } else if (!texture_source.uri.empty()) {
+    }
+    else if (!texture_source.uri.empty()) {
         // The texture is external and referenced by URI
         const auto& texture_path = m_curr_path.parent_path() / texture_source.uri;
 
         const auto& texture_asset_id = m_asset_manager->import_asset(texture_path.string());
-        auto        texture          = dynamic_pointer_cast<asset::Texture>(m_asset_manager->get_asset(texture_asset_id));
+        auto        texture = dynamic_pointer_cast<asset::Texture>(m_asset_manager->get_asset(texture_asset_id));
 
         CGX_VERIFY(texture != nullptr);
 
@@ -366,7 +340,8 @@ std::shared_ptr<asset::Texture> SceneImporter::process_texture(
         }
 
         return texture;
-    } else {
+    }
+    else {
         // No texture data or URI found
         CGX_WARN("No texture data or URI found for texture index {}", gltf_texture.source);
         return nullptr;

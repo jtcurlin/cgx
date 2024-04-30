@@ -26,6 +26,8 @@
 #include <iostream>
 
 #include "core/input_manager.h"
+#include "gui/panels/dialog_panel.h"
+#include "scene/scene_manager.h"
 
 
 namespace cgx::gui
@@ -206,6 +208,39 @@ void ImGuiManager::draw_editor()
         }
     }
 
+    if (m_context->m_importing_node) {
+        std::string selected_file = "none";
+        if (DialogPanel::draw_file_import_dialog("Select Scene File", ".glb,.gltf", selected_file)) {
+            if (selected_file != "none") {
+                m_context->get_scene_manager()->import_node(selected_file, dynamic_cast<scene::Node*>(m_context->get_node_to_birth()));
+                m_context->set_node_to_birth(nullptr);
+            }
+            m_context->m_importing_node = false;
+        }
+    }
+
+    if (m_context->m_adding_scene) {
+        std::string scene_name = "";
+        if (DialogPanel::draw_text_input_dialog("Enter Scene Label", scene_name)) {
+            if (scene_name != "") {
+                m_context->get_scene_manager()->add_scene(scene_name);
+            }
+            m_context->m_adding_scene = false;
+        }
+    }
+
+    if (m_context->m_renaming_item) {
+        std::string new_name = "";
+        if (DialogPanel::draw_text_input_dialog("Enter New Tag", new_name)) {
+            if (new_name != "") {
+                m_context->get_item_to_rename()->set_tag(new_name);
+            }
+            m_context->m_renaming_item = false;
+        }
+    }
+
+
+
     // const ImVec2 center = ImGui::GetMainViewport()->GetCenter();
     // ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
 
@@ -291,6 +326,39 @@ void ImGuiManager::draw_main_menu_bar()
                 }
                 ImGui::EndMenu();
             }
+        }
+
+        if (ImGui::BeginMenu("Scene")) {
+            const auto scene_manager = m_context->get_scene_manager();
+            if (ImGui::MenuItem("Add")) {
+                m_context->m_adding_scene = true;
+            }
+            if (ImGui::MenuItem("Import")) {
+                m_context->m_importing_node = true;
+                m_context->set_node_to_birth(scene_manager->get_active_scene()->get_root());
+            }
+            if (ImGui::BeginMenu("Remove")) {
+                std::string current_scene_label = scene_manager->get_active_scene()->get_label();
+                for (const auto& scene_pair : scene_manager->get_scenes()) {
+                    std::string scene_label = scene_pair.first + "##RemoveSceneList";
+                    if (ImGui::MenuItem(scene_label.c_str(), "", scene_pair.first == current_scene_label)) {
+                        // todo: remove scene
+                    }
+                }
+                ImGui::EndMenu();
+            }
+            if (ImGui::BeginMenu("Select")) {
+                std::string current_scene_label = scene_manager->get_active_scene()->get_label();
+                for (const auto& scene_pair : scene_manager->get_scenes()) {
+
+                    std::string scene_label = scene_pair.first + "##SelectActiveSceneList";
+                    if (ImGui::MenuItem(scene_label.c_str(), "", scene_pair.first == current_scene_label)) {
+                        m_context->get_scene_manager()->set_active_scene(scene_pair.first);
+                    }
+                }
+                ImGui::EndMenu();
+            }
+            ImGui::EndMenu();
         }
         ImGui::EndMainMenuBar();
     }

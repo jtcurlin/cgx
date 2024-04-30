@@ -88,9 +88,6 @@ target_sources(cgx PRIVATE
         ${SOURCE_DIR}/render/framebuffer.cpp
         ${SOURCE_DIR}/render/render_system.cpp
         ${SOURCE_DIR}/scene/node.cpp
-        ${SOURCE_DIR}/scene/camera_node.cpp
-        ${SOURCE_DIR}/scene/mesh_node.cpp
-        ${SOURCE_DIR}/scene/root_node.cpp
         ${SOURCE_DIR}/scene/scene.cpp
         ${SOURCE_DIR}/scene/scene_importer.cpp
         ${SOURCE_DIR}/scene/scene_manager.cpp

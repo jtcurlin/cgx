@@ -15,46 +15,40 @@ void Sandbox::initialize()
     m_scene_manager->add_scene("Default Scene");
     m_scene_manager->set_active_scene("Default Scene");
 
-    m_scene_manager->import_scene(
-        std::string(DATA_DIRECTORY) + "/assets/scenes/default_scene.glb",
-        m_scene_manager->get_active_scene()->get_root());
+    m_scene_manager->import_node(std::string(DATA_DIRECTORY) + "/assets/scenes/default_scene.glb");
 
-    const auto root = m_scene_manager->get_active_scene()->get_root();
+
+    const auto        root   = m_scene_manager->get_active_scene()->get_root();
     cgx::scene::Node* camera = nullptr;
-    root->for_each([&camera](cgx::core::Hierarchy& hierarchy) -> bool {
-        if (auto* casted_node = dynamic_cast<cgx::scene::Node*>(&hierarchy) ; casted_node) {
-            if (casted_node->get_node_type() == cgx::scene::NodeType::Type::Camera) {
-                camera = casted_node;
-                return false;
+    root->for_each(
+        [&camera](cgx::core::Hierarchy& hierarchy) -> bool {
+            if (auto* casted_node = dynamic_cast<cgx::scene::Node*>(&hierarchy) ; casted_node) {
+                if (casted_node->is_camera()) {
+                    camera = casted_node;
+                    return false;
+                }
             }
-        }
-        return true;
-    });
+            return true;
+        });
 
     if (!camera) {
         camera = m_scene_manager->add_node(
-        cgx::scene::NodeType::Type::Camera,
-        "Default Camera",
-        m_scene_manager->get_active_scene()->get_root());
+            "Default Camera",
+            cgx::scene::NodeFlag::Camera);
     }
 
-    auto& controllable_c = m_ecs_manager->get_component<
-        cgx::component::Controllable>(camera->get_entity());
-    controllable_c.enable_rotation    = true;
+    auto& controllable_c = m_ecs_manager->get_component<cgx::component::Controllable>(camera->get_entity());
+    controllable_c.enable_rotation = true;
     controllable_c.enable_translation = true;
 
     auto* viewport_panel        = m_imgui_manager->get_panel("Viewport");
     auto* casted_viewport_panel = dynamic_cast<cgx::gui::ViewportPanel*>(viewport_panel);
     if (casted_viewport_panel) {
-        auto node_sptr        = camera->get_shared();
-        auto camera_node_sptr = dynamic_pointer_cast<cgx::scene::CameraNode>(node_sptr);
-        casted_viewport_panel->set_camera(camera_node_sptr);
+        auto node_sptr = camera->get_shared();
+        casted_viewport_panel->set_camera(dynamic_pointer_cast<cgx::scene::Node>(node_sptr));
     }
 
     m_render_system->get_render_settings().default_shader_enabled = true;
-
-
-
     load_assets();
 }
 

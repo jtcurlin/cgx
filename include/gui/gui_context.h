@@ -69,13 +69,19 @@ public:
     [[nodiscard]] core::WindowManager*  get_window_manager() const;
     [[nodiscard]] core::TimeSystem*     get_time_system() const;
 
-    void set_item_to_birth(core::Item* item);
+    void set_node_to_birth(core::Item* item);
     void set_item_to_rename(core::Item* item);
     void set_item_to_inspect(core::Item* item);
 
-    [[nodiscard]] core::Item* get_item_to_birth() const;
+    [[nodiscard]] core::Item* get_node_to_birth() const;
     [[nodiscard]] core::Item* get_item_to_rename() const;
     [[nodiscard]] core::Item* get_item_to_inspect() const;
+
+    bool m_renaming_item{false};
+    bool m_adding_node{false};
+    bool m_adding_scene{false};
+    bool m_importing_node{false};
+    bool m_importing_asset{false};
 
 private:
     asset::AssetManager*  m_asset_manager{nullptr};
@@ -86,11 +92,15 @@ private:
     core::TimeSystem*     m_time_system{nullptr};
 
     core::Item* m_item_to_inspect{nullptr};
-    core::Item* m_item_to_birth{nullptr};
+    core::Item* m_node_to_birth{nullptr};
     core::Item* m_item_to_rename{nullptr};
     core::Item* m_item_to_display_popup{nullptr};
 
     std::string m_string_buffer{};
     char        m_char_buffer[256]{};
+
+
+
+
 };
 }

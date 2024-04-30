@@ -61,9 +61,9 @@ core::TimeSystem* GUIContext::get_time_system() const
     return m_time_system;
 }
 
-void GUIContext::set_item_to_birth(core::Item* item)
+void GUIContext::set_node_to_birth(core::Item* item)
 {
-    m_item_to_birth = item;
+    m_node_to_birth = item;
 }
 
 void GUIContext::set_item_to_rename(core::Item* item)
@@ -76,9 +76,9 @@ void GUIContext::set_item_to_inspect(core::Item* item)
     m_item_to_inspect = item;
 }
 
-core::Item* GUIContext::get_item_to_birth() const
+core::Item* GUIContext::get_node_to_birth() const
 {
-    return m_item_to_birth;
+    return m_node_to_birth;
 }
 
 core::Item* GUIContext::get_item_to_rename() const

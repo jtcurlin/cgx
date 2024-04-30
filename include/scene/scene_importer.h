@@ -32,7 +32,7 @@ public:
     SceneImporter(ecs::ECSManager* ecs_manager, asset::AssetManager* asset_manager);
     ~SceneImporter();
 
-    void import(const std::string& path, Scene* scene, Node* parent=nullptr);
+    void import(const std::string& path, Node* parent=nullptr);
 
 private:
     std::filesystem::path m_curr_path = "";
@@ -43,8 +43,7 @@ private:
     void process_node(
         const tinygltf::Model& gltf_model,
         const tinygltf::Node&  gltf_node,
-        Node*                  parent_node,
-        Scene*                 scene);
+        Node*                  parent);
 
     std::shared_ptr<asset::Material> process_material(
         const tinygltf::Model&    gltf_model,

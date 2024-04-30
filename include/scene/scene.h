@@ -15,15 +15,10 @@ public:
     ~Scene();
 
     [[nodiscard]] Node* get_root() const;
-
-    Node* add_node(NodeType::Type type, std::string tag, ecs::Entity entity, Node* parent=nullptr);
-
-    void remove_node(Node* node);
-    void remove_node_recursive(Node* node);
+    const std::string& get_label() const;
 
 private:
     std::shared_ptr<Node> m_root;
-    std::string                        m_label;
-    // std::vector<std::shared_ptr<Node>> m_roots{};
+    std::string           m_label;
 };
 }

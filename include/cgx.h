@@ -54,8 +54,6 @@
 
 // scene
 #include "scene/node.h"
-#include "scene/mesh_node.h"
-#include "scene/camera_node.h"
 #include "scene/scene.h"
 #include "scene/scene_manager.h"
 

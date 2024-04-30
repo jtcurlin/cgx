@@ -4,7 +4,10 @@
 
 #include "gui/imgui_panel.h"
 #include "glad/glad.h"
-#include "scene/camera_node.h"
+
+namespace cgx::scene {
+class Node;
+}
 
 namespace cgx::gui
 {
@@ -20,10 +23,10 @@ public:
     void on_begin() override;
     void on_end() override;
 
-    void set_camera(std::shared_ptr<scene::CameraNode> camera_node);
+    void set_camera(std::shared_ptr<scene::Node> node);
 
 protected:
-    std::shared_ptr<scene::CameraNode> m_active_camera_node{nullptr};
+    std::shared_ptr<scene::Node> m_active_camera_node{nullptr};
 
     float  m_tex_width{0.0f};
     float  m_tex_height{0.0f};

@@ -14,7 +14,7 @@
 namespace cgx::gui
 {
 ScenePanel::ScenePanel(GUIContext* context, ImGuiManager* manager)
-    : ImGuiPanel("Scene", context, manager, ImGuiWindowFlags_MenuBar) {}
+    : ImGuiPanel("Node Hierarchy", context, manager, ImGuiWindowFlags_MenuBar) {}
 
 ScenePanel::~ScenePanel() = default;
 
@@ -36,127 +36,58 @@ void ScenePanel::render()
     for (auto& node : root_node->get_children()) {
         draw_node(dynamic_cast<scene::Node*>(node.get()));
     }
-
-    if (m_importing_scene) {
-        std::string selected_file = "none";
-        if (DialogPanel::draw_file_import_dialog("Select Scene File", ".glb,.gltf", selected_file)) {
-            if (selected_file != "none") {
-                m_context->get_scene_manager()->import_scene(selected_file, m_node_to_birth);
-                m_node_to_birth = nullptr;
-            }
-            m_importing_scene = false;
-        }
-    }
-
-    if (m_adding_scene) {
-        draw_add_scene_popup();
-    }
 }
 
 void ScenePanel::render_scene_menu_bar()
 {
-    if (ImGui::BeginMenu("Scene")) {
-        auto scene_manager = m_context->get_scene_manager();
-
-        if (ImGui::BeginMenu("Select Active Scene")) {
-            for (const auto& scene_pair : scene_manager->get_scenes()) {
-                std::string scene_label = scene_pair.first + "##SelectActiveSceneList";
-                if (ImGui::MenuItem(scene_label.c_str())) {
-                    m_context->get_scene_manager()->set_active_scene(scene_label);
-                }
-            }
-            ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("Remove Scene")) {
-            for (const auto& scene_pair : scene_manager->get_scenes()) {
-                std::string scene_label = scene_pair.first + "##RemoveSceneList";
-                if (ImGui::MenuItem(scene_label.c_str())) {
-                    // todo: remove selected scene (scene_pair.second)
-                }
-            }
-            ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("Import Scene")) {
-            if (ImGui::MenuItem("As New Scene")) {
-                // todo
-            }
-            if (ImGui::MenuItem("Into Active Scene")) {
-                m_importing_scene = true;
-            }
-            ImGui::EndMenu();
-        }
-        if (ImGui::MenuItem("Add New Scene")) {
-            m_adding_scene = true;
-        }
-        ImGui::EndMenu();
-    }
-
     if (ImGui::BeginMenu("Add Node")) {
         const auto scene_manager = m_context->get_scene_manager();
         const auto root_node     = scene_manager->get_active_scene()->get_root();
 
         if (ImGui::MenuItem("\uf6cf  Mesh Node")) {
-            auto* new_node = scene_manager->add_node(scene::NodeType::Type::Mesh, "New Mesh", root_node);
+            auto* new_node = scene_manager->add_node("New Mesh", scene::NodeFlag::Mesh);
+            m_context->set_item_to_inspect(new_node);
+        }
+        if (ImGui::MenuItem("\uf4a1   Light Node")) {
+            auto* new_node = m_context->get_scene_manager()->add_node("New Light", scene::NodeFlag::Light);
             m_context->set_item_to_inspect(new_node);
         }
         if (ImGui::MenuItem("\uf03d   Camera Node")) {
-            auto* new_node = m_context->get_scene_manager()->add_node(
-                scene::NodeType::Type::Camera,
-                "New Camera",
-                root_node);
+            auto* new_node = m_context->get_scene_manager()->add_node("New Camera", scene::NodeFlag::Camera);
             m_context->set_item_to_inspect(new_node);
         }
-        /*
-        if (ImGui::MenuItem("\uf4a1   Light Node")) {
-            auto* new_node = m_context->get_scene_manager()->add_node(
-                scene::NodeType::Type::Light,
-                scene::Node::get_default_tag(),
-                nullptr);
-            m_context->set_item_to_inspect(new_node);
-        }
-        */
         ImGui::EndMenu();
     }
-
 }
 
 void ScenePanel::draw_node(scene::Node* node)
 {
     CGX_VERIFY(node);
-    CGX_VERIFY(node->get_node_type() != scene::NodeType::Type::Root);
 
     ImGui::PushID(node);
-    auto& node_state = m_node_states[node->get_id()];
 
-    ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_None;
-    node_flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_AllowOverlap;
-    node_flags |= node_state.is_expanded ? ImGuiTreeNodeFlags_DefaultOpen : 0;
-    node_flags |= node == m_context->get_item_to_inspect() ? ImGuiTreeNodeFlags_Selected : 0;
-
-    bool node_opened = false;
-    switch (node->get_node_type()) {
-        case scene::NodeType::Type::Mesh: {
-            const std::string icon = "\uf6cf  " + node->get_tag();
-            node_opened            = ImGui::TreeNodeEx(icon.c_str(), node_flags);
-            break;
-        }
-        case scene::NodeType::Type::Camera: {
-            const std::string icon = "\uf03d  " + node->get_tag();
-            node_opened            = ImGui::TreeNodeEx(icon.c_str(), node_flags);
-            break;
-        }
-        case scene::NodeType::Type::Root: {
-            CGX_FATAL("attempting to render root");
-        }
-        default: {
-            CGX_FATAL("Unrecognized node type");
-        }
+    std::string node_label = "Empty";
+    if (node->is_mesh()) {
+        node_label = "\uf6cf  " + node->get_tag();
+    }
+    if (node->is_light()) {
+        node_label = "\uf4a1  " + node->get_tag();
+    }
+    if (node->is_camera()) {
+        node_label = "\uf03d  " + node->get_tag();
     }
 
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Left) ) {
+    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth |
+                                    ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_AllowOverlap;
+    flags |= m_node_states[node->get_id()].is_expanded ? ImGuiTreeNodeFlags_DefaultOpen : 0;
+    flags |= node == m_context->get_item_to_inspect() ? ImGuiTreeNodeFlags_Selected : 0;
+
+    const bool node_opened = ImGui::TreeNodeEx(node_label.c_str(), flags);
+
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Left)) {
         m_context->set_item_to_inspect(node);
         if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-            node_state.is_expanded = !node_state.is_expanded;
+            m_node_states[node->get_id()].is_expanded = !m_node_states[node->get_id()].is_expanded;
         }
     }
 
@@ -170,7 +101,6 @@ void ScenePanel::draw_node(scene::Node* node)
         }
         ImGui::TreePop();
     }
-
     ImGui::PopID();
 }
 
@@ -188,30 +118,29 @@ void ScenePanel::draw_node_context_menu(scene::Node* node)
             bool node_added = false;
             if (ImGui::MenuItem("\uf6cf  Mesh Node")) {
                 auto* new_node = m_context->get_scene_manager()->add_node(
-                    scene::NodeType::Type::Mesh,
                     "New Mesh",
+                    scene::NodeFlag::Mesh,
+                    node);
+                m_context->set_item_to_inspect(new_node);
+                node_added = true;
+            }
+            if (ImGui::MenuItem("\uf4a1   Light Node")) {
+                auto* new_node = m_context->get_scene_manager()->add_node(
+                    "New Light",
+                    scene::NodeFlag::Light,
                     node);
                 m_context->set_item_to_inspect(new_node);
                 node_added = true;
             }
             if (ImGui::MenuItem("\uf03d   Camera Node")) {
                 auto* new_node = m_context->get_scene_manager()->add_node(
-                    scene::NodeType::Type::Camera,
                     "New Camera",
+                    scene::NodeFlag::Camera,
                     node);
                 m_context->set_item_to_inspect(new_node);
                 node_added = true;
             }
-            /*
-            if (ImGui::MenuItem("\uf4a1   Light Node")) {
-                auto* new_node = m_context->get_scene_manager()->add_node(
-                    scene::NodeType::Type::Light,
-                    scene::Node::get_default_tag(),
-                    node);
-                m_context->set_item_to_inspect(new_node);
-                node_added = true;
-            }
-            */
+
             if (node_added) {
                 ImGui::CloseCurrentPopup();
             }
@@ -219,11 +148,12 @@ void ScenePanel::draw_node_context_menu(scene::Node* node)
         }
         if (ImGui::MenuItem("Rename")) {
             m_context->set_item_to_rename(node);
+            m_context->m_renaming_item = true;
             ImGui::CloseCurrentPopup();
         }
         if (ImGui::MenuItem("Import Child")) {
-            m_node_to_birth   = node;
-            m_importing_scene = true;
+            m_context->set_node_to_birth(node);
+            m_context->m_importing_node = true;
             ImGui::CloseCurrentPopup();
         }
         if (ImGui::MenuItem("Remove")) {
