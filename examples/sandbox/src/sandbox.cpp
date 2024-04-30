@@ -21,8 +21,8 @@ void Sandbox::initialize()
         m_scene_manager->get_active_scene()->get_root());
     auto& controllable_c = m_ecs_manager->get_component<
         cgx::component::Controllable>(default_camera_node->get_entity());
-    controllable_c.enable_rotation = true;
-    controllable_c.enable_translation    = true;
+    controllable_c.enable_rotation    = true;
+    controllable_c.enable_translation = true;
 
     auto* viewport_panel        = m_imgui_manager->get_panel("Viewport");
     auto* casted_viewport_panel = dynamic_cast<cgx::gui::ViewportPanel*>(viewport_panel);
@@ -31,6 +31,12 @@ void Sandbox::initialize()
         auto camera_node_sptr = dynamic_pointer_cast<cgx::scene::CameraNode>(node_sptr);
         casted_viewport_panel->set_camera(camera_node_sptr);
     }
+
+    m_render_system->get_render_settings().default_shader_enabled = true;
+
+    m_scene_manager->import_scene(
+        std::string(DATA_DIRECTORY) + "/assets/scenes/default_scene.glb",
+        m_scene_manager->get_active_scene()->get_root());
 
     load_assets();
 }
@@ -62,7 +68,7 @@ void Sandbox::load_assets() const
     }
 
     // load model, lighting shaders
-    const std::vector<std::string> shader_names = {"model", "lighting", "pbr", "basic_diffuse"};
+    const std::vector<std::string> shader_names = {"model", "lighting", "pbr", "default"};
     for (const auto& name : shader_names) {
         std::filesystem::path shader_path = shader_dir / name;
         auto shader = std::make_shared<cgx::asset::Shader>(name, shader_path.string(), cgx::asset::ShaderType::Unknown);

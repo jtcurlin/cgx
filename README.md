@@ -4,7 +4,7 @@
 </p>
 
 <p align="center">
-  <img src = "./data/demo_screenshots/042524_demo.png" alt="editor">
+  <img src = "./data/demo_screenshots/043024_demo.png" alt="editor">
 </p>
  
 ## Introduction 

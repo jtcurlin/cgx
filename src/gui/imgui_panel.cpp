@@ -13,7 +13,7 @@ void AspectRatioConstraint(ImGuiSizeCallbackData* data)
     data->DesiredSize.y      = data->DesiredSize.x / aspect_ratio;
 }
 
-ImGuiPanel::ImGuiPanel(std::string title, GUIContext* context, ImGuiManager* manager, ImGuiWindowFlags window_flags)
+ImGuiPanel::ImGuiPanel(std::string title, GUIContext* context, ImGuiManager* manager, const ImGuiWindowFlags window_flags)
     : m_title(std::move(title))
     , m_context(context)
     , m_manager(manager)
@@ -39,8 +39,8 @@ void ImGuiPanel::Begin()
     }
 
     if (!ImGui::IsWindowDocked()) {
-        const auto dockspace_id = ImGui::GetID("primary_dockspace");
-        ImGui::SetNextWindowDockID(dockspace_id, ImGuiCond_FirstUseEver);
+        m_dockspace_id = ImGui::GetID("primary_dockspace");
+        ImGui::SetNextWindowDockID(m_dockspace_id, ImGuiCond_FirstUseEver);
     }
 
     ImGui::Begin(m_title.c_str(), &keep_visible, m_window_flags);

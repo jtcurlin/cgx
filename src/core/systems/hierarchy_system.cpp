@@ -36,7 +36,6 @@ void HierarchySystem::on_entity_removed(const ecs::Entity entity)
 
 void HierarchySystem::on_parent_update(const ecs::Entity child, const ecs::Entity old_parent, const ecs::Entity new_parent)
 {
-    CGX_INFO("on_parent_update called: child:{} | old_parent:{} | new_parent: {}", child, old_parent, new_parent);
     CGX_ASSERT(m_ecs_manager->has_component<component::Hierarchy>(child), "no hierarchy component associated with specified child");
 
     if (old_parent != ecs::MAX_ENTITIES && m_entities.find(old_parent) != m_entities.end()) {

@@ -2,9 +2,8 @@
 
 #pragma once
 
-#include "../common.h"
-#include "../../asset/model.h"
-#include "../../asset/shader.h"
+#include "asset/model.h"
+#include "asset/shader.h"
 
 namespace cgx::component
 {

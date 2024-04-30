@@ -5,7 +5,7 @@
 
 namespace cgx::core
 {
-Hierarchy::Hierarchy(std::string tag, const std::string path)
+Hierarchy::Hierarchy(std::string tag, std::string path)
     : Item(std::move(tag), std::move(path))
 {
     set_internal_path(Hierarchy::get_path_prefix() + tag);

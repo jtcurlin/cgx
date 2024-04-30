@@ -64,7 +64,7 @@ AssetID AssetManager::import_asset(const std::string& path)
     return k_invalid_id;
 }
 
-AssetID AssetManager::add_asset(const std::shared_ptr<Asset>& asset)
+AssetID AssetManager::add_asset(const std::shared_ptr<Asset>& asset, bool return_original_on_duplicate)
 {
     if (asset == nullptr) {
         CGX_ERROR("AssetManager: failed to add asset. (null asset)");
@@ -165,7 +165,8 @@ std::shared_ptr<Asset> AssetManager::get_asset(AssetID asset_id)
 
 AssetID AssetManager::get_id_by_path(const std::string& path)
 {
-    if (const auto asset_it = m_source_path_to_id.find(path) ; asset_it != m_source_path_to_id.end()) {
+    auto fs_path = clean_path(path).string();
+    if (const auto asset_it = m_source_path_to_id.find(fs_path) ; asset_it != m_source_path_to_id.end()) {
         return asset_it->second; // return id
     }
     return k_invalid_id;

@@ -21,6 +21,7 @@
 #include <glm/gtx/string_cast.hpp>
 
 #include <iostream>
+#include <__filesystem/path.h>
 
 namespace cgx::render
 {
@@ -33,6 +34,11 @@ void RenderSystem::initialize()
 {
     glEnable(GL_DEPTH_TEST);
     CGX_CHECK_GL_ERROR;
+
+    const std::string default_shader_path = std::string(DATA_DIRECTORY) + "/shaders/default";
+    CGX_INFO("Default Shader Path : {}", default_shader_path);
+    m_default_shader = std::make_unique<asset::Shader>(
+        "default_shader", default_shader_path, asset::ShaderType::Unknown);
 
     // m_camera = std::make_unique<Camera>();
 
@@ -82,15 +88,15 @@ void RenderSystem::render()
     CGX_CHECK_GL_ERROR;
 
     static auto default_proj = glm::perspective(
-            glm::radians(45.0f),
-            static_cast<float>(m_settings.render_width) / static_cast<float>(m_settings.render_height),
-            0.1f,
-            100.0f);
+        glm::radians(45.0f),
+        static_cast<float>(m_settings.render_width) / static_cast<float>(m_settings.render_height),
+        0.1f,
+        100.0f);
 
     if (m_camera != ecs::MAX_ENTITIES) {
         auto& camera_c = get_component<component::Camera>(m_camera);
-        m_view_mat           = camera_c.view_matrix;
-        m_proj_mat           = glm::perspective(
+        m_view_mat     = camera_c.view_matrix;
+        m_proj_mat     = glm::perspective(
             glm::radians(camera_c.zoom),
             static_cast<float>(m_settings.render_width) / static_cast<float>(m_settings.render_height),
             camera_c.near_plane,
@@ -107,18 +113,29 @@ void RenderSystem::render()
         auto& render_c    = get_component<component::Render>(entity);
         auto& transform_c = get_component<component::Transform>(entity);
 
-        if (!(render_c.model && render_c.shader)) {
+        auto* model = render_c.model
+                          ? render_c.model.get()
+                          : m_settings.default_model_enabled
+                                ? m_default_model.get()
+                                : nullptr;
+        auto* shader = render_c.shader
+                           ? render_c.shader.get()
+                           : m_settings.default_shader_enabled
+                                 ? m_default_shader.get()
+                                 : nullptr;
+
+        if (model == nullptr || shader == nullptr) {
             continue;
         }
 
-        render_c.shader->use();
-        render_c.shader->set_mat4("proj", m_proj_mat);
-        render_c.shader->set_mat4("view", m_view_mat);
-        render_c.shader->set_mat4("model", transform_c.world_matrix);
+        shader->use();
+        shader->set_mat4("u_proj", m_proj_mat);
+        shader->set_mat4("u_view", m_view_mat);
+        shader->set_mat4("u_model", transform_c.world_matrix);
 
-        render_c.shader->set_vec3("light_direction", glm::normalize(glm::vec3(1.0, 1.0, 1.0)));
+        shader->set_vec3("light_direction", glm::normalize(glm::vec3(1.0, 1.0, 1.0)));
 
-        render_c.model->draw(render_c.shader.get());
+        model->draw(shader);
     }
 
     if (m_settings.m_render_test_enabled) {
@@ -184,7 +201,7 @@ const std::shared_ptr<asset::Cubemap>& RenderSystem::get_skybox_cubemap() const
 
 void RenderSystem::set_skybox_cubemap(const std::shared_ptr<asset::Cubemap>& cubemap)
 {
-    m_skybox_cubemap = cubemap;
+    m_skybox_cubemap          = cubemap;
     m_settings.skybox_enabled = true;
 }
 

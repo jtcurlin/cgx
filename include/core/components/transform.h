@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include "ecs/common.h"
 #include <glm/glm.hpp>
 
 namespace cgx::component

@@ -34,10 +34,10 @@ Node* SceneManager::add_node(const NodeType::Type type, std::string tag, Node* p
             break;
         }
         case NodeType::Type::Camera: {
-            m_ecs_manager->add_component<component::Camera>(entity, component::Camera{});
+            m_ecs_manager->add_component<component::Camera>(entity, component::Camera{.zoom=50.0f});
             m_ecs_manager->add_component<component::Transform>(
                 entity,
-                component::Transform{.translation = glm::vec3(0.0f, 0.0f, 3.0f)});
+                component::Transform{.translation = glm::vec3(0.0f, 1.0f, 3.0f), .rotation=glm::vec3(-5.0f, 0.0f, 0.0f)});
             m_ecs_manager->add_component<component::Controllable>(entity, component::Controllable{.use_relative_movement=true});
             break;
         }

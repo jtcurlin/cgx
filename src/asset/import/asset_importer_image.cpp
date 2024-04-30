@@ -1,14 +1,14 @@
 // Copyright © 2024 Jacob Curlin
 
 #define STB_IMAGE_IMPLEMENTATION
+
 #include "asset/import/asset_importer_image.h"
 #include "asset/asset_manager.h"
 #include "asset/texture.h"
-#include "utility/paths.h"
-
 #include "core/common.h"
-#include "glad/glad.h"
-#include "stb_image.h"
+
+#include <glad/glad.h>
+#include <stb/stb_image.h>
 
 namespace cgx::asset
 {

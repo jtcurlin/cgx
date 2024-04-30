@@ -4,11 +4,10 @@
 
 #include "gui/imgui_panel.h"
 #include "gui/gui_context.h"
-#include "imgui.h"
 
+#include <imgui/imgui.h>
 #include <vector>
-#include <memory>
-#include <__filesystem/path.h>
+#include <filesystem>
 
 namespace cgx::gui
 {
@@ -18,7 +17,7 @@ public:
     explicit ImGuiManager(GUIContext* context);
     ~ImGuiManager();
 
-    void shutdown();
+    static void shutdown();
 
     void init();
     void register_event_handlers();
@@ -26,20 +25,20 @@ public:
     void register_panel(std::unique_ptr<ImGuiPanel> panel);
     ImGuiPanel* get_panel(const std::string& label);
 
-    void render();
-    void begin_render();
-    void end_render();
+    void        render();
+    void        begin_render() const;
+    static void end_render();
 
     void draw_editor();
     void draw_fullscreen_render();
     void draw_main_menu_bar();
 
-    void load_fonts();
-    void set_style();
+    void        load_fonts();
+    static void set_style();
 
-    void toggle_interface();
-    void enable_imgui_input();
-    void disable_imgui_input();
+    void        toggle_interface();
+    static void enable_imgui_input();
+    void        disable_imgui_input();
 
     ImFont* m_title_font{};
     ImFont* m_header_font{};
@@ -52,7 +51,7 @@ private:
     GUIContext*                              m_context{nullptr};
     std::vector<std::unique_ptr<ImGuiPanel>> m_imgui_panels;
 
-    char m_input_buffer[256]{};
-    void clear_inputs(ImGuiIO& io);
+    char        m_input_buffer[256]{};
+    static void clear_inputs(ImGuiIO& io);
 };
 }

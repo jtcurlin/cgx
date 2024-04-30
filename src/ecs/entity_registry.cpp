@@ -18,14 +18,8 @@ EntityRegistry::~EntityRegistry() = default;
 Entity EntityRegistry::acquire_entity() // fetch first unused entity from entity vector
 {
     CGX_ASSERT(m_active_entity_count < MAX_ENTITIES, "Too many active entities.");
-    if (!(m_active_entity_count < MAX_ENTITIES)) {
-        CGX_INFO("Active Entity Count : {}", m_active_entity_count);
-    }
-    if (!(m_active_entity_count < MAX_ENTITIES)) {
-        CGX_INFO("MAX_ENTITIES : {}", MAX_ENTITIES);
-    }
 
-    Entity id = m_available_entities.front(); // fetch
+    const Entity id = m_available_entities.front(); // fetch
     m_available_entities.pop();
     ++m_active_entity_count;
 
@@ -35,7 +29,6 @@ Entity EntityRegistry::acquire_entity() // fetch first unused entity from entity
 void EntityRegistry::release_entity(Entity entity)
 {
     CGX_ASSERT(entity < MAX_ENTITIES, "Entity out of range.");
-    CGX_INFO("Destroying Entity {}", entity);
 
     m_signatures[entity].reset(); // reset entity's signature (bitset)
 

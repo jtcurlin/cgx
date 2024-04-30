@@ -11,7 +11,7 @@
 
 namespace cgx::asset
 {
-class AssetImporterOBJ : public AssetImporter
+class AssetImporterOBJ final : public AssetImporter
 {
 public:
     AssetImporterOBJ();

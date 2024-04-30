@@ -3,7 +3,6 @@
 #include "scene/scene.h"
 
 #include "cgx.h"
-#include "core/events/ecs_events.h"
 #include "core/event_handler.h"
 #include "scene/camera_node.h"
 #include "scene/mesh_node.h"
@@ -13,7 +12,7 @@ namespace cgx::scene
 {
 Scene::Scene(std::string label) : m_label(std::move(label))
 {
-    m_root = std::make_shared<RootNode>("Scene " + label + " Root");
+    m_root = std::make_shared<RootNode>("Scene " + m_label + " Root");
     CGX_INFO("scene '{}' : initialized", m_label);
 }
 Scene::~Scene() = default;
@@ -25,16 +24,14 @@ Node* Scene::get_root() const
 
 Node* Scene::add_node(const NodeType::Type type, std::string tag, const ecs::Entity entity, Node* parent)
 {
-    CGX_INFO("Adding node  entity={} ; tag={}; type={}", entity, tag, NodeType::get_lower_typename(type));
-
     std::shared_ptr<Node> node;
     switch (type) {
         case NodeType::Type::Mesh: {
-            node = std::make_shared<MeshNode>(tag, entity);
+            node = std::make_shared<MeshNode>(std::move(tag), entity);
             break;
         }
         case NodeType::Type::Camera: {
-            node = std::make_shared<CameraNode>(tag, entity);
+            node = std::make_shared<CameraNode>(std::move(tag), entity);
             break;
         }
         default: {

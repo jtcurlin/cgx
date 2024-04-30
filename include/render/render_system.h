@@ -6,7 +6,6 @@
 #include "core/components/camera.h"
 #include "ecs/system.h"
 
-#include "render/camera.h"
 #include "render/framebuffer.h"
 
 namespace cgx::asset
@@ -38,12 +37,15 @@ struct RenderSettings
     bool msaa_enabled{false};
     bool skybox_enabled{false};
 
+    bool default_shader_enabled{false};
+    bool default_model_enabled{false};
+
     bool     m_render_test_enabled{false};
     uint32_t m_render_test_shader{};
     uint32_t m_render_test_vao{};
 };
 
-class RenderSystem : public ecs::System
+class RenderSystem final : public ecs::System
 {
 public:
     explicit RenderSystem(ecs::ECSManager* ecs_manager);
@@ -68,7 +70,7 @@ public:
     RenderSettings& get_render_settings();
 
     [[nodiscard]] ecs::Entity get_camera() const;
-    void set_camera(ecs::Entity camera_entity);
+    void                      set_camera(ecs::Entity camera_entity);
 
 private:
     ecs::Entity m_camera{ecs::MAX_ENTITIES};
@@ -79,6 +81,9 @@ private:
     glm::mat4 m_proj_mat{glm::mat4(1.0f)};
 
     std::shared_ptr<asset::Cubemap> m_skybox_cubemap{};
+
+    std::unique_ptr<asset::Shader> m_default_shader{};
+    std::unique_ptr<asset::Model>  m_default_model{};
 
     RenderSettings m_settings;
 

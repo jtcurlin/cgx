@@ -53,8 +53,6 @@ void PBRMaterial::bind(Shader* shader) const
 
     shader->set_float("roughnessFactor", m_roughness_factor);
 
-    static bool first = true;
-
     if (m_base_color_map != nullptr) {
         m_base_color_map->bind(0);
         shader->set_int("base_color_map", 0);

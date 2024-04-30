@@ -6,7 +6,8 @@
 #define GLFW_INCLUDE_NONE
 
 #include "core/common.h"
-#include "GLFW/glfw3.h"
+
+#include <GLFW/glfw3.h>
 #include <functional>
 
 namespace cgx::core

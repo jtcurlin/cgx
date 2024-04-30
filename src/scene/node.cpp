@@ -5,9 +5,6 @@
 #include "core/events/ecs_events.h"
 #include "core/event_handler.h"
 
-#include <iomanip>
-#include <sstream>
-
 namespace cgx::scene
 {
 
@@ -43,8 +40,6 @@ void Node::handle_parent_update(Hierarchy* old_parent, Hierarchy* new_parent)
 
     const ecs::Entity old_parent_entity = old_parent_node ? old_parent_node->get_entity() : ecs::MAX_ENTITIES;
     const ecs::Entity new_parent_entity = new_parent_node ? new_parent_node->get_entity() : ecs::MAX_ENTITIES;
-
-    CGX_INFO("Sending Event PARENT_UPDATE: child={}, old_parent={}, new_parent={}", get_entity(), old_parent_entity, new_parent_entity);
 
     core::event::Event event(core::event::component::hierarchy::PARENT_UPDATE);
     event.set_param(core::event::component::hierarchy::CHILD, get_entity());

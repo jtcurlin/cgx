@@ -22,6 +22,8 @@ void RenderSettingsPanel::render()
     draw_skybox_menu();
     ImGui::Checkbox("Enable MSAA", &render_settings.msaa_enabled);
     ImGui::Checkbox("Enable Rendering Test", &render_settings.m_render_test_enabled);
+    ImGui::Checkbox("Enable Default Shader", &render_settings.default_shader_enabled);
+    ImGui::Checkbox("Enable Default Model", &render_settings.default_model_enabled);
 }
 
 void RenderSettingsPanel::draw_skybox_menu() const

@@ -21,11 +21,11 @@ Shader::Shader(std::string tag, std::string source_path, ShaderType::Type type)
     const fs::path    f_path               = shader_root_path / (base_shader_filename + ".fs");
 
     if (!exists(v_path)) {
-        CGX_ERROR("Shader: Vertex shader does not exist at derived path [{}].", m_vert_path);
+        CGX_ERROR("Shader: Vertex shader does not exist at derived path [{}].", v_path.string());
         m_initialized = false;
     }
     else if (!exists(f_path)) {
-        CGX_ERROR("Shader: Fragment shader does not exist at derived path [{}].", m_frag_path);
+        CGX_ERROR("Shader: Fragment shader does not exist at derived path [{}].", f_path.string());
         m_initialized = false;
     }
     else {

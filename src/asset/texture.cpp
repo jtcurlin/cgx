@@ -49,6 +49,9 @@ Texture::Texture(
 
 Texture::~Texture()
 {
+    if (m_internal_path == "cgx://item/asset/texture/colormap") {
+        CGX_INFO("this one");
+    }
     glDeleteTextures(1, &m_texture_id);
     CGX_CHECK_GL_ERROR;
     stbi_image_free(m_pixels);

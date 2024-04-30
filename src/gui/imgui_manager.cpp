@@ -155,7 +155,7 @@ void ImGuiManager::render()
     end_render();
 }
 
-void ImGuiManager::begin_render()
+void ImGuiManager::begin_render() const
 {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
@@ -198,10 +198,8 @@ void ImGuiManager::draw_editor()
 {
     draw_main_menu_bar();
 
-    static ImGuiID dockspace_id = ImGui::GetID("primary_dockspace");
     for (const auto& window : m_imgui_panels) {
         if (window->is_visible()) {
-            // ImGui::SetNextWindowDockID(dockspace_id);
             window->Begin();
             window->render();
             window->End();
@@ -391,8 +389,8 @@ void ImGuiManager::set_style()
     // constexpr auto gray = "#2C2A2E";
     constexpr auto dark_gray = "#211F22";
     constexpr auto gray = "#2C2A2E";
-    constexpr auto light_gray = "#403E41";
-    constexpr auto lightest_gray = "#353337";
+    constexpr auto light_gray = "#616161";
+    constexpr auto lightest_gray = "#625E65";
 
 
     ImGuiStyle& style                   = ImGui::GetStyle();
@@ -422,7 +420,7 @@ void ImGuiManager::set_style()
     style.Colors[ImGuiCol_ButtonActive]  = hex_to_imvec4(lightest_gray);
     style.Colors[ImGuiCol_Header]        = hex_to_imvec4(gray);
     style.Colors[ImGuiCol_HeaderHovered] = hex_to_imvec4(lightest_gray);
-    style.Colors[ImGuiCol_HeaderActive] = hex_to_imvec4(light_gray);
+    style.Colors[ImGuiCol_HeaderActive] = hex_to_imvec4(lightest_gray);
 
     style.Colors[ImGuiCol_Separator] = hex_to_imvec4(lightest_gray);
     style.Colors[ImGuiCol_SeparatorHovered] = ImVec4(
@@ -477,7 +475,7 @@ void ImGuiManager::set_style()
     style.ChildBorderSize           = 1.0f;
     style.PopupRounding             = 5.0f;
     style.PopupBorderSize           = 1.0f;
-    style.FramePadding              = ImVec2(4.0f, 3.0f);
+    style.FramePadding              = ImVec2(2.0f, 2.0f);
     style.FrameRounding             = 5.0f;
     style.FrameBorderSize           = 0.0f;
     style.ItemSpacing               = ImVec2(8.0f, 4.0f);

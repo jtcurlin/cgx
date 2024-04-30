@@ -1,10 +1,11 @@
 // Copyright © 2024 Jacob Curlin
 
 #version 330 core
+
 out vec4 FragColor;
-in vec2 TexCoords;
-in vec3 FragPos;
-in vec3 Normal;
+in vec3 position;
+in vec2 uv;
+in vec3 normal;
 
 #define BASE_COLOR_MAP_BIT 1 << 0
 #define NORMAL_MAP_BIT 2 << 1
@@ -35,14 +36,14 @@ const float PI = 3.14159265359;
 // technique somewhere later in the normal mapping tutorial.
 vec3 getNormalFromMap()
 {
-    vec3 tangentNormal = texture(normal_map, TexCoords).xyz * 2.0 - 1.0;
+    vec3 tangentNormal = texture(normal_map, uv).xyz * 2.0 - 1.0;
 
-    vec3 Q1  = dFdx(FragPos);
-    vec3 Q2  = dFdy(FragPos);
-    vec2 st1 = dFdx(TexCoords);
-    vec2 st2 = dFdy(TexCoords);
+    vec3 Q1  = dFdx(position);
+    vec3 Q2  = dFdy(position);
+    vec2 st1 = dFdx(uv);
+    vec2 st2 = dFdy(uv);
 
-    vec3 N   = normalize(Normal);
+    vec3 N   = normalize(normal);
     vec3 T  = normalize(Q1*st2.t - Q2*st1.t);
     vec3 B  = -normalize(cross(N, T));
     mat3 TBN = mat3(T, B, N);
@@ -98,13 +99,13 @@ void main()
     bool has_occlusion_map = ((map_bitset & OCCLUSION_MAP_BIT) != 0);
     bool has_emissive_map = ((map_bitset & EMISSIVE_MAP_BIT) != 0);
 
-    vec3 albedo = has_base_color_map ? pow(texture(base_color_map, TexCoords).rgb, vec3(2.2)) : vec3(0.5, 0.5, 0.5);
-    float metallic = has_metallic_roughness_map ? texture(metallic_roughness_map, TexCoords).b : 0.0;
-    float roughness = has_metallic_roughness_map ? texture(metallic_roughness_map, TexCoords).g : 0.5;
-    float ao        = has_occlusion_map ? texture(occlusion_map, TexCoords).r : 1.0;
+    vec3 albedo = has_base_color_map ? pow(texture(base_color_map, uv).rgb, vec3(2.2)) : vec3(0.5, 0.5, 0.5);
+    float metallic = has_metallic_roughness_map ? texture(metallic_roughness_map, uv).b : 0.0;
+    float roughness = has_metallic_roughness_map ? texture(metallic_roughness_map, uv).g : 0.5;
+    float ao        = has_occlusion_map ? texture(occlusion_map, uv).r : 1.0;
 
     vec3 N = getNormalFromMap();
-    vec3 V = normalize(camPos - FragPos);
+    vec3 V = normalize(camPos - position);
 
     // calculate reflectance at normal incidence; if dia-electric (like plastic) use F0
     // of 0.04 and if it's a metal, use the albedo color as F0 (metallic workflow)
@@ -116,9 +117,9 @@ void main()
     for(int i = 0; i < 4; ++i)
     {
         // calculate per-light radiance
-        vec3 L = normalize(lightPositions[i] - FragPos);
+        vec3 L = normalize(lightPositions[i] - position);
         vec3 H = normalize(V + L);
-        float distance = length(lightPositions[i] - FragPos);
+        float distance = length(lightPositions[i] - position);
         float attenuation = 1.0 / (distance * distance);
         vec3 radiance = lightColors[i] * attenuation;
 

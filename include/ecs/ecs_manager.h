@@ -17,7 +17,7 @@ public:
 
     void update(float dt) const;
 
-    Entity acquire_entity() const
+    [[nodiscard]] Entity acquire_entity() const
     {
         return m_entity_registry->acquire_entity();
     }
@@ -39,7 +39,6 @@ public:
     void add_component(const Entity entity, T component)
     {
         m_component_registry->add_component<T>(entity, component);
-        CGX_INFO("Scene: Added Component to entity {}", entity);
 
         auto signature = m_entity_registry->get_signature(entity);
         signature.set(m_component_registry->get_component_type<T>(), true);

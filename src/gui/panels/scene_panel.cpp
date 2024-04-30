@@ -38,9 +38,12 @@ void ScenePanel::render()
     }
 
     if (m_importing_scene) {
-        std::string selected_file;
+        std::string selected_file = "none";
         if (DialogPanel::draw_file_import_dialog("Select Scene File", ".glb,.gltf", selected_file)) {
-            m_context->get_scene_manager()->import_scene(selected_file);
+            if (selected_file != "none") {
+                m_context->get_scene_manager()->import_scene(selected_file, m_node_to_birth);
+                m_node_to_birth = nullptr;
+            }
             m_importing_scene = false;
         }
     }
@@ -126,7 +129,7 @@ void ScenePanel::draw_node(scene::Node* node)
     auto& node_state = m_node_states[node->get_id()];
 
     ImGuiTreeNodeFlags node_flags = ImGuiTreeNodeFlags_None;
-    node_flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
+    node_flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_AllowOverlap;
     node_flags |= node_state.is_expanded ? ImGuiTreeNodeFlags_DefaultOpen : 0;
     node_flags |= node == m_context->get_item_to_inspect() ? ImGuiTreeNodeFlags_Selected : 0;
 
@@ -150,8 +153,11 @@ void ScenePanel::draw_node(scene::Node* node)
         }
     }
 
-    if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-        node_state.is_expanded = !node_state.is_expanded;
+    if (ImGui::IsItemClicked(ImGuiMouseButton_Left) ) {
+        m_context->set_item_to_inspect(node);
+        if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+            node_state.is_expanded = !node_state.is_expanded;
+        }
     }
 
     draw_node_context_menu(node);
@@ -216,9 +222,6 @@ void ScenePanel::draw_node_context_menu(scene::Node* node)
             ImGui::CloseCurrentPopup();
         }
         if (ImGui::MenuItem("Import Child")) {
-            m_node_to_birth = node;
-            // m_dialog_panel->m_file_import_dialog("Import Scene", ".glb,.gltf", [this](const std::string& file_path))
-
             m_node_to_birth   = node;
             m_importing_scene = true;
             ImGui::CloseCurrentPopup();
@@ -228,7 +231,6 @@ void ScenePanel::draw_node_context_menu(scene::Node* node)
                 m_context->set_item_to_inspect(nullptr);
             }
             m_context->get_scene_manager()->remove_node(node);
-            CGX_INFO("Clicked Remove on Node {}!", node->get_tag());
             ImGui::CloseCurrentPopup();
         }
         ImGui::EndPopup();

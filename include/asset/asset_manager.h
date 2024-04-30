@@ -21,7 +21,7 @@ public:
     void register_importer(const std::shared_ptr<AssetImporter>& importer);
 
     AssetID import_asset(const std::string& path);
-    AssetID add_asset(const std::shared_ptr<Asset>& asset);
+    AssetID add_asset(const std::shared_ptr<Asset>& asset, bool return_original_on_duplicate=false);
     bool    remove_asset(AssetID asset_id);
 
     AssetID                     get_id_by_path(const std::string& path);

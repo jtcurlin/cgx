@@ -8,7 +8,7 @@
 
 namespace cgx::asset
 {
-class AssetImporterImage : public AssetImporter
+class AssetImporterImage final : public AssetImporter
 {
 public:
     AssetImporterImage();

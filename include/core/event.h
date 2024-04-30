@@ -4,7 +4,6 @@
 
 #include <any>
 #include <unordered_map>
-#include <functional>
 
 namespace cgx::core::event
 {

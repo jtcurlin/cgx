@@ -6,7 +6,7 @@
 
 namespace cgx::gui
 {
-    class InputPanel : public ImGuiPanel
+    class InputPanel final : public ImGuiPanel
     {
         InputPanel(GUIContext* context, ImGuiManager* manager);
         ~InputPanel() override;

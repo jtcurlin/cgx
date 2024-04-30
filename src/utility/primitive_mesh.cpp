@@ -45,9 +45,6 @@ std::shared_ptr<asset::Mesh> create_plane(
     const float horizontal_step = 1.0f / horizontal_count;
     const float vertical_step   = 1.0f / vertical_count;
 
-    const float u_step = (u_range.y - u_range.x) / horizontal_count;
-    const float v_step = (v_range.y - v_range.x) / vertical_count;
-
     glm::vec3 size_scale(size.x, size.y, size.z);
 
     std::vector<asset::Vertex> vertices;

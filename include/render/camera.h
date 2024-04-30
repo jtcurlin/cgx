@@ -42,7 +42,7 @@ public:
 
     void update(double dt);
 
-    glm::mat4 get_view_matrix() const;
+    [[nodiscard]] glm::mat4 get_view_matrix() const;
 
     [[nodiscard]] float get_zoom() const;
 
@@ -52,7 +52,7 @@ public:
     void enable_control();
     void disable_control();
 
-    glm::vec3 get_cam_pos() const;
+    [[nodiscard]] glm::vec3 get_cam_pos() const;
 
 private:
     void updateCameraVectors();
