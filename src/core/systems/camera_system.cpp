@@ -5,6 +5,7 @@
 #include "core/components/camera.h"
 #include "core/components/transform.h"
 #include <glm/glm.hpp>
+#include <glm/ext/matrix_clip_space.hpp>
 #include <glm/ext/matrix_transform.hpp>
 
 namespace cgx::core
@@ -23,10 +24,27 @@ void CameraSystem::update(float dt)
         auto view = glm::mat4(1.0f);
 
         // compute the view matrix based on the transform component
-        view = glm::rotate(view, glm::radians(-transform.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
-        view = glm::rotate(view, glm::radians(-transform.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
-        view = glm::rotate(view, glm::radians(-transform.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
-        view = glm::translate(view, -transform.translation);
+        view = rotate(view, glm::radians(-transform.rotation.x), glm::vec3(1.0f, 0.0f, 0.0f));
+        view = rotate(view, glm::radians(-transform.rotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+        view = rotate(view, glm::radians(-transform.rotation.z), glm::vec3(0.0f, 0.0f, 1.0f));
+        view = translate(view, -transform.translation);
+
+        if (camera.type == component::Camera::Type::Perspective) {
+            camera.proj_matrix = glm::perspective(
+                glm::radians(camera.fov),
+                camera.aspect_ratio,
+                camera.near_plane,
+                camera.far_plane);
+        }
+        else if (camera.type == component::Camera::Type::Orthographic) {
+            camera.proj_matrix = glm::ortho(
+                -camera.x_mag,
+                camera.x_mag,
+                -camera.y_mag,
+                camera.y_mag,
+                camera.near_plane,
+                camera.far_plane);
+        }
 
         // set the computed view matrix in the camera component
         camera.view_matrix = view;

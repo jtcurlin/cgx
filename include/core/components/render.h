@@ -11,5 +11,6 @@ struct Render
 {
     std::shared_ptr<asset::Model>  model;
     std::shared_ptr<asset::Shader> shader;
+    bool visible{true};
 };
 }

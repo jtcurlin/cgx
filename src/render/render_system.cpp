@@ -38,7 +38,9 @@ void RenderSystem::initialize()
     const std::string default_shader_path = std::string(DATA_DIRECTORY) + "/shaders/default";
     CGX_INFO("Default Shader Path : {}", default_shader_path);
     m_default_shader = std::make_unique<asset::Shader>(
-        "default_shader", default_shader_path, asset::ShaderType::Unknown);
+        "default_shader",
+        default_shader_path,
+        asset::ShaderType::Unknown);
 
     // m_camera = std::make_unique<Camera>();
 
@@ -96,11 +98,7 @@ void RenderSystem::render()
     if (m_camera != ecs::MAX_ENTITIES) {
         auto& camera_c = get_component<component::Camera>(m_camera);
         m_view_mat     = camera_c.view_matrix;
-        m_proj_mat     = glm::perspective(
-            glm::radians(camera_c.zoom),
-            static_cast<float>(m_settings.render_width) / static_cast<float>(m_settings.render_height),
-            camera_c.near_plane,
-            camera_c.far_plane);
+        m_proj_mat     = camera_c.proj_matrix;
     }
     else {
         m_view_mat = glm::mat4(1.0f);
@@ -133,7 +131,7 @@ void RenderSystem::render()
         shader->set_mat4("u_view", m_view_mat);
         shader->set_mat4("u_model", transform_c.world_matrix);
 
-        shader->set_vec3("light_direction", glm::normalize(glm::vec3(1.0, 1.0, 1.0)));
+        shader->set_vec3("light_direction", normalize(glm::vec3(1.0, 1.0, 1.0)));
 
         model->draw(shader);
     }

@@ -22,6 +22,10 @@
 
 #include <stb/stb_image.h>
 
+#include "core/components/camera.h"
+#include "core/components/controllable.h"
+
+
 namespace cgx::scene
 {
 SceneImporter::SceneImporter(ecs::ECSManager* ecs_manager, asset::AssetManager* asset_manager)
@@ -73,9 +77,57 @@ void SceneImporter::process_node(
                                                ? "Imported Mesh" + std::to_string(unnamed_mesh_count++)
                                                : gltf_node.name;
 
-    auto new_node_entity = m_ecs_manager->acquire_entity();
-    m_ecs_manager->add_component<component::Hierarchy>(new_node_entity, component::Hierarchy{});
-    auto node = scene->add_node(NodeType::Type::Mesh, node_tag, new_node_entity, parent_node);
+    Node* new_node = nullptr;
+
+    if (gltf_node.camera >= 0) {
+        auto& gltf_camera = gltf_model.cameras[gltf_node.camera];
+
+        auto new_entity = m_ecs_manager->acquire_entity();
+        m_ecs_manager->add_component<component::Hierarchy>(new_entity, component::Hierarchy{});
+        new_node = scene->add_node(NodeType::Type::Camera, gltf_camera.name, new_entity, parent_node);
+
+        component::Camera camera;
+
+        if (gltf_camera.type == "perspective") {
+            camera.type         = component::Camera::Type::Perspective;
+            camera.fov          = static_cast<float>(gltf_camera.perspective.yfov) * 180.0f / glm::pi<float>();
+            camera.aspect_ratio = static_cast<float>(gltf_camera.perspective.aspectRatio);
+            camera.near_plane   = static_cast<float>(gltf_camera.perspective.znear);
+            camera.far_plane    = static_cast<float>(gltf_camera.perspective.zfar);
+        }
+        else if (gltf_camera.type == "orthographic") {
+            camera.type       = component::Camera::Type::Orthographic;
+            camera.x_mag       = static_cast<float>(gltf_camera.orthographic.xmag);
+            camera.y_mag       = static_cast<float>(gltf_camera.orthographic.ymag);
+            camera.near_plane = static_cast<float>(gltf_camera.orthographic.znear);
+            camera.far_plane  = static_cast<float>(gltf_camera.orthographic.zfar);
+        }
+
+        m_ecs_manager->add_component<component::Camera>(new_entity, camera);
+        m_ecs_manager->add_component<component::Controllable>(new_entity, component::Controllable{.use_relative_movement=true});
+    }
+    else if (gltf_node.mesh >= 0) {
+        const auto& gltf_mesh = gltf_model.meshes[gltf_node.mesh];
+
+        auto new_entity = m_ecs_manager->acquire_entity();
+        m_ecs_manager->add_component<component::Hierarchy>(new_entity, component::Hierarchy{});
+        new_node = scene->add_node(NodeType::Type::Mesh, node_tag, new_entity, parent_node);
+
+        auto        meshes    = process_mesh(gltf_model, gltf_mesh);
+
+        if (!meshes.empty()) {
+            static size_t     model_count = 0;
+            std::stringstream tag_ss, source_path_ss;
+            tag_ss << std::setw(3) << std::setfill('0') << ++model_count;
+            source_path_ss << m_curr_path.string() << ":" << tag_ss.str();
+            auto model_asset = std::make_shared<asset::Model>(tag_ss.str(), source_path_ss.str(), meshes);
+            m_asset_manager->add_asset(model_asset);
+
+            component::Render rc{};
+            rc.model = model_asset;
+            m_ecs_manager->add_component<component::Render>(new_node->get_entity(), rc);
+        }
+    }
 
     glm::vec3 translation(0.0f);
     glm::vec3 rotation(0.0f);
@@ -90,22 +142,18 @@ void SceneImporter::process_node(
 
     if (!gltf_node.rotation.empty()) {
         glm::quat quaternion(
-            static_cast<float>(gltf_node.rotation[3]),      // w
-            static_cast<float>(gltf_node.rotation[0]),      // x
-            static_cast<float>(gltf_node.rotation[1]),      // y
-            static_cast<float>(gltf_node.rotation[2])       // z
+            static_cast<float>(gltf_node.rotation[3]),
+            // w
+            static_cast<float>(gltf_node.rotation[0]),
+            // x
+            static_cast<float>(gltf_node.rotation[1]),
+            // y
+            static_cast<float>(gltf_node.rotation[2]) // z
         );
 
         glm::vec3 euler_angles = glm::eulerAngles(quaternion);
-        euler_angles = glm::degrees(euler_angles);
-        rotation = euler_angles;
-
-        /*
-        rotation = glm::vec3(
-            static_cast<float>(gltf_node.rotation[0]),
-            static_cast<float>(gltf_node.rotation[1]),
-            static_cast<float>(gltf_node.rotation[2]));
-        */
+        euler_angles           = glm::degrees(euler_angles);
+        rotation               = euler_angles;
     }
 
     if (!gltf_node.scale.empty()) {
@@ -118,29 +166,11 @@ void SceneImporter::process_node(
     component::Transform tc = {
         .translation = translation, .rotation = rotation, .scale = scale, .world_matrix = glm::mat4(1.0f), .dirty = true
     };
-    m_ecs_manager->add_component<component::Transform>(node->get_entity(), tc);
-
-    if (gltf_node.mesh >= 0) {
-        const auto& gltf_mesh = gltf_model.meshes[gltf_node.mesh];
-        auto        meshes    = process_mesh(gltf_model, gltf_mesh);
-
-        if (!meshes.empty()) {
-            static size_t     model_count = 0;
-            std::stringstream tag_ss, source_path_ss;
-            tag_ss << std::setw(3) << std::setfill('0') << ++model_count;
-            source_path_ss << m_curr_path.string() << ":" << tag_ss.str();
-            auto model_asset = std::make_shared<asset::Model>(tag_ss.str(), source_path_ss.str(), meshes);
-            m_asset_manager->add_asset(model_asset);
-
-            component::Render rc{};
-            rc.model = model_asset;
-            m_ecs_manager->add_component<component::Render>(node->get_entity(), rc);
-        }
-    }
+    m_ecs_manager->add_component<component::Transform>(new_node->get_entity(), tc);
 
     for (const auto& child_node_index : gltf_node.children) {
         const auto& child_gltf_node = gltf_model.nodes[child_node_index];
-        process_node(gltf_model, child_gltf_node, node, scene);
+        process_node(gltf_model, child_gltf_node, new_node, scene);
     }
 }
 
@@ -151,7 +181,7 @@ std::shared_ptr<asset::Material> SceneImporter::process_material(
     const std::string& material_tag  = gltf_material.name; // todo
     const std::string& material_path = m_curr_path.string() + material_tag;
 
-    if (auto id = m_asset_manager->get_id_by_path(material_path); id != asset::k_invalid_id) {
+    if (auto id = m_asset_manager->get_id_by_path(material_path) ; id != asset::k_invalid_id) {
         return dynamic_pointer_cast<asset::Material>(m_asset_manager->get_asset(id));
     }
 
@@ -238,9 +268,9 @@ std::shared_ptr<asset::Texture> SceneImporter::process_texture(
     const auto& texture_source = gltf_model.images[gltf_texture.source];
 
     if (!texture_source.image.empty()) {
-        const auto& image_data = texture_source.image;
-        const auto& image_width = texture_source.width;
-        const auto& image_height = texture_source.height;
+        const auto& image_data      = texture_source.image;
+        const auto& image_width     = texture_source.width;
+        const auto& image_height    = texture_source.height;
         const auto& image_component = texture_source.component;
 
         uint32_t num_channels = 0;
@@ -257,8 +287,7 @@ std::shared_ptr<asset::Texture> SceneImporter::process_texture(
             case 4:
                 num_channels = 4;
                 break;
-            default:
-                CGX_ERROR("Unsupported image component: {}", image_component);
+            default: CGX_ERROR("Unsupported image component: {}", image_component);
                 return nullptr;
         }
 
@@ -276,20 +305,19 @@ std::shared_ptr<asset::Texture> SceneImporter::process_texture(
             case 4:
                 format = GL_RGBA;
                 break;
-            default:
-                CGX_ERROR("Unsupported number of channels: {}", num_channels);
+            default: CGX_ERROR("Unsupported number of channels: {}", num_channels);
                 return nullptr;
         }
 
         auto texture = std::make_shared<asset::Texture>(
             texture_source.name,
-            "",  // Empty source path for embedded textures
+            "",
+            // Empty source path for embedded textures
             image_width,
             image_height,
             num_channels,
             format,
-            const_cast<unsigned char*>(image_data.data())
-        );
+            const_cast<unsigned char*>(image_data.data()));
 
         if (gltf_texture.sampler >= 0) {
             const auto& texture_sampler = gltf_model.samplers[gltf_texture.sampler];
@@ -300,12 +328,13 @@ std::shared_ptr<asset::Texture> SceneImporter::process_texture(
         }
 
         return texture;
-    } else if (!texture_source.uri.empty()) {
+    }
+    else if (!texture_source.uri.empty()) {
         // The texture is external and referenced by URI
         const auto& texture_path = m_curr_path.parent_path() / texture_source.uri;
 
         const auto& texture_asset_id = m_asset_manager->import_asset(texture_path.string());
-        auto        texture          = dynamic_pointer_cast<asset::Texture>(m_asset_manager->get_asset(texture_asset_id));
+        auto        texture = dynamic_pointer_cast<asset::Texture>(m_asset_manager->get_asset(texture_asset_id));
 
         CGX_VERIFY(texture != nullptr);
 
@@ -319,7 +348,8 @@ std::shared_ptr<asset::Texture> SceneImporter::process_texture(
         }
 
         return texture;
-    } else {
+    }
+    else {
         // No texture data or URI found
         CGX_WARN("No texture data or URI found for texture index {}", gltf_texture.source);
         return nullptr;
@@ -444,21 +474,26 @@ std::vector<std::shared_ptr<asset::Mesh>> SceneImporter::process_mesh(
     return meshes;
 }
 
-void quat_to_euler(const double x, const double y, const double z, const double w, double& roll, double& pitch, double& yaw)
+void quat_to_euler(
+    const double x,
+    const double y,
+    const double z,
+    const double w,
+    double&      roll,
+    double&      pitch,
+    double&      yaw)
 {
     const double sinr_cosp = 2 * (w * x + y * z);
     const double cosr_cosp = 1 - 2 * (x * x + y * y);
-    roll = std::atan2(sinr_cosp, cosr_cosp);
+    roll                   = std::atan2(sinr_cosp, cosr_cosp);
 
     const double sinp = 2 * (w * y - z * x);
-    if (std::abs(sinp) >= 1)
-        pitch = std::copysign(M_PI / 2, sinp);
-    else
-        pitch = std::asin(sinp);
+    if (std::abs(sinp) >= 1) pitch = std::copysign(M_PI / 2, sinp);
+    else pitch                     = std::asin(sinp);
 
     const double siny_cosp = 2 * (w * z + x * y);
     const double cosy_cosp = 1 - 2 * (y * y + z * z);
-    yaw = std::atan2(siny_cosp, cosy_cosp);
+    yaw                    = std::atan2(siny_cosp, cosy_cosp);
 }
 
 }

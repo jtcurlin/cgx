@@ -276,12 +276,16 @@ void PropertiesPanel::draw_render_component_editor(const scene::Node* node)
 
     if (removed) {
         core::event::Event event(core::event::component::REMOVED);
-        event.set_param(core::event::component::TYPE, m_context->get_ecs_manager()->get_component_type<component::Render>());
+        event.set_param(
+            core::event::component::TYPE,
+            m_context->get_ecs_manager()->get_component_type<component::Render>());
         event.set_param(core::event::component::ENTITY_ID, node->get_entity());
     }
     if (updated) {
         core::event::Event event(core::event::component::MODIFIED);
-        event.set_param(core::event::component::TYPE, m_context->get_ecs_manager()->get_component_type<component::Render>());
+        event.set_param(
+            core::event::component::TYPE,
+            m_context->get_ecs_manager()->get_component_type<component::Render>());
         event.set_param(core::event::component::ENTITY_ID, node->get_entity());
     }
 }
@@ -307,8 +311,8 @@ void PropertiesPanel::draw_transform_component_editor(const scene::Node* node)
 
             component.translation = glm::vec3(0.0f);
             component.rotation    = glm::vec3(0.0f);
-            component.scale     = glm::vec3(1.0f);
-            updated             = true;
+            component.scale       = glm::vec3(1.0f);
+            updated               = true;
         }
         ImGui::EndPopup();
     }
@@ -386,7 +390,7 @@ void PropertiesPanel::draw_rigidbody_component_editor(const scene::Node* node)
     if (updated) {
         core::event::Event event(core::event::component::MODIFIED);
         event.set_param(
-            core::event ::component::TYPE,
+            core::event::component::TYPE,
             m_context->get_ecs_manager()->get_component_type<component::RigidBody>());
         event.set_param(core::event::component::ENTITY_ID, node->get_entity());
     }
@@ -419,22 +423,130 @@ void PropertiesPanel::draw_camera_component_editor(const scene::Node* node)
             auto& component = m_context->get_ecs_manager()->get_component<component::Camera>(node->get_entity());
 
             component = component::Camera{};
-            updated             = true;
+            updated   = true;
         }
         ImGui::EndPopup();
     }
     ImGui::SetItemTooltip("right click for options");
 
     if (editor_opened) {
+    auto& component = m_context->get_ecs_manager()->get_component<component::Camera>(node->get_entity());
+
+    if (ImGui::BeginTable("Editor##CameraComponent", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_SizingStretchProp)) {
+        ImGui::TableSetupColumn("##Label", ImGuiTableColumnFlags_WidthFixed, 50.0f);  // Fixed width for the first column
+        ImGui::TableSetupColumn("##Slider", ImGuiTableColumnFlags_WidthStretch);  // Remaining space for the second column
+
+        ImVec2 available = ImGui::GetContentRegionAvail();
+        ImGui::PushItemWidth(available.x - 150 - ImGui::GetStyle().ItemSpacing.x * 2);  // Subtract fixed width and padding
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Text("Camera Type");
+        ImGui::TableSetColumnIndex(1);
+        const char* camera_types[] = { "Perspective", "Orthographic" };
+        int current_item = static_cast<int>(component.type);
+        if (ImGui::Combo("##CameraType", &current_item, camera_types, IM_ARRAYSIZE(camera_types))) {
+            component.type = static_cast<component::Camera::Type>(current_item);
+            updated = true;
+        }
+
+        if (component.type == component::Camera::Perspective) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Field of View");
+            ImGui::TableSetColumnIndex(1);
+            updated |= ImGui::SliderFloat("##FOV", &component.fov, 1.0f, 180.0f, "%.0f degrees");
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Aspect Ratio");
+            ImGui::TableSetColumnIndex(1);
+            updated |= ImGui::SliderFloat("##AspectRatio", &component.aspect_ratio, 0.1f, 4.0f, "%.2f");
+        } else if (component.type == component::Camera::Orthographic) {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("X Magnification");
+            ImGui::TableSetColumnIndex(1);
+            updated |= ImGui::SliderFloat("##XMag", &component.x_mag, 0.1f, 10.0f, "%.1f");
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Y Magnification");
+            ImGui::TableSetColumnIndex(1);
+            updated |= ImGui::SliderFloat("##YMag", &component.y_mag, 0.1f, 10.0f, "%.1f");
+        }
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Text("Near Plane");
+        ImGui::TableSetColumnIndex(1);
+        updated |= ImGui::SliderFloat("##NearPlane", &component.near_plane, 0.01f, 10.0f, "%.2f");
+
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::Text("Far Plane");
+        ImGui::TableSetColumnIndex(1);
+        updated |= ImGui::SliderFloat("##FarPlane", &component.far_plane, 0.1f, 1000.0f, "%.0f");
+
+        ImGui::EndTable();
+    }
+
+    ImGui::Separator();
+}
+
+    /*
+    if (editor_opened) {
         auto& component = m_context->get_ecs_manager()->get_component<component::Camera>(node->get_entity());
 
-        updated |= ImGui::InputFloat("FOV ##CameraComponent", &component.fov);
-        updated |= ImGui::InputFloat("Aspect Ratio ##CameraComponent", &component.aspect_ratio);
-        updated |= ImGui::InputFloat("Near Plane ##CameraComponent", &component.near_plane);
-        updated |= ImGui::InputFloat("Far Plane ##CameraComponent", &component.far_plane);
-        updated |= ImGui::InputFloat("Zoom ##CameraComponent", &component.zoom);
+        updated |= ImGui::RadioButton(
+            "Perspective",
+            reinterpret_cast<int*>(&component.type),
+            component::Camera::Perspective);
+        ImGui::SameLine();
+        updated |= ImGui::RadioButton(
+            "Orthographic",
+            reinterpret_cast<int*>(&component.type),
+            component::Camera::Orthographic);
+
+        if (component.type == component::Camera::Perspective) {
+            updated |= ImGui::SliderFloat("Field of View ##CameraComponent", &component.fov, 1.0f, 180.0f, "%.0f degrees");
+            updated |= ImGui::SliderFloat("Aspect Ratio ##CameraComponent", &component.aspect_ratio, 0.1f, 4.0f, "%.2f");
+        }
+        else if (component.type == component::Camera::Orthographic) {
+            updated |= ImGui::SliderFloat(
+                "X Magnification ##CameraComponent",
+                &component.x_mag,
+                0.1f,
+                10.0f,
+                "%.1f",
+                ImGuiSliderFlags_Logarithmic);
+            updated |= ImGui::SliderFloat(
+                "Y Magnification ##CameraComponent",
+                &component.y_mag,
+                0.1f,
+                10.0f,
+                "%.1f",
+                ImGuiSliderFlags_Logarithmic);
+        }
+
+        updated |= ImGui::SliderFloat(
+            "Near Plane ##CameraComponent",
+            &component.near_plane,
+            0.01f,
+            10.0f,
+            "%.2f",
+            ImGuiSliderFlags_Logarithmic);
+        updated |= ImGui::SliderFloat(
+            "Far Plane ##CameraComponent",
+            &component.far_plane,
+            0.1f,
+            1000.0f,
+            "%.0f",
+            ImGuiSliderFlags_Logarithmic);
+
         ImGui::Separator();
     }
+    */
 
     if (removed) {
         core::event::Event event(core::event::component::MODIFIED);
@@ -474,7 +586,7 @@ void PropertiesPanel::draw_controllable_component_editor(const scene::Node* node
             auto& component = m_context->get_ecs_manager()->get_component<component::Controllable>(node->get_entity());
 
             component = component::Controllable{};
-            updated             = true;
+            updated   = true;
         }
         ImGui::EndPopup();
     }
