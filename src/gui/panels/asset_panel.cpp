@@ -102,6 +102,7 @@ void AssetPanel::render_asset_list(const asset::AssetType::Type asset_type)
                         ImGui::CloseCurrentPopup();
                     }
                     else if (ImGui::MenuItem("Rename Asset")) {
+                        m_context->m_renaming_item = true;
                         m_context->set_item_to_rename(asset.get());
                         ImGui::CloseCurrentPopup();
                     }

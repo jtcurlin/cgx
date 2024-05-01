@@ -185,13 +185,13 @@ void PropertiesPanel::draw_node_properties(const scene::Node* node)
                 ImGui::CloseCurrentPopup();
             }
         }
-        if (!ecs_manager->has_component<component::RigidBody>(entity)) {
+        if (!ecs_manager->has_component<component::Camera>(entity)) {
             if (ImGui::Selectable("Camera Component")) {
                 ecs_manager->add_component<component::Camera>(entity, component::Camera{});
                 ImGui::CloseCurrentPopup();
             }
         }
-        if (!ecs_manager->has_component<component::RigidBody>(entity)) {
+        if (!ecs_manager->has_component<component::Controllable>(entity)) {
             if (ImGui::Selectable("Controllable Component")) {
                 ecs_manager->add_component<component::Controllable>(entity, component::Controllable{});
                 ImGui::CloseCurrentPopup();
