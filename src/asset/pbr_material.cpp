@@ -47,11 +47,11 @@ void PBRMaterial::bind(Shader* shader) const
 
     shader->use();
 
-    shader->set_vec4("baseColorFactor", m_base_color_factor);
+    shader->set_vec4("base_color_factor", m_base_color_factor);
 
-    shader->set_float("metallicFactor", m_metallic_factor);
+    shader->set_float("metallic_factor", m_metallic_factor);
 
-    shader->set_float("roughnessFactor", m_roughness_factor);
+    shader->set_float("roughness_factor", m_roughness_factor);
 
     if (m_base_color_map != nullptr) {
         m_base_color_map->bind(0);

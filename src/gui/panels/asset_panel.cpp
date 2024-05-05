@@ -33,6 +33,7 @@ void AssetPanel::render_asset_lists()
 {
     render_asset_list(asset::AssetType::Type::Model);
     render_asset_list(asset::AssetType::Type::Material);
+    render_asset_list(asset::AssetType::Type::Sound);
     render_asset_list(asset::AssetType::Type::Texture);
     render_asset_list(asset::AssetType::Type::Shader);
     render_asset_list(asset::AssetType::Type::Mesh);

@@ -27,26 +27,28 @@ void ImGuiPanel::Begin()
     on_begin();
     bool keep_visible{true};
 
-    if (m_enforce_aspect_ratio) {
-        ImGui::SetNextWindowSizeConstraints(
-            ImVec2(m_min_size[0], m_min_size[1]),
-            ImVec2(m_max_size[0], m_max_size[1]),
-            AspectRatioConstraint,
-            &m_aspect_ratio);
-    }
-    else {
-        ImGui::SetNextWindowSizeConstraints(ImVec2(m_min_size[0], m_min_size[1]), ImVec2(m_max_size[0], m_max_size[1]));
-    }
+    if (m_is_visible) {
+        if (m_enforce_aspect_ratio) {
+            ImGui::SetNextWindowSizeConstraints(
+                ImVec2(m_min_size[0], m_min_size[1]),
+                ImVec2(m_max_size[0], m_max_size[1]),
+                AspectRatioConstraint,
+                &m_aspect_ratio);
+        }
+        else {
+            ImGui::SetNextWindowSizeConstraints(ImVec2(m_min_size[0], m_min_size[1]), ImVec2(m_max_size[0], m_max_size[1]));
+        }
 
-    if (!ImGui::IsWindowDocked()) {
-        m_dockspace_id = ImGui::GetID("primary_dockspace");
-        ImGui::SetNextWindowDockID(m_dockspace_id, ImGuiCond_FirstUseEver);
-    }
+        if (!ImGui::IsWindowDocked()) {
+            m_dockspace_id = ImGui::GetID("primary_dockspace");
+            ImGui::SetNextWindowDockID(m_dockspace_id, ImGuiCond_FirstUseEver);
+        }
 
-    ImGui::Begin(m_title.c_str(), &keep_visible, m_window_flags);
+        ImGui::Begin(m_title.c_str(), &keep_visible, m_window_flags);
 
-    if (!keep_visible) {
-        hide();
+        if (!keep_visible) {
+            hide();
+        }
     }
 }
 
@@ -69,6 +71,11 @@ void ImGuiPanel::show()
 void ImGuiPanel::hide()
 {
     m_is_visible = false;
+}
+
+void ImGuiPanel::toggle()
+{
+    m_is_visible = !m_is_visible;
 }
 
 bool ImGuiPanel::is_visible() const

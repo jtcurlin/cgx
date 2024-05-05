@@ -13,6 +13,11 @@ namespace cgx::ecs
 class ECSManager;
 }
 
+namespace cgx::audio
+{
+class AudioSystem;
+}
+
 namespace cgx::scene
 {
 class SceneManager;
@@ -91,5 +96,6 @@ protected:
     std::unique_ptr<gui::GUIContext>      m_gui_context;
     std::unique_ptr<gui::ImGuiManager>    m_imgui_manager;
     std::shared_ptr<render::RenderSystem> m_render_system;
+    std::shared_ptr<audio::AudioSystem>   m_audio_system;
 };
 }

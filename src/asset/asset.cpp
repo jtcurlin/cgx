@@ -9,7 +9,7 @@ namespace cgx::asset
 std::string AssetType::get_typename(const Type type)
 {
     static const std::unordered_map<Type, std::string> type_names = {
-        {Mesh, "Mesh"}, {Model, "Model"}, {Material, "Material"}, {Texture, "Texture"}, {Shader, "Shader"},
+        {Mesh, "Mesh"}, {Model, "Model"}, {Sound, "Sound"}, {Material, "Material"}, {Texture, "Texture"}, {Shader, "Shader"},
         {Cubemap, "Cubemap"},
     };
     const auto it = type_names.find(type);
@@ -19,7 +19,7 @@ std::string AssetType::get_typename(const Type type)
 std::string AssetType::get_lower_typename(const Type type)
 {
     static const std::unordered_map<Type, std::string> type_names = {
-        {Mesh, "mesh"}, {Model, "model"}, {Material, "material"}, {Texture, "texture"}, {Shader, "shader"},
+        {Mesh, "mesh"}, {Model, "model"}, {Sound, "sound"}, {Material, "material"}, {Texture, "texture"}, {Shader, "shader"},
         {Cubemap, "cubemap"},
     };
     const auto it = type_names.find(type);

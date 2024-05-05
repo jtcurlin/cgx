@@ -10,6 +10,7 @@
 #include "core/components/render.h"
 #include "core/components/camera.h"
 #include "core/components/controllable.h"
+#include "core/components/point_light.h"
 #include "ecs/ecs_manager.h"
 
 namespace cgx::scene
@@ -29,7 +30,6 @@ Node* SceneManager::add_node(std::string tag, NodeFlag flags, Node* parent) cons
     std::string default_tag = "Empty Node";
     const auto new_entity = m_ecs_manager->acquire_entity();
 
-
     // ! every node gets a hierarchy component
     m_ecs_manager->add_component<component::Hierarchy>(new_entity, component::Hierarchy{});
 
@@ -48,7 +48,7 @@ Node* SceneManager::add_node(std::string tag, NodeFlag flags, Node* parent) cons
     }
     if (has_flag(flags, NodeFlag::Light)) {
         default_tag = "Light";
-        // todo: light nodes
+        m_ecs_manager->add_component<component::PointLight>(new_entity, component::PointLight{});
     }
 
     const auto new_node = std::make_shared<Node>(tag.empty() ? default_tag : tag, new_entity, flags);

@@ -6,6 +6,7 @@
 
 #include "utility/paths.h"
 #include <imguifiledialog/ImGuiFileDialog.h>
+#include "core/common.h"
 
 namespace cgx::gui
 {
@@ -20,6 +21,7 @@ public:
         const std::string& filters,
         std::string&       selection);
     static bool draw_text_input_dialog(const std::string& title, std::string& selection);
+    static bool draw_key_input_dialog(const std::string& title, core::Key& selection);
 
 private:
 

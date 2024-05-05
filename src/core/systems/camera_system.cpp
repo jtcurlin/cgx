@@ -15,7 +15,7 @@ CameraSystem::CameraSystem(ecs::ECSManager* ecs_manager)
 
 CameraSystem::~CameraSystem() = default;
 
-void CameraSystem::update(float dt)
+void CameraSystem::frame_update(float dt)
 {
     for (const auto& entity : m_entities) {
         auto& camera    = get_component<component::Camera>(entity);
@@ -51,21 +51,12 @@ void CameraSystem::update(float dt)
     }
 }
 
+void CameraSystem::fixed_update(float dt)
+{
+    // do nothing
+}
+
 void CameraSystem::on_entity_added(ecs::Entity entity) {}
 void CameraSystem::on_entity_removed(ecs::Entity entity) {}
 }
 
-/*
-void CameraSystem::update(float dt)
-{
-    for (const auto& entity : m_entities) {
-        auto& camera = get_component<component::Camera>(entity);
-        auto& transform = get_component<component::Transform>(entity);
-
-        glm::mat4 translation = glm::translate(glm::mat4(1.0f), transform.translation);
-        glm::mat4 rotation = glm::toMat4(glm::quat(transform.rotation));
-        camera.view_matrix = glm::inverse(translation * rotation);
-    }
-
-}
-*/

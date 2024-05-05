@@ -25,6 +25,7 @@ public:
     void on_entity_added(ecs::Entity entity) override {}
     void on_entity_removed(ecs::Entity entity) override {}
 
-    void update(float dt) override;
+    void frame_update(float dt) override;
+    void fixed_update(float dt) override;
 };
 }

@@ -2,6 +2,8 @@
 
 #pragma once
 
+#include "core/common.h"
+
 #include <any>
 #include <unordered_map>
 
@@ -30,6 +32,9 @@ public:
     }
 
     [[nodiscard]] EventId get_type() const { return m_type; }
+    inline bool operator==(Event& event) {
+        return m_type == event.m_type;
+    }
 
 private:
     EventId                               m_type{};

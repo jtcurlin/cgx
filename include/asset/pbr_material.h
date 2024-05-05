@@ -9,6 +9,7 @@ namespace cgx::asset
 {
 class PBRMaterial final : public Material
 {
+friend class gui::PropertiesPanel;
 public:
     PBRMaterial(
         std::string                     tag,

@@ -1,4 +1,4 @@
-// Copyright © 2024 Jacob Curlin
+// Copyright © 2024 Jacob Curlin, Connor Cotturone, Chip Bevil, William Osborne
 
 #define GLM_ENABLE_EXPERIMENTAL
 
@@ -34,7 +34,8 @@ ControlSystem::ControlSystem(ecs::ECSManager* ecs_manager)
 
 ControlSystem::~ControlSystem() = default;
 
-void ControlSystem::update(const float dt)
+void ControlSystem::frame_update(float dt) {}
+void ControlSystem::fixed_update(const float dt)
 {
     if (!m_enabled) { return; } // if control system disabled, no action
 

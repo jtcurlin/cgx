@@ -10,7 +10,10 @@
 #include "core/systems/hierarchy_system.h"
 #include "core/systems/camera_system.h"
 #include "core/systems/control_system.h"
+#include "core/systems/collision_system.h"
 
+#include "ecs/ecs_manager.h"
+#include "core/event_handler.h"
 #include "core/events/master_events.h"
 
 #include "core/components/render.h"
@@ -18,14 +21,12 @@
 #include "core/components/rigid_body.h"
 #include "core/components/point_light.h"
 #include "core/components/camera.h"
+#include "core/components/collider.h"
 #include "core/components/controllable.h"
 
 #include "asset/asset_manager.h"
 #include "asset/import/asset_importer_image.h"
 #include "asset/import/asset_importer_obj.h"
-
-#include "ecs/ecs_manager.h"
-#include "core/event_handler.h"
 
 #include "gui/gui_context.h"
 #include "gui/imgui_manager.h"
@@ -67,6 +68,7 @@ void Engine::initialize()
     m_ecs_manager = std::make_unique<ecs::ECSManager>();
 
     m_ecs_manager->register_component<component::Camera>();
+    m_ecs_manager->register_component<component::Collider>();
     m_ecs_manager->register_component<component::Controllable>();
     m_ecs_manager->register_component<component::Hierarchy>();
     m_ecs_manager->register_component<component::PointLight>();
@@ -107,9 +109,17 @@ void Engine::initialize()
         m_ecs_manager->set_system_signature<PhysicsSystem>(signature);
     }
 
+    m_ecs_manager->register_system<CollisionSystem>(); {
+        ecs::Signature signature;
+        // signature.set(m_ecs_manager->get_component_type<component::RigidBody>());
+        signature.set(m_ecs_manager->get_component_type<component::Transform>());
+        signature.set(m_ecs_manager->get_component_type<component::Collider>());
+        m_ecs_manager->set_system_signature<CollisionSystem>(signature);
+    }
+
     m_render_system = m_ecs_manager->register_system<render::RenderSystem>(); {
         ecs::Signature signature;
-        signature.set(m_ecs_manager->get_component_type<component::Render>());
+        // signature.set(m_ecs_manager->get_component_type<component::Render>());
         signature.set(m_ecs_manager->get_component_type<component::Transform>());
         m_ecs_manager->set_system_signature<render::RenderSystem>(signature);
     }
@@ -123,7 +133,6 @@ void Engine::initialize()
 
     m_scene_manager = std::make_shared<scene::SceneManager>(m_ecs_manager.get(), m_asset_manager.get());
 
-
     setup_gui();
 }
 
@@ -133,7 +142,15 @@ void Engine::update()
     m_time_system->frame_update(fps_limit_60);
 
     const auto dt = m_time_system->get_frame_time();
-    m_ecs_manager->update(static_cast<float>(dt));
+    m_time_system->add_accumulator(dt);
+
+    while (m_time_system->get_accumulator() >= m_time_system->get_fixed_timestep()) {
+        m_ecs_manager->fixed_update(static_cast<float>(m_time_system->get_fixed_timestep()));
+        m_time_system->sub_accumulator(m_time_system->get_fixed_timestep());
+    }
+
+    m_ecs_manager->frame_update(static_cast<float>(dt));
+
 }
 
 void Engine::render()

@@ -17,6 +17,7 @@ namespace cgx::asset
 {
 class Asset;
 class Model;
+class Sound;
 class Mesh;
 class Material;
 class Texture;
@@ -39,20 +40,23 @@ public:
     void render() override;
 
     void draw_asset_properties(asset::Asset* asset);
-    void draw_node_properties(const scene::Node* node);
+    void draw_node_properties(scene::Node* node);
 
-    void draw_item_metadata(const core::Item* item) const;
+    void draw_item_metadata(core::Item* item);
 
     void draw_hierarchy_component_editor(const scene::Node* node);
     void draw_render_component_editor(const scene::Node* node);
     void draw_transform_component_editor(const scene::Node* node);
     void draw_rigidbody_component_editor(const scene::Node* node);
+    void draw_collider_component_editor(const scene::Node* node);
     void draw_camera_component_editor(const scene::Node* node);
     void draw_controllable_component_editor(const scene::Node* node);
+    void draw_point_light_component_editor(const scene::Node* node);
 
     void draw_model_asset_editor(asset::Model* model);
     void draw_mesh_asset_editor(asset::Mesh* mesh);
     void draw_material_asset_editor(asset::Material* material);
+    void draw_sound_asset_editor(asset::Sound* sound);
     void draw_texture_asset_editor(const asset::Texture* texture);
     void draw_shader_asset_editor(const asset::Shader* shader);
 

@@ -4,6 +4,7 @@
 
 #include "gui/imgui_panel.h"
 #include "glad/glad.h"
+#include <memory>
 
 namespace cgx::scene {
 class Node;

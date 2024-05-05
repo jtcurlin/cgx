@@ -26,19 +26,18 @@ AssetID AssetImporterImage::import(const std::string& source_path)
     int      width, height, num_channels;
     data = stbi_load(source_path.c_str(), &width, &height, &num_channels, 0);
 
-    GLenum format = 0;
+    Texture::Format format = Texture::Format::Unsupported;
     if (data) {
         if (num_channels == 1) {
-            format = GL_RED;
+            format = Texture::Format::Red;
         }
         else if (num_channels == 3) {
-            format = GL_RGB;
+            format = Texture::Format::RGB;
         }
         else if (num_channels == 4) {
-            format = GL_RGBA;
+            format = Texture::Format::RGBA;
         }
-
-        if (format == 0) {
+        if (format == Texture::Format::Unsupported) {
             CGX_ERROR(
                 "AssetImporterImage: Failed to determine valid texture data " "format for specified path. [{}]",
                 source_path);
@@ -53,7 +52,15 @@ AssetID AssetImporterImage::import(const std::string& source_path)
     const std::filesystem::path fs_path(source_path);
     const std::string           tag = fs_path.stem().string();
 
-    const auto texture = std::make_shared<Texture>(tag, source_path, width, height, num_channels, format, data);
+    const auto texture = std::make_shared<Texture>(
+        tag,
+        source_path,
+        width,
+        height,
+        num_channels,
+        format,
+        Texture::DataType::UnsignedByte,
+        data);
 
     // this class has an inherited member variable std::weak_ptr<AssetManager>  m_asset_manager
     // at the start of import, it should get this asset manager object / make sure its been initialized / still exists

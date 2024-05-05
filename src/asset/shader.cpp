@@ -3,6 +3,9 @@
 #include "asset/shader.h"
 #include "utility/error.h"
 
+#include <glm/glm.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 #include "glad/glad.h"
 #include <fstream>
 #include <filesystem>
@@ -148,7 +151,7 @@ bool Shader::check_compile_errors(const unsigned int shader, const std::string& 
         glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
         if (!success) {
             glGetShaderInfoLog(shader, 1024, nullptr, info_log);
-            CGX_ERROR("Shader: Compilation error of type {} \n {}", type, info_log);
+            CGX_ERROR("Shader {}: Compilation error of type {} \n {}", m_tag, type, info_log);
             return false;
         }
     }
@@ -156,7 +159,7 @@ bool Shader::check_compile_errors(const unsigned int shader, const std::string& 
         glGetProgramiv(shader, GL_LINK_STATUS, &success);
         if (!success) {
             glGetProgramInfoLog(shader, 1024, nullptr, info_log);
-            CGX_ERROR("Shader: Linking error of type {} \n {}", type, info_log);
+            CGX_ERROR("Shader {}: Linking error of type {} \n {}", m_tag, type, info_log);
             return false;
         }
     }
@@ -224,6 +227,24 @@ void Shader::set_vec4(const std::string& name, const glm::vec4& value) const
 void Shader::set_vec4(const std::string& name, const float x, const float y, const float z, const float w) const
 {
     glUniform4f(glGetUniformLocation(m_program_id, name.c_str()), x, y, z, w);
+    CGX_CHECK_GL_ERROR;
+}
+
+void Shader::set_vec2_array(const std::string& name, const std::vector<glm::vec2>& values) const
+{
+    glUniform2fv(glGetUniformLocation(m_program_id, name.c_str()), values.size(), glm::value_ptr(values[0]));
+    CGX_CHECK_GL_ERROR;
+}
+
+void Shader::set_vec3_array(const std::string& name, const std::vector<glm::vec3>& values) const
+{
+    glUniform3fv(glGetUniformLocation(m_program_id, name.c_str()), values.size(), glm::value_ptr(values[0]));
+    CGX_CHECK_GL_ERROR;
+}
+
+void Shader::set_vec4_array(const std::string& name, const std::vector<glm::vec4>& values) const
+{
+    glUniform4fv(glGetUniformLocation(m_program_id, name.c_str()), values.size(), glm::value_ptr(values[0]));
     CGX_CHECK_GL_ERROR;
 }
 

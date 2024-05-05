@@ -25,6 +25,14 @@
 #include "core/components/camera.h"
 #include "core/components/controllable.h"
 
+#define _USE_MATH_DEFINES
+#include <cmath>
+#include "math.h"
+
+#ifndef M_PI
+    #define M_PI 3.14159265358979323846
+#endif
+
 
 namespace cgx::scene
 {
@@ -36,19 +44,19 @@ SceneImporter::~SceneImporter() = default;
 
 void SceneImporter::import(const std::string& path, Node* parent)
 {
-    m_curr_path = path;
+    m_root_path = path;
 
     tinygltf::Model    gltf_model;
     tinygltf::TinyGLTF gltf_context;
     std::string        err, warn;
 
     bool              success;
-    const std::string extension = m_curr_path.extension().string();
+    const std::string extension = m_root_path.extension().string();
     if (extension == ".gltf") {
-        success = gltf_context.LoadASCIIFromFile(&gltf_model, &err, &warn, m_curr_path.string());
+        success = gltf_context.LoadASCIIFromFile(&gltf_model, &err, &warn, m_root_path.string());
     }
     else if (extension == ".glb") {
-        success = gltf_context.LoadBinaryFromFile(&gltf_model, &err, &warn, m_curr_path.string());
+        success = gltf_context.LoadBinaryFromFile(&gltf_model, &err, &warn, m_root_path.string());
     }
     else {
         CGX_ERROR("Unsupported file extension: {}", extension);
@@ -105,11 +113,16 @@ void SceneImporter::process_node(
         auto        meshes    = process_mesh(gltf_model, gltf_mesh);
 
         if (!meshes.empty()) {
+
+            std::stringstream default_tag_ss, source_path_ss;
             static size_t     model_count = 0;
-            std::stringstream tag_ss, source_path_ss;
-            tag_ss << std::setw(3) << std::setfill('0') << ++model_count;
-            source_path_ss << m_curr_path.string() << ":" << tag_ss.str();
-            auto model_asset = std::make_shared<asset::Model>(tag_ss.str(), source_path_ss.str(), meshes);
+
+            default_tag_ss << ":mesh_" << std::setw(3) << std::setfill('0') << std::to_string(++model_count);
+            source_path_ss << m_root_path.string() << ":" << default_tag_ss.str();
+
+            std::string tag = !gltf_mesh.name.empty() ? gltf_mesh.name : default_tag_ss.str();
+
+            auto model_asset = std::make_shared<asset::Model>(tag, source_path_ss.str(), meshes);
             m_asset_manager->add_asset(model_asset);
 
             component::Render rc{};
@@ -170,10 +183,13 @@ std::shared_ptr<asset::Material> SceneImporter::process_material(
     const tinygltf::Model&    gltf_model,
     const tinygltf::Material& gltf_material)
 {
-    const std::string& material_tag  = gltf_material.name; // todo
-    const std::string& material_path = m_curr_path.string() + material_tag;
+    std::stringstream path_ss;
+    path_ss << m_root_path.string() << ":material_" << std::setw(3) << std::setfill('0') << m_material_count++;
 
-    if (auto id = m_asset_manager->get_id_by_path(material_path) ; id != asset::k_invalid_id) {
+    const std::string tag  = gltf_material.name;
+    const std::string path = path_ss.str();
+
+    if (auto id = m_asset_manager->get_id_by_path(path) ; id != asset::k_invalid_id) {
         return dynamic_pointer_cast<asset::Material>(m_asset_manager->get_asset(id));
     }
 
@@ -236,8 +252,8 @@ std::shared_ptr<asset::Material> SceneImporter::process_material(
         }
 
         auto material_asset = std::make_shared<asset::PBRMaterial>(
-            material_tag,
-            material_path,
+            tag,
+            path,
             base_color_factor,
             metallic_factor,
             roughness_factor,
@@ -283,19 +299,19 @@ std::shared_ptr<asset::Texture> SceneImporter::process_texture(
                 return nullptr;
         }
 
-        GLenum format = GL_NONE;
+        asset::Texture::Format format = asset::Texture::Format::Unsupported;
         switch (num_channels) {
             case 1:
-                format = GL_RED;
+                format = asset::Texture::Format::Red;
                 break;
             case 2:
-                format = GL_RG;
+                format = asset::Texture::Format::RG;
                 break;
             case 3:
-                format = GL_RGB;
+                format = asset::Texture::Format::RGB;
                 break;
             case 4:
-                format = GL_RGBA;
+                format = asset::Texture::Format::RGBA;
                 break;
             default: CGX_ERROR("Unsupported number of channels: {}", num_channels);
                 return nullptr;
@@ -309,21 +325,22 @@ std::shared_ptr<asset::Texture> SceneImporter::process_texture(
             image_height,
             num_channels,
             format,
+            asset::Texture::DataType::UnsignedByte,
             const_cast<unsigned char*>(image_data.data()));
 
         if (gltf_texture.sampler >= 0) {
             const auto& texture_sampler = gltf_model.samplers[gltf_texture.sampler];
-            texture->set_min_filter(static_cast<asset::FilterMode>(texture_sampler.minFilter));
-            texture->set_mag_filter(static_cast<asset::FilterMode>(texture_sampler.magFilter));
-            texture->set_wrap_s(static_cast<asset::WrapMode>(texture_sampler.wrapS));
-            texture->set_wrap_t(static_cast<asset::WrapMode>(texture_sampler.wrapT));
+            texture->set_min_filter(static_cast<asset::Texture::FilterMode>(texture_sampler.minFilter));
+            texture->set_mag_filter(static_cast<asset::Texture::FilterMode>(texture_sampler.magFilter));
+            texture->set_wrap_s(static_cast<asset::Texture::WrapMode>(texture_sampler.wrapS));
+            texture->set_wrap_t(static_cast<asset::Texture::WrapMode>(texture_sampler.wrapT));
         }
 
         return texture;
     }
     else if (!texture_source.uri.empty()) {
         // The texture is external and referenced by URI
-        const auto& texture_path = m_curr_path.parent_path() / texture_source.uri;
+        const auto& texture_path = m_root_path.parent_path() / texture_source.uri;
 
         const auto& texture_asset_id = m_asset_manager->import_asset(texture_path.string());
         auto        texture = dynamic_pointer_cast<asset::Texture>(m_asset_manager->get_asset(texture_asset_id));
@@ -333,10 +350,10 @@ std::shared_ptr<asset::Texture> SceneImporter::process_texture(
         // Set texture sampling parameters
         if (gltf_texture.sampler >= 0) {
             const auto& texture_sampler = gltf_model.samplers[gltf_texture.sampler];
-            texture->set_min_filter(static_cast<asset::FilterMode>(texture_sampler.minFilter));
-            texture->set_mag_filter(static_cast<asset::FilterMode>(texture_sampler.magFilter));
-            texture->set_wrap_s(static_cast<asset::WrapMode>(texture_sampler.wrapS));
-            texture->set_wrap_t(static_cast<asset::WrapMode>(texture_sampler.wrapT));
+            texture->set_min_filter(static_cast<asset::Texture::FilterMode>(texture_sampler.minFilter));
+            texture->set_mag_filter(static_cast<asset::Texture::FilterMode>(texture_sampler.magFilter));
+            texture->set_wrap_s(static_cast<asset::Texture::WrapMode>(texture_sampler.wrapS));
+            texture->set_wrap_t(static_cast<asset::Texture::WrapMode>(texture_sampler.wrapT));
         }
 
         return texture;
@@ -355,14 +372,15 @@ std::vector<std::shared_ptr<asset::Mesh>> SceneImporter::process_mesh(
     std::vector<std::shared_ptr<asset::Mesh>> meshes;
 
     for (const auto& primitive : gltf_mesh.primitives) {
+        static size_t     mesh_counter = 0;
+        std::stringstream default_mesh_tag;
+        default_mesh_tag << "sub_mesh_" << std::setw(3) << std::setfill('0') << ++mesh_counter;
+
         std::string mesh_tag = gltf_mesh.name;
         if (mesh_tag.empty()) {
-            static size_t     mesh_counter = 0;
-            std::stringstream default_mesh_tag;
-            default_mesh_tag << "mesh_" << std::setw(3) << std::setfill('0') << ++mesh_counter;
             mesh_tag = default_mesh_tag.str();
         }
-        std::string mesh_source_path = m_curr_path.string() + ":" + mesh_tag;
+        std::string mesh_source_path = m_root_path.string() + ":" + default_mesh_tag.str();
 
         std::vector<asset::Vertex> vertices;
         std::vector<uint32_t>      indices;

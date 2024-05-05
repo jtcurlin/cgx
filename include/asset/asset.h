@@ -22,6 +22,7 @@ struct AssetType
     {
         Mesh,
         Model,
+        Sound,
         Material,
         Texture,
         Shader,

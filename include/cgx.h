@@ -5,7 +5,6 @@
 // core
 #include "core/common.h"
 #include "core/engine.h"
-#include "core/events/engine_events.h"
 #include "core/hierarchy.h"
 #include "core/item.h"
 #include "core/input_manager.h"
@@ -48,7 +47,6 @@
 #include "gui/panels/viewport_panel.h"
 
 // render
-#include "render/camera.h"
 #include "render/framebuffer.h"
 #include "render/render_system.h"
 

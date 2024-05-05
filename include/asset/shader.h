@@ -5,6 +5,7 @@
 #include "asset/asset.h"
 
 #include "glm/glm.hpp"
+#include <vector>
 #include <string>
 
 namespace cgx::gui
@@ -56,7 +57,7 @@ private:
     std::string  m_vert_code{};
     std::string  m_frag_code{};
 
-    static bool check_compile_errors(unsigned int shader, const std::string& type);
+    bool check_compile_errors(unsigned int shader, const std::string& type);
 
     std::string     get_path_prefix() const override;
     AssetType::Type get_asset_type() const override;
@@ -73,6 +74,10 @@ public:
     void set_vec2(const std::string& name, float x, float y) const;
     void set_vec3(const std::string& name, float x, float y, float z) const;
     void set_vec4(const std::string& name, float x, float y, float z, float w) const;
+
+    void set_vec2_array(const std::string& name, const std::vector<glm::vec2>& values) const;
+    void set_vec3_array(const std::string& name, const std::vector<glm::vec3>& values) const;
+    void set_vec4_array(const std::string& name, const std::vector<glm::vec4>& values) const;
 
     void set_mat2(const std::string& name, const glm::mat2& mat) const;
     void set_mat3(const std::string& name, const glm::mat3& mat) const;

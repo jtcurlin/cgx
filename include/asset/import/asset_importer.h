@@ -4,6 +4,7 @@
 
 #include "asset/asset.h"
 
+#include <vector>
 #include <string>
 #include <unordered_set>
 

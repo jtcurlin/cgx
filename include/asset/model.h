@@ -26,6 +26,8 @@ public:
     std::string get_path_prefix() const override;
     AssetType::Type get_asset_type() const override;
 
+    const std::vector<std::shared_ptr<Mesh>>& get_meshes() const;
+
 private:
     std::vector<std::shared_ptr<Mesh>> m_meshes;
 };

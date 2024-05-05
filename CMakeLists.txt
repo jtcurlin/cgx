@@ -28,7 +28,8 @@ configure_file(
         @ONLY
 )
 
-add_library(cgx STATIC "") # create static engine library
+add_library(cgx STATIC ""
+        include/cgx.h) # create static engine library
 
 # link dependencies
 include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/dependencies.cmake")
@@ -58,6 +59,7 @@ target_sources(cgx PRIVATE
         ${SOURCE_DIR}/asset/shader.cpp
         ${SOURCE_DIR}/asset/texture.cpp
         ${SOURCE_DIR}/core/systems/camera_system.cpp
+        ${SOURCE_DIR}/core/systems/collision_system.cpp
         ${SOURCE_DIR}/core/systems/control_system.cpp
         ${SOURCE_DIR}/core/systems/hierarchy_system.cpp
         ${SOURCE_DIR}/core/systems/physics_system.cpp
@@ -75,7 +77,6 @@ target_sources(cgx PRIVATE
         ${SOURCE_DIR}/ecs/system_registry.cpp
         ${SOURCE_DIR}/gui/panels/asset_panel.cpp
         ${SOURCE_DIR}/gui/panels/dialog_panel.cpp
-        ${SOURCE_DIR}/gui/panels/input_panel.cpp
         ${SOURCE_DIR}/gui/panels/profiler_panel.cpp
         ${SOURCE_DIR}/gui/panels/properties_panel.cpp
         ${SOURCE_DIR}/gui/panels/render_settings_panel.cpp
@@ -84,7 +85,6 @@ target_sources(cgx PRIVATE
         ${SOURCE_DIR}/gui/gui_context.cpp
         ${SOURCE_DIR}/gui/imgui_manager.cpp
         ${SOURCE_DIR}/gui/imgui_panel.cpp
-        ${SOURCE_DIR}/render/camera.cpp
         ${SOURCE_DIR}/render/framebuffer.cpp
         ${SOURCE_DIR}/render/render_system.cpp
         ${SOURCE_DIR}/scene/node.cpp

@@ -284,8 +284,8 @@ void ImGuiManager::draw_fullscreen_render()
     ImGui::Begin("fullscreen_render_window", nullptr, window_flags);
 
     const ImVec2   image_size         = ImGui::GetContentRegionAvail();
-    const uint32_t framebuffer_tex_id = m_context->get_render_system()->getFramebuffer()->getTextureID();
-    ImGui::Image((void*) (intptr_t) framebuffer_tex_id, image_size, ImVec2(0, 1), ImVec2(1, 0));
+    auto texture_id = m_context->get_render_system()->get_output_buffer()->get_attachment_info(GL_COLOR_ATTACHMENT0).id;
+    ImGui::Image((void*) (intptr_t) texture_id, image_size, ImVec2(0, 1), ImVec2(1, 0));
 
     ImGui::End();
 }
@@ -321,7 +321,12 @@ void ImGuiManager::draw_main_menu_bar()
             if (ImGui::BeginMenu("Panels")) {
                 for (const auto& window : m_imgui_panels) {
                     if (ImGui::MenuItem(window->get_title().c_str(), "", window->is_visible())) {
-                        window->show();
+                        if (window->is_visible()) {
+                            window->hide();
+                        }
+                        else {
+                            window->show();
+                        }
                     }
                 }
                 ImGui::EndMenu();
@@ -483,7 +488,7 @@ void ImGuiManager::set_style()
     style.Colors[ImGuiCol_CheckMark] = ImVec4(0.3098039329051971f, 0.6235294342041016f, 0.9333333373069763f, 1.0f);
     style.Colors[ImGuiCol_SliderGrab] = ImVec4(0.239215686917305f, 0.5215686559677124f, 0.8784313797950745f, 1.0f);
     style.Colors[ImGuiCol_SliderGrabActive] = ImVec4(0.2588235437870026f, 0.5882353186607361f, 0.9803921580314636f, 1.0f);
-    style.Colors[ImGuiCol_Button] = hex_to_imvec4(gray);
+    style.Colors[ImGuiCol_Button] = hex_to_imvec4("#424043");
     style.Colors[ImGuiCol_ButtonHovered] = hex_to_imvec4(lightest_gray);
     style.Colors[ImGuiCol_ButtonActive]  = hex_to_imvec4(lightest_gray);
     style.Colors[ImGuiCol_Header]        = hex_to_imvec4(gray);
@@ -567,5 +572,9 @@ void ImGuiManager::set_style()
 void ImGuiManager::toggle_interface()
 {
     m_interface_enabled = !m_interface_enabled;
+}
+
+void ImGuiManager::set_buffer(std::string tag) {
+    strcpy(m_input_buffer, m_context->get_item_to_rename()->get_tag().c_str());
 }
 }

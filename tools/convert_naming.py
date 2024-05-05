@@ -49,6 +49,7 @@ def rename_file_if_needed(file_path, option):
     return file_path  # Return original path if no renaming occurred or new name already exists
 
 def process_file(file_path, mapping):
+    print(f"processing: {file_path}")
     with open(file_path, 'r', encoding='utf-8') as file:
         content = file.read()
 

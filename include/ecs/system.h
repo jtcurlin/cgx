@@ -14,13 +14,12 @@ class System
 {
 public:
     explicit System(ECSManager* ecs_manager)
-        : m_ecs_manager(ecs_manager)
-    {
-    }
+        : m_ecs_manager(ecs_manager) {}
 
     virtual ~System() = default;
 
-    virtual void update(float dt) = 0;
+    virtual void frame_update(float dt) = 0;
+    virtual void fixed_update(float dt) = 0;
     virtual void on_entity_added(Entity entity) = 0;
     virtual void on_entity_removed(Entity entity) = 0;
 

@@ -23,7 +23,8 @@ HierarchySystem::HierarchySystem(ecs::ECSManager* ecs_manager)
 
 HierarchySystem::~HierarchySystem() = default;
 
-void HierarchySystem::update(float dt) {} // do nothing
+void HierarchySystem::frame_update(float dt) {} // do nothing
+void HierarchySystem::fixed_update(float dt) {} // do nothing
 
 void HierarchySystem::on_entity_added(const ecs::Entity entity)
 {

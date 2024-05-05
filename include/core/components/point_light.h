@@ -2,16 +2,14 @@
 
 #pragma once
 
-#include <../../../external/glm/glm/glm.hpp>
+#include <glm/glm.hpp>
 
 namespace cgx::component
 {
-
-    struct PointLight
-    {
-        glm::vec3 position;
-        glm::vec3 color;
-        float intensity;
-    };
-
-} // namespace cgx::component
+struct PointLight
+{
+    glm::vec3 color{237.0f, 211.0f, 78.0f};
+    float intensity{1.0f};
+    float range{1.0f};
+};
+}

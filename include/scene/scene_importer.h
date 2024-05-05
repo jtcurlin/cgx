@@ -35,7 +35,12 @@ public:
     void import(const std::string& path, Node* parent=nullptr);
 
 private:
-    std::filesystem::path m_curr_path = "";
+    std::filesystem::path m_root_path = "";
+    size_t m_node_count{0};
+    size_t m_mesh_count{0};
+    size_t m_submesh_count{0};
+    size_t m_material_count{0};
+    size_t m_texture_count{0};
 
     asset::AssetManager* m_asset_manager{nullptr};
     ecs::ECSManager*     m_ecs_manager{nullptr};

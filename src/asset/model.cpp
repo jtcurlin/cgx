@@ -37,4 +37,9 @@ AssetType::Type Model::get_asset_type() const
 {
     return AssetType::Model;
 }
+
+const std::vector<std::shared_ptr<Mesh>>& Model::get_meshes() const
+{
+    return m_meshes;
+}
 }

@@ -29,6 +29,7 @@ public:
 
     void show();
     void hide();
+    void toggle();
 
     [[nodiscard]] const std::string& get_title();
     [[nodiscard]] bool               is_visible() const;

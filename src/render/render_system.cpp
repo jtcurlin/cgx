@@ -1,26 +1,31 @@
 // Copyright © 2024 Jacob Curlin
 
+#define GLM_ENABLE_EXPERIMENTAL
+
 #include "render/render_system.h"
-
-
-#include "render/camera.h"
 #include "render/framebuffer.h"
 
 #include "asset/model.h"
 #include "asset/shader.h"
-#include "core/components/transform.h"
-#include "core/components/render.h"
-#include "ecs/component_registry.h"
+
 #include "core/event_handler.h"
+#include "ecs/component_registry.h"
 #include "scene/scene.h"
 #include "utility/error.h"
 
+#include "core/components/collider.h"
+#include "core/components/transform.h"
+#include "core/components/render.h"
+
 #include <glad/glad.h>
-#define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtx/string_cast.hpp>
 
 #include <iostream>
+#include <filesystem>
+
+#include "core/components/point_light.h"
+
 
 namespace cgx::render
 {
@@ -31,60 +36,89 @@ RenderSystem::~RenderSystem() = default;
 
 void RenderSystem::initialize()
 {
+
+
+    // initialize collider shader
+    m_collider_shader = std::make_unique<asset::Shader>(
+        "collider_shader",
+        m_settings.collider_shader_path,
+        asset::ShaderType::Unknown);
+
+    m_geometry_shader = std::make_unique<asset::Shader>(
+        "geometry_shader",
+        m_settings.geometry_shader_path,
+        asset::ShaderType::Unknown);
+
+    m_lighting_shader = std::make_unique<asset::Shader>(
+        "lighting_shader",
+        m_settings.lighting_shader_path,
+        asset::ShaderType::Unknown);
+
+    // initialize collider shader
+    m_light_mesh_shader = std::make_unique<asset::Shader>(
+        "light_mesh_shader",
+        m_settings.light_mesh_shader_path,
+        asset::ShaderType::Unknown);
+
+    // setup output framebuffer
+    m_output_framebuffer = std::make_shared<Framebuffer>(m_settings.render_width, m_settings.render_height);
+    m_output_framebuffer->set_clear_color(0.1f, 0.1f, 0.1f, 1.0f);
+    m_output_framebuffer->add_color_attachment(asset::Texture::Format::RGBA, asset::Texture::DataType::UnsignedByte);
+    m_output_framebuffer->add_depth_stencil_attachment(asset::Texture::Format::Depth24Stencil8);
+    m_output_framebuffer->check_completeness();
+
+    // setup g-buffer
+    m_g_buffer = std::make_shared<Framebuffer>(m_settings.render_width, m_settings.render_height);
+    m_g_buffer->add_color_attachment(asset::Texture::Format::RGB, asset::Texture::DataType::Float); // position
+    m_g_buffer->add_color_attachment(asset::Texture::Format::RGB, asset::Texture::DataType::Float); // normal
+    m_g_buffer->add_color_attachment(asset::Texture::Format::RGB, asset::Texture::DataType::Float); // albedo
+    m_g_buffer->add_color_attachment(asset::Texture::Format::Red, asset::Texture::DataType::Float); // metallic
+    m_g_buffer->add_color_attachment(asset::Texture::Format::Red, asset::Texture::DataType::Float); // roughness
+    m_g_buffer->add_depth_stencil_attachment(asset::Texture::Format::Depth24Stencil8);
+    m_g_buffer->check_completeness();
+
+    // setup_test_triangle();
+
     glEnable(GL_DEPTH_TEST);
     CGX_CHECK_GL_ERROR;
-
-    const std::string default_shader_path = std::string(DATA_DIRECTORY) + "/shaders/default";
-    CGX_INFO("Default Shader Path : {}", default_shader_path);
-    m_default_shader = std::make_unique<asset::Shader>(
-        "default_shader", default_shader_path, asset::ShaderType::Unknown);
-
-    // m_camera = std::make_unique<Camera>();
-
-    m_framebuffer = std::make_shared<Framebuffer>(m_settings.render_width, m_settings.render_height);
-    m_framebuffer->setClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-    init_msaa();
-
-    setup_test_triangle();
-
-    glBindFramebuffer(GL_FRAMEBUFFER, m_msaa_framebuffer);
-    GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
-    if (status != GL_FRAMEBUFFER_COMPLETE) {
-        CGX_ERROR("MSAA Framebuffer is incomplete: {}", status);
-    }
 }
 
-void RenderSystem::update(const float dt)
+void RenderSystem::begin_render()
 {
-    // m_camera->update(dt);
+    glDisable(GL_CULL_FACE);
+    // CGX_CHECK_GL_ERROR;
+
+    glViewport(0, 0, static_cast<GLsizei>(m_settings.render_width), static_cast<GLsizei>(m_settings.render_height));
+    CGX_CHECK_GL_ERROR;
 }
 
 void RenderSystem::render()
 {
-    float r, g, b, a;
-    m_framebuffer->getClearColor(r, g, b, a);
-    glDisable(GL_CULL_FACE);
-    CGX_CHECK_GL_ERROR;
-    glClearColor(r, g, b, a);
-    CGX_CHECK_GL_ERROR;
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    CGX_CHECK_GL_ERROR;
-
-    if (m_settings.msaa_enabled) {
-        glBindFramebuffer(GL_FRAMEBUFFER, m_msaa_framebuffer);
-        CGX_CHECK_GL_ERROR;
-    }
-    else {
-        glBindFramebuffer(GL_FRAMEBUFFER, m_framebuffer->getFBO());
-        CGX_CHECK_GL_ERROR;
-    }
-
     glViewport(0, 0, static_cast<GLsizei>(m_settings.render_width), static_cast<GLsizei>(m_settings.render_height));
-    CGX_CHECK_GL_ERROR;
-    glClearColor(r, g, b, a);
-    CGX_CHECK_GL_ERROR;
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    CGX_CHECK_GL_ERROR;
+    // begin_render();
+
+    geometry_pass();
+    lighting_pass();
+    light_mesh_pass();
+
+    // end_render();
+}
+
+void RenderSystem::end_render()
+{
+    if (m_settings.m_render_test_enabled) {
+        glUseProgram(m_settings.m_render_test_shader);
+        glBindVertexArray(m_settings.m_render_test_vao);
+        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glBindVertexArray(0);
+    }
+}
+
+void RenderSystem::geometry_pass()
+{
+    m_g_buffer->bind();
+
+    m_g_buffer->clear(true, true, true);
 
     static auto default_proj = glm::perspective(
         glm::radians(45.0f),
@@ -100,74 +134,142 @@ void RenderSystem::render()
     else {
         m_view_mat = glm::mat4(1.0f);
         m_proj_mat = default_proj;
-
     }
 
     for (auto& entity : m_entities) {
+        if (!m_ecs_manager->has_component<component::Render>(entity)) {
+            continue;
+        }
 
         auto& render_c    = get_component<component::Render>(entity);
         auto& transform_c = get_component<component::Transform>(entity);
 
-        auto* model = render_c.model
-                          ? render_c.model.get()
-                          : m_settings.default_model_enabled
-                                ? m_default_model.get()
-                                : nullptr;
-        auto* shader = render_c.shader
-                           ? render_c.shader.get()
-                           : m_settings.default_shader_enabled
-                                 ? m_default_shader.get()
-                                 : nullptr;
+        auto* model = render_c.model.get();
+        // auto* shader = render_c.shader.get()
 
-        if (model == nullptr || shader == nullptr) {
+        if (model == nullptr) {
             continue;
         }
 
-        render_c.shader->use();
-        render_c.shader->set_mat4("proj", m_proj_mat);
-        render_c.shader->set_mat4("view", m_view_mat);
-        render_c.shader->set_mat4("model", transform_c.world_matrix);
+        m_geometry_shader->use();
 
-        shader->set_vec3("light_direction", glm::normalize(glm::vec3(1.0, 1.0, 1.0)));
+        m_geometry_shader->set_mat4("proj", m_proj_mat);
+        m_geometry_shader->set_mat4("view", m_view_mat);
+        m_geometry_shader->set_mat4("model", transform_c.world_matrix);
 
-        model->draw(shader);
+        model->draw(m_geometry_shader.get());
     }
 
-    if (m_settings.m_render_test_enabled) {
-        glUseProgram(m_settings.m_render_test_shader);
-        glBindVertexArray(m_settings.m_render_test_vao);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        glBindVertexArray(0);
+    m_g_buffer->unbind();
+}
+
+void RenderSystem::lighting_pass()
+{
+    m_output_framebuffer->bind();
+    m_output_framebuffer->clear(true, true, true);
+
+    // bind color attachment textures
+    m_g_buffer->get_texture(GL_COLOR_ATTACHMENT0)->bind(0); // position
+    m_g_buffer->get_texture(GL_COLOR_ATTACHMENT1)->bind(1); // normal
+    m_g_buffer->get_texture(GL_COLOR_ATTACHMENT2)->bind(2); // albedo
+    m_g_buffer->get_texture(GL_COLOR_ATTACHMENT3)->bind(3); // roughness
+    m_g_buffer->get_texture(GL_COLOR_ATTACHMENT4)->bind(4); // metallic
+
+    m_lighting_shader->use();
+
+    m_lighting_shader->set_int("g_position", 0);
+    m_lighting_shader->set_int("g_normal", 1);
+    m_lighting_shader->set_int("g_albedo", 2);
+    m_lighting_shader->set_int("g_metallic", 3);
+    m_lighting_shader->set_int("g_roughness", 4);
+
+    int light_index = 0;
+    m_curr_lights.clear();
+    for (auto& entity : m_entities) {
+        if (!m_ecs_manager->has_component<component::PointLight>(entity)) {
+            continue;
+        }
+
+        const auto& lc = m_ecs_manager->get_component<component::PointLight>(entity);
+        const auto& tc = m_ecs_manager->get_component<component::Transform>(entity);
+
+        m_lighting_shader->set_vec3("lights[" + std::to_string(light_index) + "].position", tc.translation);
+        m_lighting_shader->set_vec3("lights[" + std::to_string(light_index) + "].color", lc.color);
+        m_lighting_shader->set_float("lights[" + std::to_string(light_index) + "].intensity", lc.intensity);
+        m_lighting_shader->set_float("lights[" + std::to_string(light_index) + "].range", lc.range);
+
+        light_index++;
+        m_curr_lights.push_back(entity);
     }
 
-    if (m_settings.msaa_enabled) {
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, m_msaa_framebuffer);
-        CGX_CHECK_GL_ERROR;
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_framebuffer->getFBO());
-        CGX_CHECK_GL_ERROR;
-        glBlitFramebuffer(
-            0,
-            0,
-            static_cast<GLsizei>(m_settings.render_width),
-            static_cast<GLsizei>(m_settings.render_height),
-            0,
-            0,
-            static_cast<GLsizei>(m_settings.render_width),
-            static_cast<GLsizei>(m_settings.render_height),
-            GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT,
-            GL_NEAREST);
-        CGX_CHECK_GL_ERROR;
+    if (light_index != 0) {
+        CGX_INFO("Current Processed Light Count: {}", light_index);
     }
 
-    if (m_settings.skybox_enabled) {
-        draw_skybox();
-    }
+    m_lighting_shader->set_int("num_point_lights", light_index);
+    m_lighting_shader->set_vec3("view_pos", m_ecs_manager->get_component<component::Transform>(m_camera).translation);
 
+    render_quad();
+    m_output_framebuffer->unbind();
+}
+
+void RenderSystem::light_mesh_pass()
+{
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, m_g_buffer->get_fbo());
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_output_framebuffer->get_fbo());
+
+    glBlitFramebuffer(
+        0,
+        0,
+        m_settings.render_width,
+        m_settings.render_height,
+        0,
+        0,
+        m_settings.render_width,
+        m_settings.render_height,
+        GL_DEPTH_BUFFER_BIT,
+        GL_NEAREST);
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    CGX_CHECK_GL_ERROR;
 
-    glViewport(0, 0, static_cast<GLsizei>(m_settings.window_width), static_cast<GLsizei>(m_settings.window_height));
-    CGX_CHECK_GL_ERROR;
+    m_light_mesh_shader->use();
+    m_light_mesh_shader->set_mat4("proj", m_proj_mat);
+    m_light_mesh_shader->set_mat4("view", m_view_mat);
+
+    for (auto& entity : m_curr_lights) {
+        auto lc = m_ecs_manager->get_component<component::PointLight>(entity);
+        auto tc = m_ecs_manager->get_component<component::Transform>(entity);
+
+        m_light_mesh_shader->set_mat4("model", tc.world_matrix);
+        m_light_mesh_shader->set_vec3("light_color", lc.color);
+        draw_cube(glm::vec3(1.0f));
+    }
+}
+
+void RenderSystem::render_quad()
+{
+    static unsigned int quadVAO = 0;
+    static unsigned int quadVBO = 0;
+
+    if (quadVAO == 0) {
+        constexpr float quadVertices[] = {
+            -1.0f, 1.0f, 0.0f, 0.0f, 1.0f, -1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, -1.0f,
+            0.0f, 1.0f, 0.0f,
+        };
+
+        glGenVertexArrays(1, &quadVAO);
+        glGenBuffers(1, &quadVBO);
+        glBindVertexArray(quadVAO);
+        glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) 0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*) (3 * sizeof(float)));
+    }
+
+    glBindVertexArray(quadVAO);
+    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+    glBindVertexArray(0);
 }
 
 void RenderSystem::draw_skybox() const
@@ -184,9 +286,14 @@ void RenderSystem::draw_skybox() const
     }
 }
 
-const std::shared_ptr<Framebuffer>& RenderSystem::getFramebuffer()
+const std::shared_ptr<Framebuffer>& RenderSystem::get_output_buffer()
 {
-    return m_framebuffer;
+    return m_output_framebuffer;
+}
+
+const std::shared_ptr<Framebuffer>& RenderSystem::get_g_buffer()
+{
+    return m_g_buffer;
 }
 
 const std::shared_ptr<asset::Cubemap>& RenderSystem::get_skybox_cubemap() const
@@ -309,6 +416,108 @@ void RenderSystem::setup_test_triangle()
     glBindVertexArray(0);
 }
 
+void RenderSystem::draw_cube(const glm::vec3& size)
+{
+    static GLuint vao = 0;
+    static GLuint vbo = 0;
+    static GLuint ebo = 0;
+
+    if (vao == 0) {
+        glGenVertexArrays(1, &vao);
+        glGenBuffers(1, &vbo);
+        glGenBuffers(1, &ebo);
+
+        std::vector<glm::vec3> vertices = {
+            // Front face
+            {-size.x / 2, -size.y / 2, size.z / 2}, {size.x / 2, -size.y / 2, size.z / 2},
+            {size.x / 2, size.y / 2, size.z / 2}, {-size.x / 2, size.y / 2, size.z / 2},
+
+            // Back face
+            {-size.x / 2, -size.y / 2, -size.z / 2}, {size.x / 2, -size.y / 2, -size.z / 2},
+            {size.x / 2, size.y / 2, -size.z / 2}, {-size.x / 2, size.y / 2, -size.z / 2}
+        };
+
+        std::vector<GLuint> indices = {
+            0, 1, 1, 2, 2, 3, 3, 0, // Front face
+            4, 5, 5, 6, 6, 7, 7, 4, // Back face
+            0, 4, 1, 5, 2, 6, 3, 7  // Connecting lines
+        };
+
+        glBindVertexArray(vao);
+
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
+
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), nullptr);
+        glEnableVertexAttribArray(0);
+
+        glBindVertexArray(0);
+    }
+
+    glBindVertexArray(vao);
+    glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, nullptr);
+    glBindVertexArray(0);
+}
+
+void RenderSystem::draw_sphere(float radius)
+{
+    static GLuint vao = 0;
+    static GLuint vbo = 0;
+
+    const int segments = 16;
+    const int rings    = 16;
+
+    if (vao == 0) {
+        glGenVertexArrays(1, &vao);
+        glGenBuffers(1, &vbo);
+
+
+        std::vector<glm::vec3> vertices;
+        std::vector<GLuint>    indices;
+
+        for (int i = 0 ; i <= rings ; ++i) {
+            float theta = glm::pi<float>() * i / rings;
+            for (int j = 0 ; j <= segments ; ++j) {
+                float phi = 2.0f * glm::pi<float>() * j / segments;
+                float x   = radius * std::sin(theta) * std::cos(phi);
+                float y   = radius * std::cos(theta);
+                float z   = radius * std::sin(theta) * std::sin(phi);
+                vertices.emplace_back(x, y, z);
+            }
+        }
+
+        for (int i = 0 ; i < rings ; ++i) {
+            for (int j = 0 ; j < segments ; ++j) {
+                indices.push_back(i * (segments + 1) + j);
+                indices.push_back(i * (segments + 1) + j + 1);
+                indices.push_back((i + 1) * (segments + 1) + j);
+
+                indices.push_back(i * (segments + 1) + j + 1);
+                indices.push_back((i + 1) * (segments + 1) + j + 1);
+                indices.push_back((i + 1) * (segments + 1) + j);
+            }
+        }
+
+        glBindVertexArray(vao);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW);
+
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), nullptr);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo);
+        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
+
+        glBindVertexArray(0);
+    }
+
+    glBindVertexArray(vao);
+    glDrawElements(GL_LINES, segments * rings * 6, GL_UNSIGNED_INT, nullptr);
+    glBindVertexArray(0);
+}
 
 RenderSettings& RenderSystem::get_render_settings()
 {

@@ -53,7 +53,20 @@ std::string Mesh::get_path_prefix() const
     return Asset::get_path_prefix() + "/" + AssetType::get_lower_typename(AssetType::Mesh) + "/";
 }
 
-AssetType::Type Mesh::get_asset_type() const { return AssetType::Mesh; }
+AssetType::Type Mesh::get_asset_type() const
+{
+    return AssetType::Mesh;
+}
+
+const std::vector<Vertex>& Mesh::get_vertices()
+{
+    return m_vertices;
+}
+
+const std::vector<uint32_t>& Mesh::get_indices()
+{
+    return m_indices;
+}
 
 void Mesh::initialize()
 {

@@ -31,7 +31,6 @@
 
 ## Building
 
-
 <details open>
 <summary> Prerequisites </summary>
 

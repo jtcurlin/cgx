@@ -13,8 +13,13 @@ namespace cgx::ecs
 
     ECSManager::~ECSManager() = default;
 
-    void ECSManager::update(const float dt) const
+    void ECSManager::frame_update(const float dt) const
     {
-        m_system_registry->update(dt);
+        m_system_registry->frame_update(dt);
+    }
+
+    void ECSManager::fixed_update(const float dt) const
+    {
+        m_system_registry->fixed_update(dt);
     }
 }

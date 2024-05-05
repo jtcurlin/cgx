@@ -17,7 +17,9 @@ public:
 
     void initialize(HierarchySystem* hierarchy_system);
 
-    void update(float dt) override;
+    void frame_update(float dt) override;
+    void fixed_update(float dt) override;
+
     void on_entity_added(ecs::Entity entity) override;
     void on_entity_removed(ecs::Entity entity) override;
 

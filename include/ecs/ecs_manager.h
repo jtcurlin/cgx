@@ -15,7 +15,8 @@ public:
     ECSManager();
     ~ECSManager();
 
-    void update(float dt) const;
+    void frame_update(float dt) const;
+    void fixed_update(float dt) const;
 
     [[nodiscard]] Entity acquire_entity() const
     {

@@ -44,6 +44,9 @@ public:
     void get_mouse_position(double& x_pos, double& y_pos) const;
     void get_mouse_offset(double& x_offset, double& y_offset);
 
+    std::unordered_map<KeyInput, event::Event, KeyInputHash>& get_event_bindings();
+    std::vector<Key>& get_key_bindings();
+
     void reset();
 
 private:
@@ -52,8 +55,9 @@ private:
 
     bool m_initialized{false};
 
-    std::shared_ptr<WindowManager>                         m_window_manager{};
+    std::shared_ptr<WindowManager>                           m_window_manager{};
     std::unordered_map<KeyInput, event::Event, KeyInputHash> m_event_bindings{};
+    std::vector<Key>                                         m_key_bindings{};
 
     double m_mouse_x{0.0};
     double m_mouse_y{0.0};

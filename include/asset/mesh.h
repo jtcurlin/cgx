@@ -62,8 +62,11 @@ public:
 
     void draw(Shader* shader) const;
 
-    std::string get_path_prefix() const override;
+    std::string     get_path_prefix() const override;
     AssetType::Type get_asset_type() const override;
+
+    const std::vector<Vertex>&   get_vertices();
+    const std::vector<uint32_t>& get_indices();
 
 private:
     void initialize();

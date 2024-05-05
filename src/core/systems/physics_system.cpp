@@ -4,15 +4,22 @@
 
 #include "core/components/transform.h"
 #include "core/components/rigid_body.h"
+#include "core/events/physics_events.h"
 
 namespace cgx::core
 {
 PhysicsSystem::PhysicsSystem(ecs::ECSManager* ecs_manager)
-    : System(ecs_manager) {}
+    : System(ecs_manager)
+{}
 
 PhysicsSystem::~PhysicsSystem() = default;
 
-void PhysicsSystem::update(const float dt)
+void PhysicsSystem::frame_update(const float dt)
+{
+    // do nothing
+}
+
+void PhysicsSystem::fixed_update(float dt)
 {
     for (auto const& entity : m_entities) {
         auto& rigid_body = get_component<component::RigidBody>(entity);
@@ -22,6 +29,8 @@ void PhysicsSystem::update(const float dt)
         rigid_body.velocity += rigid_body.acceleration * dt;
 
         transform.rotation += rigid_body.angular_velocity * dt;
+
+
         transform.scale += rigid_body.scale_rate * dt;
 
         transform.dirty = true;

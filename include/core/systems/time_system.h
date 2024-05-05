@@ -17,14 +17,22 @@ public:
     void start();
     void frame_update(double limit = 0.0);
 
+    void add_accumulator(double dt);
+    void sub_accumulator(double dt);
+    [[nodiscard]] double get_accumulator() const;
+    [[nodiscard]] double get_fixed_timestep() const;
+
     [[nodiscard]] const std::chrono::steady_clock::time_point& get_current_time() const;
     [[nodiscard]] double                                       get_frame_time() const;
     [[nodiscard]] double get_uptime() const;
     [[nodiscard]] uint64_t                                     get_frame_number() const;
 
 private:
+    double m_accumulator{0.0};
+    double m_fixed_timestep{1.0 / 60.0};
+
+    std::chrono::steady_clock::time_point m_start_time{};
     std::chrono::steady_clock::time_point m_current_time{};
-    std::chrono::steady_clock::time_point m_start_time;
 
     double   m_frame_time{0.0};
     uint64_t m_frame_number{0};

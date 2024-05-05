@@ -1,8 +1,7 @@
 // Copyright © 2024 Jacob Curlin
 
 #include "core/input_manager.h"
-#include "core/events/engine_events.h"
-#include "../../include/core/event_handler.h"
+#include "core/event_handler.h"
 
 #include "core/window_manager.h"
 
@@ -85,15 +84,25 @@ void InputManager::get_mouse_offset(double& x_offset, double& y_offset)
         m_mouse_x     = x_pos;
         m_mouse_y     = y_pos;
         m_reset_mouse = false;
-        x_offset = 0.0;
-        y_offset = 0.0;
+        x_offset      = 0.0;
+        y_offset      = 0.0;
     }
     else {
-        x_offset = x_pos - m_mouse_x;
-        y_offset = m_mouse_y - y_pos;
+        x_offset  = x_pos - m_mouse_x;
+        y_offset  = m_mouse_y - y_pos;
         m_mouse_x = x_pos;
         m_mouse_y = y_pos;
     }
+}
+
+std::unordered_map<KeyInput, event::Event, KeyInputHash>& InputManager::get_event_bindings()
+{
+    return m_event_bindings;
+}
+
+std::vector<Key>& InputManager::get_key_bindings()
+{
+    return m_key_bindings;
 }
 
 void InputManager::reset()

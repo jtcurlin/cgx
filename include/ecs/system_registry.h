@@ -39,7 +39,8 @@ public:
         m_signatures.insert({type_name, signature});
     }
 
-    void update(float dt);
+    void frame_update(float dt);
+    void fixed_update(float fixed_dt);
     void on_entity_released(Entity entity) const;
     void on_entity_updated(Entity entity, Signature entitySignature);
 

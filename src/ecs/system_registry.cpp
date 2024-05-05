@@ -11,10 +11,17 @@ SystemRegistry::SystemRegistry(ECSManager* ecs_manager)
 
 SystemRegistry::~SystemRegistry() = default;
 
-void SystemRegistry::update(const float dt)
+void SystemRegistry::frame_update(const float dt)
 {
     for (auto& [type_id, system] : m_systems) {
-        system->update(dt);
+        system->frame_update(dt);
+    }
+}
+
+void SystemRegistry::fixed_update(const float fixed_dt)
+{
+    for (auto& [type_id, system] : m_systems) {
+        system->fixed_update(fixed_dt);
     }
 }
 

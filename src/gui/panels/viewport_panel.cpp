@@ -14,11 +14,14 @@ ViewportPanel::ViewportPanel(GUIContext* context, ImGuiManager* manager)
     m_enforce_aspect_ratio = true;
     m_window_flags |= ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 
-    const auto framebuffer = m_context->get_render_system()->getFramebuffer();
+    const auto framebuffer = m_context->get_render_system()->get_output_buffer();
     uint32_t   width, height;
-    framebuffer->getSize(width, height);
-    CGX_ASSERT(glIsTexture(framebuffer->getTextureID()), "Invalid Texture ID in Render Framebuffer");
-    set_texture(width, height, framebuffer->getTextureID());
+    framebuffer->get_dimensions(width, height);
+
+    auto texture_id = framebuffer->get_attachment_info(GL_COLOR_ATTACHMENT0).id;
+
+    CGX_ASSERT(glIsTexture(texture_id), "Invalid Texture ID in Render Framebuffer");
+    set_texture(width, height, texture_id);
 }
 
 ViewportPanel::~ViewportPanel() = default;
@@ -95,6 +98,8 @@ void ViewportPanel::render()
 
     ImGui::SetCursorPos(ImVec2(offset_x, offset_y));
 
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, m_texture_id);
     ImGui::Image((void*) (intptr_t) m_texture_id, render_size, ImVec2(0, 1), ImVec2(1, 0));
 }
 

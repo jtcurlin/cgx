@@ -12,6 +12,16 @@
 namespace cgx::core
 {
 
+enum class Direction
+{
+    Forward,
+    Backward,
+    Left,
+    Right,
+    Up,
+    Down
+};
+
 enum class Key
 {
     key_0,

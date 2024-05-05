@@ -40,6 +40,8 @@ public:
     static void enable_imgui_input();
     void        disable_imgui_input();
 
+    void set_buffer(std::string);
+
     ImFont* m_title_font{};
     ImFont* m_header_font{};
     ImFont* m_body_font{};

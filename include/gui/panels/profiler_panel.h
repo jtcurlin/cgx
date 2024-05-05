@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "core/common.h"
 #include "gui/imgui_panel.h"
 #include <vector>
 

@@ -14,7 +14,8 @@ public:
     explicit HierarchySystem(ecs::ECSManager* ecs_manager);
     ~HierarchySystem() override;
 
-    void update(float dt) override;
+    void frame_update(float dt) override;
+    void fixed_update(float dt) override;
 
     void on_entity_added(ecs::Entity entity) override;
     void on_entity_removed(ecs::Entity entity) override;

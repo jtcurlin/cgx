@@ -34,7 +34,10 @@ void ScenePanel::render()
 
     auto root_node = m_context->get_scene_manager()->get_active_scene()->get_root();
     for (auto& node : root_node->get_children()) {
-        draw_node(dynamic_cast<scene::Node*>(node.get()));
+        const auto casted_node = dynamic_cast<scene::Node*>(node.get());
+        if (casted_node) {
+            draw_node(casted_node);
+        }
     }
 }
 

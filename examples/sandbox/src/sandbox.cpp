@@ -15,8 +15,8 @@ void Sandbox::initialize()
     m_scene_manager->add_scene("Default Scene");
     m_scene_manager->set_active_scene("Default Scene");
 
-    m_scene_manager->import_node(std::string(DATA_DIRECTORY) + "/assets/scenes/default_scene.glb");
-
+    // m_scene_manager->import_node(std::string(DATA_DIRECTORY) + "/assets/scenes/default_scene.glb");
+    m_scene_manager->import_node(std::string(DATA_DIRECTORY) + "/assets/scenes/physics_demo.glb");
 
     const auto        root   = m_scene_manager->get_active_scene()->get_root();
     cgx::scene::Node* camera = nullptr;
