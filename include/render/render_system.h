@@ -3,6 +3,7 @@
 #pragma once
 
 #include "asset/cubemap.h"
+#include "asset/shader.h"
 #include "core/components/camera.h"
 #include "ecs/system.h"
 
@@ -33,16 +34,42 @@ struct RenderSettings
     uint32_t render_width{1280};
     uint32_t render_height{720};
 
-    bool ssao_enabled{true};
     bool skybox_enabled{false};
     bool draw_colliders{false};
 
     const std::string geometry_shader_path{std::string(DATA_DIRECTORY) + "/shaders/geometry"};
     const std::string lighting_shader_path{std::string(DATA_DIRECTORY) + "/shaders/lighting"};
     const std::string light_mesh_shader_path{std::string(DATA_DIRECTORY) + "/shaders/light_mesh"};
+    const std::string collider_shader_path{std::string(DATA_DIRECTORY) + "/shaders/collider"};
+};
+
+struct SSAOConfig
+{
+    bool enabled{true};
+
+    float power{1.0f};
+    float radius{0.5f};
+    float bias{0.025f};
+    int kernel_size{64};
+
+    std::shared_ptr<Framebuffer>   main_fb;
+    std::shared_ptr<Framebuffer>   blur_fb;
+
+    std::unique_ptr<asset::Shader> main_shader;
+    std::unique_ptr<asset::Shader> blur_shader;
+
+    std::shared_ptr<asset::Texture> noise_tex{};
+    std::vector<glm::vec3>          kernel{};
+
     const std::string ssao_shader_path{std::string(DATA_DIRECTORY) + "/shaders/ssao"};
     const std::string ssao_blur_shader_path{std::string(DATA_DIRECTORY) + "/shaders/ssao_blur"};
-    const std::string collider_shader_path{std::string(DATA_DIRECTORY) + "/shaders/collider"};
+};
+
+struct LightingConfig
+{
+    float     base_reflectivity{0.04};
+    float     gamma_correction{1.0f / 2.2f};
+    glm::vec3 base_ambient_factor = glm::vec3(0.03);
 };
 
 class RenderSystem final : public ecs::System
@@ -83,6 +110,7 @@ public:
 
     void            render_cube();
     RenderSettings& get_render_settings();
+    SSAOConfig& get_ssao_config();
 
     [[nodiscard]] ecs::Entity get_camera() const;
     void                      set_camera(ecs::Entity camera_entity);
@@ -92,24 +120,20 @@ private:
 
     std::shared_ptr<Framebuffer> m_output_fb;
     std::shared_ptr<Framebuffer> m_gbuffer_fb;
-    std::shared_ptr<Framebuffer> m_ssao_fb;
-    std::shared_ptr<Framebuffer> m_ssao_blur_fb;
 
-    std::vector<glm::vec3> m_ssao_kernel{};
-    std::shared_ptr<asset::Texture> m_ssao_noise_tex{};
 
     glm::mat4 m_view_mat{glm::mat4(1.0f)};
     glm::mat4 m_proj_mat{glm::mat4(1.0f)};
 
     std::shared_ptr<asset::Cubemap> m_skybox_cubemap{};
-    std::unique_ptr<asset::Shader> m_geometry_shader{};
-    std::unique_ptr<asset::Shader> m_lighting_shader{};
-    std::unique_ptr<asset::Shader> m_light_mesh_shader{};
-    std::unique_ptr<asset::Shader> m_ssao_shader{};
-    std::unique_ptr<asset::Shader> m_ssao_blur_shader{};
-    std::unique_ptr<asset::Shader> m_collider_shader{};
+    std::unique_ptr<asset::Shader>  m_geometry_shader{};
+    std::unique_ptr<asset::Shader>  m_lighting_shader{};
+    std::unique_ptr<asset::Shader>  m_light_mesh_shader{};
+    std::unique_ptr<asset::Shader>  m_collider_shader{};
 
     RenderSettings m_settings{};
+    SSAOConfig     m_ssao_config{};
+    LightingConfig m_pbr_config{};
 
     std::vector<ecs::Entity> m_curr_lights{};
 

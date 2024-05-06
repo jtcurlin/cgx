@@ -81,26 +81,35 @@ void RenderSystem::initialize()
 
 void RenderSystem::init_ssao()
 {
-    m_ssao_shader = std::make_unique<asset::Shader>(
+    m_ssao_config.main_shader = std::make_unique<asset::Shader>(
         "ssao_shader",
-        m_settings.ssao_shader_path,
+        m_ssao_config.ssao_shader_path,
         asset::ShaderType::Unknown);
 
-    m_ssao_blur_shader = std::make_unique<asset::Shader>(
+    m_ssao_config.blur_shader = std::make_unique<asset::Shader>(
         "ssao_blur_shader",
-        m_settings.ssao_blur_shader_path,
+        m_ssao_config.ssao_blur_shader_path,
         asset::ShaderType::Unknown);
 
     // setup ssao framebuffer
-    m_ssao_fb = std::make_shared<Framebuffer>(m_settings.render_width, m_settings.render_height);
-    m_ssao_fb->add_color_attachment(asset::Texture::Format::Red, asset::Texture::DataType::Float); // ssao color buffer
-    m_ssao_fb->check_completeness();
+    m_ssao_config.main_fb = std::make_shared<Framebuffer>(m_settings.render_width, m_settings.render_height);
+    m_output_fb->set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
+    m_ssao_config.main_fb->add_color_attachment(asset::Texture::Format::Red, asset::Texture::DataType::Float); // ssao color buffer
+    m_ssao_config.main_fb->check_completeness();
 
     // setup ssaa-blur framebuffer
-    m_ssao_blur_fb = std::make_shared<Framebuffer>(m_settings.render_width, m_settings.render_height);
-    m_ssao_blur_fb->add_color_attachment(asset::Texture::Format::Red, asset::Texture::DataType::Float);
-    // ssao blur color buffer
-    m_ssao_blur_fb->check_completeness();
+    m_ssao_config.blur_fb = std::make_shared<Framebuffer>(m_settings.render_width, m_settings.render_height);
+    m_output_fb->set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
+    m_ssao_config.blur_fb->add_color_attachment(asset::Texture::Format::Red, asset::Texture::DataType::Float);
+    m_ssao_config.blur_fb->check_completeness();
+
+    // red->white texture backgrounds for debug buffer view
+    constexpr GLint swizzle[4] = {GL_RED, GL_RED, GL_RED, GL_ONE};
+    m_ssao_config.main_fb->get_texture(GL_COLOR_ATTACHMENT0)->bind(0);
+    glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzle);
+    m_ssao_config.blur_fb->get_texture(GL_COLOR_ATTACHMENT0)->bind(0);
+    glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzle);
+
 
     std::uniform_real_distribution<GLfloat> random_floats(0.0, 1.0);
     std::default_random_engine              generator;
@@ -112,26 +121,34 @@ void RenderSystem::init_ssao()
         sample = glm::normalize(sample);
         sample *= random_floats(generator);
         float scale = static_cast<float>(i) / 64.0f;
-        scale = math::lerp(0.1f, 1.0f, scale*scale);
+        scale       = math::lerp(0.1f, 1.0f, scale * scale);
         sample *= scale;
-        m_ssao_kernel.push_back(sample);
+        m_ssao_config.kernel.push_back(sample);
     }
 
     std::vector<glm::vec3> ssao_noise_data;
-    for (uint32_t i = 0; i < 16; i++) {
+    for (uint32_t i = 0 ; i < 16 ; i++) {
         glm::vec3 noise(random_floats(generator) * 2.0 - 1.0, random_floats(generator) * 2.0 - 1.0, 0.0f);
         ssao_noise_data.push_back(noise);
     }
 
-    m_ssao_noise_tex = std::make_shared<asset::Texture>("ssao_noise_texture", "", 4, 4, 3, asset::Texture::Format::RGB, asset::Texture::DataType::Float, &ssao_noise_data[0]);
+    m_ssao_config.noise_tex = std::make_shared<asset::Texture>(
+        "ssao_noise_texture",
+        "",
+        4,
+        4,
+        3,
+        asset::Texture::Format::RGB,
+        asset::Texture::DataType::Float,
+        &ssao_noise_data[0]);
 
-    m_ssao_shader->use();
-    m_ssao_shader->set_int("g_position", 0);
-    m_ssao_shader->set_int("g_normal", 1);
-    m_ssao_shader->set_int("noise_tex", 2);
+    m_ssao_config.main_shader->use();
+    m_ssao_config.main_shader->set_int("g_position", 0);
+    m_ssao_config.main_shader->set_int("g_normal", 1);
+    m_ssao_config.main_shader->set_int("noise_tex", 2);
 
-    m_ssao_blur_shader->use();
-    m_ssao_blur_shader->set_int("ssao_input_tex", 0);
+    m_ssao_config.blur_shader->use();
+    m_ssao_config.blur_shader->set_int("ssao_input_tex", 0);
 
     m_lighting_shader->use();
     m_lighting_shader->set_int("ssao", 5);
@@ -142,7 +159,9 @@ void RenderSystem::render()
     glViewport(0, 0, static_cast<GLsizei>(m_settings.render_width), static_cast<GLsizei>(m_settings.render_height));
 
     geometry_pass();
-    ssao_pass();
+    if (m_ssao_config.enabled) {
+        ssao_pass();
+    }
     lighting_pass();
     light_mesh_pass();
 
@@ -207,12 +226,12 @@ void RenderSystem::lighting_pass()
     m_output_fb->clear(true, true, true);
 
     // bind color attachment textures
-    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT0)->bind(0); // position
-    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT1)->bind(1); // normal
-    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT2)->bind(2); // albedo
-    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT3)->bind(3); // roughness
-    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT4)->bind(4); // metallic
-    m_ssao_blur_fb->get_texture(GL_COLOR_ATTACHMENT0)->bind(5);    // ssao
+    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT0)->bind(0);   // position
+    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT1)->bind(1);   // normal
+    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT2)->bind(2);   // albedo
+    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT3)->bind(3);   // roughness
+    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT4)->bind(4);   // metallic
+    m_ssao_config.blur_fb->get_texture(GL_COLOR_ATTACHMENT0)->bind(5); // ssao
 
     m_lighting_shader->use();
 
@@ -222,7 +241,7 @@ void RenderSystem::lighting_pass()
     m_lighting_shader->set_int("g_metallic", 3);
     m_lighting_shader->set_int("g_roughness", 4);
 
-    if (m_settings.ssao_enabled) {
+    if (m_ssao_config.enabled) {
         m_lighting_shader->set_bool("ssao_enabled", true);
         m_lighting_shader->set_int("ssao", 5);
     }
@@ -293,33 +312,42 @@ void RenderSystem::light_mesh_pass()
 
 void RenderSystem::ssao_pass()
 {
-    m_ssao_fb->bind();
-    m_ssao_fb->clear(true, false, false);
+    m_ssao_config.main_fb->bind();
+    m_ssao_config.main_fb->clear(true, false, false);
 
-    m_ssao_shader->use();
+    m_ssao_config.main_shader->use();
 
-    for (uint32_t i = 0; i < 64; ++i) {
-        m_ssao_shader->set_vec3("samples[" + std::to_string(i) + "]", m_ssao_kernel[i]);
+    for (uint32_t i = 0 ; i < 64 ; ++i) {
+        m_ssao_config.main_shader->set_vec3("samples[" + std::to_string(i) + "]", m_ssao_config.kernel[i]);
     }
-    m_ssao_shader->set_mat4("proj", m_proj_mat);
+    m_ssao_config.main_shader->set_mat4("proj", m_proj_mat);
+    m_ssao_config.main_shader->set_mat4("view", m_view_mat);
+
+    m_ssao_config.main_shader->set_float("power", m_ssao_config.power);
+    m_ssao_config.main_shader->set_int("kernel_size", m_ssao_config.kernel_size);
+    m_ssao_config.main_shader->set_float("radius", m_ssao_config.radius);
+    m_ssao_config.main_shader->set_float("bias", m_ssao_config.bias);
 
     m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT0)->bind(0); // position
     m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT1)->bind(1); // normal
-    m_ssao_noise_tex->bind(2);
+    m_ssao_config.noise_tex->bind(2);
 
     render_quad();
 
-    m_ssao_fb->unbind();
+    m_ssao_config.main_fb->unbind();
 
     // blur
-    m_ssao_blur_fb->bind();
-    m_ssao_blur_fb->clear(true, false, false);
+    m_ssao_config.blur_fb->bind();
+    m_ssao_config.blur_fb->clear(true, false, false);
 
-    m_ssao_blur_shader->use();
-    m_ssao_fb->get_texture(GL_COLOR_ATTACHMENT0)->bind(0); // ssao color buffer
+    m_ssao_config.blur_shader->use();
+    m_ssao_config.main_fb->get_texture(GL_COLOR_ATTACHMENT0)->bind(0); // ssao color buffer
+
+    glDisable(GL_BLEND);
     render_quad();
+    glEnable(GL_BLEND);
 
-    m_ssao_blur_fb->unbind();
+    m_ssao_config.blur_fb->unbind();
 }
 
 void RenderSystem::render_quad()
@@ -375,12 +403,12 @@ const std::shared_ptr<Framebuffer>& RenderSystem::get_gbuffer_fb()
 
 const std::shared_ptr<Framebuffer>& RenderSystem::get_ssao_fb()
 {
-    return m_ssao_fb;
+    return m_ssao_config.main_fb;
 }
 
 const std::shared_ptr<Framebuffer>& RenderSystem::get_ssao_blur_fb()
 {
-    return m_ssao_blur_fb;
+    return m_ssao_config.blur_fb;
 }
 
 const std::shared_ptr<asset::Cubemap>& RenderSystem::get_skybox_cubemap() const
@@ -468,6 +496,11 @@ void RenderSystem::render_cube()
 RenderSettings& RenderSystem::get_render_settings()
 {
     return m_settings;
+}
+
+SSAOConfig& RenderSystem::get_ssao_config()
+{
+    return m_ssao_config;
 }
 
 ecs::Entity RenderSystem::get_camera() const

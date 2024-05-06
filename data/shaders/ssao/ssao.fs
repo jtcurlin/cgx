@@ -9,14 +9,20 @@ uniform sampler2D g_position;
 uniform sampler2D g_normal;
 uniform sampler2D noise_tex;
 
+uniform float power;
+uniform float radius;
+uniform float bias;
+uniform int kernel_size;
+
 uniform vec3 samples[64];
 
-int kernel_size = 64;
-float radius = 0.5;
-float bias = 0.025;
+// int kernel_size = 64;
+// float radius = 0.5;
+// float bias = 0.025;
 
 const vec2 noise_scale = vec2(1280.0/4.0, 720.0/4.0);
 
+uniform mat4 view;
 uniform mat4 proj;
 
 void main()
@@ -36,8 +42,10 @@ void main()
     for(int i = 0; i < kernel_size; ++i)
     {
         // get sample position
-        vec3 sample_pos = TBN * samples[i]; // from tangent to view-space
+        vec3 sample_pos = TBN * samples[i].xyz; // from tangent to view-space
         sample_pos = position + sample_pos * radius;
+        sample_pos = (view * vec4(sample_pos, 1.0)).xyz;
+        // sample_pos = position + sample_pos * radius;
 
         // project sample position (to sample texture) (to get position on screen/texture)
         vec4 offset = vec4(sample_pos, 1.0);
@@ -54,5 +62,5 @@ void main()
     }
     occlusion = 1.0 - (occlusion / kernel_size);
 
-    FragColor = occlusion;
+    FragColor = pow(occlusion, power);
 }
