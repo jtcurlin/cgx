@@ -92,6 +92,7 @@ public:
     void draw_cube(const glm::vec3& size);
     void draw_sphere(float radius);
 
+    void            render_cube();
     RenderSettings& get_render_settings();
 
     [[nodiscard]] ecs::Entity get_camera() const;
@@ -122,6 +123,8 @@ private:
 
     std::vector<ecs::Entity> m_curr_lights{};
 
+    uint32_t m_light_cube_vao{0};
+    uint32_t m_light_cube_vbo{0};
 
 };
 }

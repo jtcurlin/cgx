@@ -20,7 +20,7 @@ struct PointLight
     float range;
 };
 
-uniform PointLight point_lights[100];
+uniform PointLight lights[100];
 uniform int num_point_lights;
 uniform vec3 view_pos;
 
@@ -94,7 +94,7 @@ void main()
     vec3 position = texture(g_position, uv).rgb;
     vec3 normal = texture(g_normal, uv).rgb;
     vec3 albedo = texture(g_albedo, uv).rgb;
-    float metallic = texture(g_albedo, uv).r;
+    float metallic = texture(g_metallic, uv).r;
     float roughness = texture(g_roughness, uv).r;
 
     vec3 N = normalize(normal);
@@ -104,13 +104,13 @@ void main()
     F0 = mix(F0, albedo, metallic);
 
     vec3 Lo = vec3(0.0);
-    for (int i=0; i < num_point_lights; ++i)
+    for (int i=0; i < num_point_lights; i++)
     {
-        vec3 L = normalize(point_lights[i].position - position);
+        vec3 L = normalize(lights[i].position - position);
         vec3 H = normalize(V + L);
-        float distance = length(point_lights[i].position - position);
+        float distance = length(lights[i].position - position);
         float attenuation = 1.0 / (distance * distance);
-        vec3 radiance = point_lights[i].color * attenuation;
+        vec3 radiance = lights[i].color * attenuation * lights[i].intensity;
 
         float NDF = distribution_ggx(N, H, roughness);
         float G = geometry_smith(N, V, L, roughness);

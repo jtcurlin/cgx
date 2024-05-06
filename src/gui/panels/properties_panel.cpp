@@ -972,7 +972,10 @@ void PropertiesPanel::draw_point_light_component_editor(const scene::Node* node)
             ImGui::Text("Color");
             ImGui::TableSetColumnIndex(1);
             ImGui::SetNextItemWidth(-FLT_MIN);
-            ImGui::ColorEdit3("##BaseColorFactorSlider", &component.color[0]);
+            updated |= ImGui::ColorEdit3("##BaseColorFactorSlider", &component.color[0]);
+            if (updated) {
+                CGX_INFO("Color: {}, {}, {}", component.color.r, component.color.g, component.color.b);
+            }
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);

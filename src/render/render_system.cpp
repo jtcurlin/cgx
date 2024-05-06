@@ -13,7 +13,6 @@
 #include "scene/scene.h"
 #include "utility/error.h"
 
-#include "core/components/collider.h"
 #include "core/components/transform.h"
 #include "core/components/render.h"
 
@@ -36,8 +35,6 @@ RenderSystem::~RenderSystem() = default;
 
 void RenderSystem::initialize()
 {
-
-
     // initialize collider shader
     m_collider_shader = std::make_unique<asset::Shader>(
         "collider_shader",
@@ -100,6 +97,12 @@ void RenderSystem::render()
     geometry_pass();
     lighting_pass();
     light_mesh_pass();
+
+    if (m_settings.skybox_enabled) {
+        draw_skybox();
+    }
+
+    m_output_framebuffer->unbind();
 
     // end_render();
 }
@@ -193,17 +196,15 @@ void RenderSystem::lighting_pass()
         const auto& lc = m_ecs_manager->get_component<component::PointLight>(entity);
         const auto& tc = m_ecs_manager->get_component<component::Transform>(entity);
 
-        m_lighting_shader->set_vec3("lights[" + std::to_string(light_index) + "].position", tc.translation);
+
+
+        m_lighting_shader->set_vec3("lights[" + std::to_string(light_index) + "].position", glm::vec3(tc.world_matrix[3]));
         m_lighting_shader->set_vec3("lights[" + std::to_string(light_index) + "].color", lc.color);
         m_lighting_shader->set_float("lights[" + std::to_string(light_index) + "].intensity", lc.intensity);
         m_lighting_shader->set_float("lights[" + std::to_string(light_index) + "].range", lc.range);
 
         light_index++;
         m_curr_lights.push_back(entity);
-    }
-
-    if (light_index != 0) {
-        CGX_INFO("Current Processed Light Count: {}", light_index);
     }
 
     m_lighting_shader->set_int("num_point_lights", light_index);
@@ -229,7 +230,8 @@ void RenderSystem::light_mesh_pass()
         m_settings.render_height,
         GL_DEPTH_BUFFER_BIT,
         GL_NEAREST);
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    m_output_framebuffer->bind();
 
     m_light_mesh_shader->use();
     m_light_mesh_shader->set_mat4("proj", m_proj_mat);
@@ -241,8 +243,10 @@ void RenderSystem::light_mesh_pass()
 
         m_light_mesh_shader->set_mat4("model", tc.world_matrix);
         m_light_mesh_shader->set_vec3("light_color", lc.color);
-        draw_cube(glm::vec3(1.0f));
+        render_cube();
     }
+
+
 }
 
 void RenderSystem::render_quad()
@@ -518,6 +522,78 @@ void RenderSystem::draw_sphere(float radius)
     glDrawElements(GL_LINES, segments * rings * 6, GL_UNSIGNED_INT, nullptr);
     glBindVertexArray(0);
 }
+
+void RenderSystem::render_cube()
+{
+    // initialize (if necessary)
+    if (m_light_cube_vao == 0)
+    {
+        constexpr float vertices[] = {
+            // back face
+            -0.1f, -0.1f, -0.1f,  0.0f,  0.0f, -0.1f, 0.0f, 0.0f, // bottom-left
+             0.1f,  0.1f, -0.1f,  0.0f,  0.0f, -0.1f, 0.1f, 0.1f, // top-right
+             0.1f, -0.1f, -0.1f,  0.0f,  0.0f, -0.1f, 0.1f, 0.0f, // bottom-right
+             0.1f,  0.1f, -0.1f,  0.0f,  0.0f, -0.1f, 0.1f, 0.1f, // top-right
+            -0.1f, -0.1f, -0.1f,  0.0f,  0.0f, -0.1f, 0.0f, 0.0f, // bottom-left
+            -0.1f,  0.1f, -0.1f,  0.0f,  0.0f, -0.1f, 0.0f, 0.1f, // top-left
+            // front face
+            -0.1f, -0.1f,  0.1f,  0.0f,  0.0f,  0.1f, 0.0f, 0.0f, // bottom-left
+             0.1f, -0.1f,  0.1f,  0.0f,  0.0f,  0.1f, 0.1f, 0.0f, // bottom-right
+             0.1f,  0.1f,  0.1f,  0.0f,  0.0f,  0.1f, 0.1f, 0.1f, // top-right
+             0.1f,  0.1f,  0.1f,  0.0f,  0.0f,  0.1f, 0.1f, 0.1f, // top-right
+            -0.1f,  0.1f,  0.1f,  0.0f,  0.0f,  0.1f, 0.0f, 0.1f, // top-left
+            -0.1f, -0.1f,  0.1f,  0.0f,  0.0f,  0.1f, 0.0f, 0.0f, // bottom-left
+            // left face
+            -0.1f,  0.1f,  0.1f, -0.1f,  0.0f,  0.0f, 0.1f, 0.0f, // top-right
+            -0.1f,  0.1f, -0.1f, -0.1f,  0.0f,  0.0f, 0.1f, 0.1f, // top-left
+            -0.1f, -0.1f, -0.1f, -0.1f,  0.0f,  0.0f, 0.0f, 0.1f, // bottom-left
+            -0.1f, -0.1f, -0.1f, -0.1f,  0.0f,  0.0f, 0.0f, 0.1f, // bottom-left
+            -0.1f, -0.1f,  0.1f, -0.1f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
+            -0.1f,  0.1f,  0.1f, -0.1f,  0.0f,  0.0f, 0.1f, 0.0f, // top-right
+            // right face
+             0.1f,  0.1f,  0.1f,  0.1f,  0.0f,  0.0f, 0.1f, 0.0f, // top-left
+             0.1f, -0.1f, -0.1f,  0.1f,  0.0f,  0.0f, 0.0f, 0.1f, // bottom-right
+             0.1f,  0.1f, -0.1f,  0.1f,  0.0f,  0.0f, 0.1f, 0.1f, // top-right
+             0.1f, -0.1f, -0.1f,  0.1f,  0.0f,  0.0f, 0.0f, 0.1f, // bottom-right
+             0.1f,  0.1f,  0.1f,  0.1f,  0.0f,  0.0f, 0.1f, 0.0f, // top-left
+             0.1f, -0.1f,  0.1f,  0.1f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left
+            // bottom face
+            -0.1f, -0.1f, -0.1f,  0.0f, -0.1f,  0.0f, 0.0f, 0.1f, // top-right
+             0.1f, -0.1f, -0.1f,  0.0f, -0.1f,  0.0f, 0.1f, 0.1f, // top-left
+             0.1f, -0.1f,  0.1f,  0.0f, -0.1f,  0.0f, 0.1f, 0.0f, // bottom-left
+             0.1f, -0.1f,  0.1f,  0.0f, -0.1f,  0.0f, 0.1f, 0.0f, // bottom-left
+            -0.1f, -0.1f,  0.1f,  0.0f, -0.1f,  0.0f, 0.0f, 0.0f, // bottom-right
+            -0.1f, -0.1f, -0.1f,  0.0f, -0.1f,  0.0f, 0.0f, 0.1f, // top-right
+            // top face
+            -0.1f,  0.1f, -0.1f,  0.0f,  0.1f,  0.0f, 0.0f, 0.1f, // top-left
+             0.1f,  0.1f , 0.1f,  0.0f,  0.1f,  0.0f, 0.1f, 0.0f, // bottom-right
+             0.1f,  0.1f, -0.1f,  0.0f,  0.1f,  0.0f, 0.1f, 0.1f, // top-right
+             0.1f,  0.1f,  0.1f,  0.0f,  0.1f,  0.0f, 0.1f, 0.0f, // bottom-right
+            -0.1f,  0.1f, -0.1f,  0.0f,  0.1f,  0.0f, 0.0f, 0.1f, // top-left
+            -0.1f,  0.1f,  0.1f,  0.0f,  0.1f,  0.0f, 0.0f, 0.0f  // bottom-left
+        };
+        glGenVertexArrays(1, &m_light_cube_vao);
+        glGenBuffers(1, &m_light_cube_vbo);
+        // fill buffer
+        glBindBuffer(GL_ARRAY_BUFFER, m_light_cube_vbo);
+        glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+        // link vertex attributes
+        glBindVertexArray(m_light_cube_vao);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+        glEnableVertexAttribArray(2);
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+    }
+    // render Cube
+    glBindVertexArray(m_light_cube_vao);
+    glDrawArrays(GL_TRIANGLES, 0, 36);
+    glBindVertexArray(0);
+}
+
 
 RenderSettings& RenderSystem::get_render_settings()
 {

@@ -4,7 +4,7 @@
 </p>
 
 <p align="center">
-  <img src = "./data/demo_screenshots/043024_demo.png" alt="editor">
+  <img src = "./data/demo_screenshots/050624_demo.png" alt="editor">
 </p>
  
 ## Introduction 
@@ -20,7 +20,7 @@
 <details open>
 <summary> Features </summary> 
 
-* OpenGL core renderer supporting full 3D, textures & materials, basic phong lighting, and more
+* OpenGL core renderer supporting full 3D, textures & materials, deferred shading w/ phong & PBR lighting, cont.
 * GLFW-based window and input handling 
 * Basic event system providing easy observer / listener registration and hashed string-defined events & parameters
 * Data-oriented Entity-Component-System (ECS) architecture providing extensibility and cache optimization  
