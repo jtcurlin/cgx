@@ -75,26 +75,26 @@ public:
     };
 
     Texture(
-        std::string    tag,
-        std::string    source_path,
-        uint32_t       width,
-        uint32_t       height,
-        uint32_t       num_channels,
-        Format         format,
-        DataType       data_type,
-        unsigned char* pixels);
+        std::string tag,
+        std::string source_path,
+        uint32_t    width,
+        uint32_t    height,
+        uint32_t    num_channels,
+        Format      format,
+        DataType    data_type,
+        void*       pixels);
     ~Texture() override;
 
     void setup();
     void bind(uint32_t slot) const;
 
-    [[nodiscard]] uint32_t       get_texture_id() const;
-    [[nodiscard]] uint32_t       get_width() const;
-    [[nodiscard]] uint32_t       get_height() const;
-    [[nodiscard]] uint32_t       get_num_channels() const;
-    [[nodiscard]] unsigned char* get_pixels() const;
-    [[nodiscard]] Format         get_format() const;
-    [[nodiscard]] DataType       get_data_type() const;
+    [[nodiscard]] uint32_t get_texture_id() const;
+    [[nodiscard]] uint32_t get_width() const;
+    [[nodiscard]] uint32_t get_height() const;
+    [[nodiscard]] uint32_t get_num_channels() const;
+    [[nodiscard]] void*    get_pixels() const;
+    [[nodiscard]] Format   get_format() const;
+    [[nodiscard]] DataType get_data_type() const;
 
     [[nodiscard]] FilterMode get_min_filter() const;
     [[nodiscard]] FilterMode get_mag_filter() const;
@@ -112,13 +112,13 @@ public:
     AssetType::Type get_asset_type() const override;
 
 private:
-    uint32_t       m_texture_id;
-    uint32_t       m_width;
-    uint32_t       m_height;
-    uint32_t       m_num_channels;
-    Format         m_format;
-    DataType       m_data_type;
-    unsigned char* m_pixels;
+    uint32_t m_texture_id;
+    uint32_t m_width;
+    uint32_t m_height;
+    uint32_t m_num_channels;
+    Format   m_format;
+    DataType m_data_type;
+    void*    m_pixels;
 
     FilterMode m_min_filter{FilterMode::Linear};
     FilterMode m_mag_filter{FilterMode::Linear};

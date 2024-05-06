@@ -14,7 +14,7 @@ Texture::Texture(
     const uint32_t num_channels,
     const Format   format,
     const DataType   data_type,
-    unsigned char* pixels)
+    void* pixels)
     : Asset(tag, get_path_prefix() + tag, std::move(source_path))
     , m_width(width)
     , m_height(height)
@@ -25,6 +25,28 @@ Texture::Texture(
 {
     setup();
 }
+
+/*
+Texture::Texture(
+    std::string    tag,
+    std::string    source_path,
+    const uint32_t width,
+    const uint32_t height,
+    const uint32_t num_channels,
+    const Format   format,
+    const DataType   data_type,
+    unsigned char* pixels)
+    : Asset(tag, get_path_prefix() + tag, std::move(source_path))
+    , m_width(width)
+    , m_height(height)
+    , m_num_channels(num_channels)
+    , m_format(format)
+    , m_data_type(data_type)
+    , m_pixels(reinterpret_cast<unsigned char*)
+{
+    setup();
+}
+*/
 
 Texture::~Texture()
 {
@@ -92,7 +114,7 @@ uint32_t Texture::get_num_channels() const
     return m_num_channels;
 }
 
-unsigned char* Texture::get_pixels() const
+void* Texture::get_pixels() const
 {
     return m_pixels;
 }

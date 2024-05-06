@@ -284,7 +284,7 @@ void ImGuiManager::draw_fullscreen_render()
     ImGui::Begin("fullscreen_render_window", nullptr, window_flags);
 
     const ImVec2   image_size         = ImGui::GetContentRegionAvail();
-    auto texture_id = m_context->get_render_system()->get_output_buffer()->get_attachment_info(GL_COLOR_ATTACHMENT0).id;
+    auto texture_id = m_context->get_render_system()->get_output_fb()->get_attachment_info(GL_COLOR_ATTACHMENT0).id;
     ImGui::Image((void*) (intptr_t) texture_id, image_size, ImVec2(0, 1), ImVec2(1, 0));
 
     ImGui::End();

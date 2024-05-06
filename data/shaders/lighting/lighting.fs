@@ -11,6 +11,7 @@ uniform sampler2D g_normal;
 uniform sampler2D g_albedo;
 uniform sampler2D g_metallic;
 uniform sampler2D g_roughness;
+uniform sampler2D ssao;
 
 struct PointLight
 {
@@ -23,6 +24,8 @@ struct PointLight
 uniform PointLight lights[100];
 uniform int num_point_lights;
 uniform vec3 view_pos;
+
+uniform bool ssao_enabled = false;
 
 const float PI = 3.14159265359;
 
@@ -129,7 +132,10 @@ void main()
         Lo += (kD * albedo / PI + specular) * radiance * NdotL;
     }
 
-    vec3 ambient = vec3(0.03) * albedo * 1;
+    vec3 ambient = vec3(0.03) * albedo;
+
+    ambient *= ssao_enabled ? texture(ssao, uv).r : 1.0;
+
     vec3 color = ambient + Lo;
     color = color / (color + vec3(1.0));
     color = pow(color, vec3(1.0/2.2));

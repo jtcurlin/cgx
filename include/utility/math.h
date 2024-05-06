@@ -35,4 +35,9 @@ inline Color4f HexToColor4f(const std::string& hexCode)
     return color;
 }
 
+inline float lerp(const float a, const float b, const float f)
+{
+    return a + f * (b-a);
+}
+
 }

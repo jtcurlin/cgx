@@ -33,26 +33,16 @@ struct RenderSettings
     uint32_t render_width{1280};
     uint32_t render_height{720};
 
-    bool manual_control{false};
-    bool msaa_enabled{false};
+    bool ssao_enabled{true};
     bool skybox_enabled{false};
-
-    bool              default_shader_enabled{false};
-    const std::string default_shader_path{std::string(DATA_DIRECTORY) + "/shaders/pbr"};
-
-    bool              draw_colliders{false};
-    const std::string collider_shader_path{std::string(DATA_DIRECTORY) + "/shaders/collider"};
-
+    bool draw_colliders{false};
 
     const std::string geometry_shader_path{std::string(DATA_DIRECTORY) + "/shaders/geometry"};
     const std::string lighting_shader_path{std::string(DATA_DIRECTORY) + "/shaders/lighting"};
     const std::string light_mesh_shader_path{std::string(DATA_DIRECTORY) + "/shaders/light_mesh"};
-
-    bool default_model_enabled{false};
-
-    bool     m_render_test_enabled{false};
-    uint32_t m_render_test_shader{};
-    uint32_t m_render_test_vao{};
+    const std::string ssao_shader_path{std::string(DATA_DIRECTORY) + "/shaders/ssao"};
+    const std::string ssao_blur_shader_path{std::string(DATA_DIRECTORY) + "/shaders/ssao_blur"};
+    const std::string collider_shader_path{std::string(DATA_DIRECTORY) + "/shaders/collider"};
 };
 
 class RenderSystem final : public ecs::System
@@ -62,13 +52,14 @@ public:
     ~RenderSystem() override;
 
     void initialize();
-    void begin_render();
+    void init_ssao();
+
     void render();
-    void end_render();
 
     void geometry_pass();
     void lighting_pass();
     void light_mesh_pass();
+    void ssao_pass();
     void output_pass();
 
     void render_quad();
@@ -79,18 +70,16 @@ public:
     void on_entity_added(ecs::Entity entity) override {}
     void on_entity_removed(ecs::Entity entity) override {}
 
-    void draw_skybox() const;
-
-    const std::shared_ptr<Framebuffer>& get_output_buffer();
-    const std::shared_ptr<Framebuffer>& get_g_buffer();
+    const std::shared_ptr<Framebuffer>& get_output_fb();
+    const std::shared_ptr<Framebuffer>& get_gbuffer_fb();
+    const std::shared_ptr<Framebuffer>& get_ssao_fb();
+    const std::shared_ptr<Framebuffer>& get_ssao_blur_fb();
 
     void set_skybox_cubemap(const std::shared_ptr<asset::Cubemap>& cubemap);
     [[nodiscard]] const std::shared_ptr<asset::Cubemap>& get_skybox_cubemap() const;
 
-    void setup_test_triangle();
-
+    void draw_skybox() const;
     void draw_cube(const glm::vec3& size);
-    void draw_sphere(float radius);
 
     void            render_cube();
     RenderSettings& get_render_settings();
@@ -101,30 +90,30 @@ public:
 private:
     ecs::Entity m_camera{ecs::MAX_ENTITIES};
 
-    std::shared_ptr<Framebuffer> m_output_framebuffer;
-    std::shared_ptr<Framebuffer> m_g_buffer;
+    std::shared_ptr<Framebuffer> m_output_fb;
+    std::shared_ptr<Framebuffer> m_gbuffer_fb;
+    std::shared_ptr<Framebuffer> m_ssao_fb;
+    std::shared_ptr<Framebuffer> m_ssao_blur_fb;
+
+    std::vector<glm::vec3> m_ssao_kernel{};
+    std::shared_ptr<asset::Texture> m_ssao_noise_tex{};
 
     glm::mat4 m_view_mat{glm::mat4(1.0f)};
     glm::mat4 m_proj_mat{glm::mat4(1.0f)};
 
     std::shared_ptr<asset::Cubemap> m_skybox_cubemap{};
-
     std::unique_ptr<asset::Shader> m_geometry_shader{};
     std::unique_ptr<asset::Shader> m_lighting_shader{};
     std::unique_ptr<asset::Shader> m_light_mesh_shader{};
-    std::unique_ptr<asset::Model>  m_default_model{};
-
-    std::unique_ptr<asset::Shader>          m_collider_shader{};
+    std::unique_ptr<asset::Shader> m_ssao_shader{};
+    std::unique_ptr<asset::Shader> m_ssao_blur_shader{};
+    std::unique_ptr<asset::Shader> m_collider_shader{};
 
     RenderSettings m_settings{};
-
-    unsigned int m_msaa_framebuffer{0};
-    void         init_msaa();
 
     std::vector<ecs::Entity> m_curr_lights{};
 
     uint32_t m_light_cube_vao{0};
     uint32_t m_light_cube_vbo{0};
-
 };
 }

@@ -22,9 +22,10 @@
 
 #include <iostream>
 #include <filesystem>
+#include <random>
+#include <utility/math.h>
 
 #include "core/components/point_light.h"
-
 
 namespace cgx::render
 {
@@ -35,12 +36,6 @@ RenderSystem::~RenderSystem() = default;
 
 void RenderSystem::initialize()
 {
-    // initialize collider shader
-    m_collider_shader = std::make_unique<asset::Shader>(
-        "collider_shader",
-        m_settings.collider_shader_path,
-        asset::ShaderType::Unknown);
-
     m_geometry_shader = std::make_unique<asset::Shader>(
         "geometry_shader",
         m_settings.geometry_shader_path,
@@ -51,50 +46,103 @@ void RenderSystem::initialize()
         m_settings.lighting_shader_path,
         asset::ShaderType::Unknown);
 
-    // initialize collider shader
     m_light_mesh_shader = std::make_unique<asset::Shader>(
         "light_mesh_shader",
         m_settings.light_mesh_shader_path,
         asset::ShaderType::Unknown);
 
+    m_collider_shader = std::make_unique<asset::Shader>(
+        "collider_shader",
+        m_settings.collider_shader_path,
+        asset::ShaderType::Unknown);
+
     // setup output framebuffer
-    m_output_framebuffer = std::make_shared<Framebuffer>(m_settings.render_width, m_settings.render_height);
-    m_output_framebuffer->set_clear_color(0.1f, 0.1f, 0.1f, 1.0f);
-    m_output_framebuffer->add_color_attachment(asset::Texture::Format::RGBA, asset::Texture::DataType::UnsignedByte);
-    m_output_framebuffer->add_depth_stencil_attachment(asset::Texture::Format::Depth24Stencil8);
-    m_output_framebuffer->check_completeness();
+    m_output_fb = std::make_shared<Framebuffer>(m_settings.render_width, m_settings.render_height);
+    m_output_fb->set_clear_color(0.1f, 0.1f, 0.1f, 1.0f);
+    m_output_fb->add_color_attachment(asset::Texture::Format::RGBA, asset::Texture::DataType::UnsignedByte);
+    m_output_fb->add_depth_stencil_attachment(asset::Texture::Format::Depth24Stencil8);
+    m_output_fb->check_completeness();
 
     // setup g-buffer
-    m_g_buffer = std::make_shared<Framebuffer>(m_settings.render_width, m_settings.render_height);
-    m_g_buffer->add_color_attachment(asset::Texture::Format::RGB, asset::Texture::DataType::Float); // position
-    m_g_buffer->add_color_attachment(asset::Texture::Format::RGB, asset::Texture::DataType::Float); // normal
-    m_g_buffer->add_color_attachment(asset::Texture::Format::RGB, asset::Texture::DataType::Float); // albedo
-    m_g_buffer->add_color_attachment(asset::Texture::Format::Red, asset::Texture::DataType::Float); // metallic
-    m_g_buffer->add_color_attachment(asset::Texture::Format::Red, asset::Texture::DataType::Float); // roughness
-    m_g_buffer->add_depth_stencil_attachment(asset::Texture::Format::Depth24Stencil8);
-    m_g_buffer->check_completeness();
+    m_gbuffer_fb = std::make_shared<Framebuffer>(m_settings.render_width, m_settings.render_height);
+    m_gbuffer_fb->add_color_attachment(asset::Texture::Format::RGB, asset::Texture::DataType::Float); // position
+    m_gbuffer_fb->add_color_attachment(asset::Texture::Format::RGB, asset::Texture::DataType::Float); // normal
+    m_gbuffer_fb->add_color_attachment(asset::Texture::Format::RGB, asset::Texture::DataType::Float); // albedo
+    m_gbuffer_fb->add_color_attachment(asset::Texture::Format::Red, asset::Texture::DataType::Float); // metallic
+    m_gbuffer_fb->add_color_attachment(asset::Texture::Format::Red, asset::Texture::DataType::Float); // roughness
+    m_gbuffer_fb->add_depth_stencil_attachment(asset::Texture::Format::Depth24Stencil8);
+    m_gbuffer_fb->check_completeness();
 
-    // setup_test_triangle();
+    init_ssao();
 
     glEnable(GL_DEPTH_TEST);
     CGX_CHECK_GL_ERROR;
 }
 
-void RenderSystem::begin_render()
+void RenderSystem::init_ssao()
 {
-    glDisable(GL_CULL_FACE);
-    // CGX_CHECK_GL_ERROR;
+    m_ssao_shader = std::make_unique<asset::Shader>(
+        "ssao_shader",
+        m_settings.ssao_shader_path,
+        asset::ShaderType::Unknown);
 
-    glViewport(0, 0, static_cast<GLsizei>(m_settings.render_width), static_cast<GLsizei>(m_settings.render_height));
-    CGX_CHECK_GL_ERROR;
+    m_ssao_blur_shader = std::make_unique<asset::Shader>(
+        "ssao_blur_shader",
+        m_settings.ssao_blur_shader_path,
+        asset::ShaderType::Unknown);
+
+    // setup ssao framebuffer
+    m_ssao_fb = std::make_shared<Framebuffer>(m_settings.render_width, m_settings.render_height);
+    m_ssao_fb->add_color_attachment(asset::Texture::Format::Red, asset::Texture::DataType::Float); // ssao color buffer
+    m_ssao_fb->check_completeness();
+
+    // setup ssaa-blur framebuffer
+    m_ssao_blur_fb = std::make_shared<Framebuffer>(m_settings.render_width, m_settings.render_height);
+    m_ssao_blur_fb->add_color_attachment(asset::Texture::Format::Red, asset::Texture::DataType::Float);
+    // ssao blur color buffer
+    m_ssao_blur_fb->check_completeness();
+
+    std::uniform_real_distribution<GLfloat> random_floats(0.0, 1.0);
+    std::default_random_engine              generator;
+    for (uint32_t i = 0 ; i < 64 ; ++i) {
+        glm::vec3 sample(
+            random_floats(generator) * 2.0 - 1.0,
+            random_floats(generator) * 2.0 - 1.0,
+            random_floats(generator));
+        sample = glm::normalize(sample);
+        sample *= random_floats(generator);
+        float scale = static_cast<float>(i) / 64.0f;
+        scale = math::lerp(0.1f, 1.0f, scale*scale);
+        sample *= scale;
+        m_ssao_kernel.push_back(sample);
+    }
+
+    std::vector<glm::vec3> ssao_noise_data;
+    for (uint32_t i = 0; i < 16; i++) {
+        glm::vec3 noise(random_floats(generator) * 2.0 - 1.0, random_floats(generator) * 2.0 - 1.0, 0.0f);
+        ssao_noise_data.push_back(noise);
+    }
+
+    m_ssao_noise_tex = std::make_shared<asset::Texture>("ssao_noise_texture", "", 4, 4, 3, asset::Texture::Format::RGB, asset::Texture::DataType::Float, &ssao_noise_data[0]);
+
+    m_ssao_shader->use();
+    m_ssao_shader->set_int("g_position", 0);
+    m_ssao_shader->set_int("g_normal", 1);
+    m_ssao_shader->set_int("noise_tex", 2);
+
+    m_ssao_blur_shader->use();
+    m_ssao_blur_shader->set_int("ssao_input_tex", 0);
+
+    m_lighting_shader->use();
+    m_lighting_shader->set_int("ssao", 5);
 }
 
 void RenderSystem::render()
 {
     glViewport(0, 0, static_cast<GLsizei>(m_settings.render_width), static_cast<GLsizei>(m_settings.render_height));
-    // begin_render();
 
     geometry_pass();
+    ssao_pass();
     lighting_pass();
     light_mesh_pass();
 
@@ -102,26 +150,14 @@ void RenderSystem::render()
         draw_skybox();
     }
 
-    m_output_framebuffer->unbind();
-
-    // end_render();
-}
-
-void RenderSystem::end_render()
-{
-    if (m_settings.m_render_test_enabled) {
-        glUseProgram(m_settings.m_render_test_shader);
-        glBindVertexArray(m_settings.m_render_test_vao);
-        glDrawArrays(GL_TRIANGLES, 0, 3);
-        glBindVertexArray(0);
-    }
+    m_output_fb->unbind();
 }
 
 void RenderSystem::geometry_pass()
 {
-    m_g_buffer->bind();
+    m_gbuffer_fb->bind();
 
-    m_g_buffer->clear(true, true, true);
+    m_gbuffer_fb->clear(true, true, true);
 
     static auto default_proj = glm::perspective(
         glm::radians(45.0f),
@@ -148,7 +184,6 @@ void RenderSystem::geometry_pass()
         auto& transform_c = get_component<component::Transform>(entity);
 
         auto* model = render_c.model.get();
-        // auto* shader = render_c.shader.get()
 
         if (model == nullptr) {
             continue;
@@ -163,20 +198,21 @@ void RenderSystem::geometry_pass()
         model->draw(m_geometry_shader.get());
     }
 
-    m_g_buffer->unbind();
+    m_gbuffer_fb->unbind();
 }
 
 void RenderSystem::lighting_pass()
 {
-    m_output_framebuffer->bind();
-    m_output_framebuffer->clear(true, true, true);
+    m_output_fb->bind();
+    m_output_fb->clear(true, true, true);
 
     // bind color attachment textures
-    m_g_buffer->get_texture(GL_COLOR_ATTACHMENT0)->bind(0); // position
-    m_g_buffer->get_texture(GL_COLOR_ATTACHMENT1)->bind(1); // normal
-    m_g_buffer->get_texture(GL_COLOR_ATTACHMENT2)->bind(2); // albedo
-    m_g_buffer->get_texture(GL_COLOR_ATTACHMENT3)->bind(3); // roughness
-    m_g_buffer->get_texture(GL_COLOR_ATTACHMENT4)->bind(4); // metallic
+    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT0)->bind(0); // position
+    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT1)->bind(1); // normal
+    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT2)->bind(2); // albedo
+    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT3)->bind(3); // roughness
+    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT4)->bind(4); // metallic
+    m_ssao_blur_fb->get_texture(GL_COLOR_ATTACHMENT0)->bind(5);    // ssao
 
     m_lighting_shader->use();
 
@@ -185,6 +221,14 @@ void RenderSystem::lighting_pass()
     m_lighting_shader->set_int("g_albedo", 2);
     m_lighting_shader->set_int("g_metallic", 3);
     m_lighting_shader->set_int("g_roughness", 4);
+
+    if (m_settings.ssao_enabled) {
+        m_lighting_shader->set_bool("ssao_enabled", true);
+        m_lighting_shader->set_int("ssao", 5);
+    }
+    else {
+        m_lighting_shader->set_bool("ssao_enabled", false);
+    }
 
     int light_index = 0;
     m_curr_lights.clear();
@@ -196,9 +240,9 @@ void RenderSystem::lighting_pass()
         const auto& lc = m_ecs_manager->get_component<component::PointLight>(entity);
         const auto& tc = m_ecs_manager->get_component<component::Transform>(entity);
 
-
-
-        m_lighting_shader->set_vec3("lights[" + std::to_string(light_index) + "].position", glm::vec3(tc.world_matrix[3]));
+        m_lighting_shader->set_vec3(
+            "lights[" + std::to_string(light_index) + "].position",
+            glm::vec3(tc.world_matrix[3]));
         m_lighting_shader->set_vec3("lights[" + std::to_string(light_index) + "].color", lc.color);
         m_lighting_shader->set_float("lights[" + std::to_string(light_index) + "].intensity", lc.intensity);
         m_lighting_shader->set_float("lights[" + std::to_string(light_index) + "].range", lc.range);
@@ -211,13 +255,13 @@ void RenderSystem::lighting_pass()
     m_lighting_shader->set_vec3("view_pos", m_ecs_manager->get_component<component::Transform>(m_camera).translation);
 
     render_quad();
-    m_output_framebuffer->unbind();
+    m_output_fb->unbind();
 }
 
 void RenderSystem::light_mesh_pass()
 {
-    glBindFramebuffer(GL_READ_FRAMEBUFFER, m_g_buffer->get_fbo());
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_output_framebuffer->get_fbo());
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, m_gbuffer_fb->get_fbo());
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_output_fb->get_fbo());
 
     glBlitFramebuffer(
         0,
@@ -231,7 +275,7 @@ void RenderSystem::light_mesh_pass()
         GL_DEPTH_BUFFER_BIT,
         GL_NEAREST);
 
-    m_output_framebuffer->bind();
+    m_output_fb->bind();
 
     m_light_mesh_shader->use();
     m_light_mesh_shader->set_mat4("proj", m_proj_mat);
@@ -245,8 +289,37 @@ void RenderSystem::light_mesh_pass()
         m_light_mesh_shader->set_vec3("light_color", lc.color);
         render_cube();
     }
+}
 
+void RenderSystem::ssao_pass()
+{
+    m_ssao_fb->bind();
+    m_ssao_fb->clear(true, false, false);
 
+    m_ssao_shader->use();
+
+    for (uint32_t i = 0; i < 64; ++i) {
+        m_ssao_shader->set_vec3("samples[" + std::to_string(i) + "]", m_ssao_kernel[i]);
+    }
+    m_ssao_shader->set_mat4("proj", m_proj_mat);
+
+    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT0)->bind(0); // position
+    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT1)->bind(1); // normal
+    m_ssao_noise_tex->bind(2);
+
+    render_quad();
+
+    m_ssao_fb->unbind();
+
+    // blur
+    m_ssao_blur_fb->bind();
+    m_ssao_blur_fb->clear(true, false, false);
+
+    m_ssao_blur_shader->use();
+    m_ssao_fb->get_texture(GL_COLOR_ATTACHMENT0)->bind(0); // ssao color buffer
+    render_quad();
+
+    m_ssao_blur_fb->unbind();
 }
 
 void RenderSystem::render_quad()
@@ -290,14 +363,24 @@ void RenderSystem::draw_skybox() const
     }
 }
 
-const std::shared_ptr<Framebuffer>& RenderSystem::get_output_buffer()
+const std::shared_ptr<Framebuffer>& RenderSystem::get_output_fb()
 {
-    return m_output_framebuffer;
+    return m_output_fb;
 }
 
-const std::shared_ptr<Framebuffer>& RenderSystem::get_g_buffer()
+const std::shared_ptr<Framebuffer>& RenderSystem::get_gbuffer_fb()
 {
-    return m_g_buffer;
+    return m_gbuffer_fb;
+}
+
+const std::shared_ptr<Framebuffer>& RenderSystem::get_ssao_fb()
+{
+    return m_ssao_fb;
+}
+
+const std::shared_ptr<Framebuffer>& RenderSystem::get_ssao_blur_fb()
+{
+    return m_ssao_blur_fb;
 }
 
 const std::shared_ptr<asset::Cubemap>& RenderSystem::get_skybox_cubemap() const
@@ -311,266 +394,53 @@ void RenderSystem::set_skybox_cubemap(const std::shared_ptr<asset::Cubemap>& cub
     m_settings.skybox_enabled = true;
 }
 
-void RenderSystem::init_msaa()
-{
-    // setup MSAA frame buffer object
-    glGenFramebuffers(1, &m_msaa_framebuffer);
-    CGX_CHECK_GL_ERROR
-    glBindFramebuffer(GL_FRAMEBUFFER, m_msaa_framebuffer);
-    CGX_CHECK_GL_ERROR;
-
-    unsigned int msaa_tex_color_buf;
-    glGenTextures(1, &msaa_tex_color_buf);
-    CGX_CHECK_GL_ERROR;
-    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, msaa_tex_color_buf);
-    CGX_CHECK_GL_ERROR;
-    glTexImage2DMultisample(
-        GL_TEXTURE_2D_MULTISAMPLE,
-        4,
-        GL_RGBA,
-        static_cast<GLsizei>(m_settings.render_width),
-        static_cast<GLsizei>(m_settings.render_height),
-        GL_TRUE);
-    CGX_CHECK_GL_ERROR;
-    glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, 0);
-    CGX_CHECK_GL_ERROR;
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, msaa_tex_color_buf, 0);
-    CGX_CHECK_GL_ERROR;
-
-    unsigned int msaa_rbo;
-    glGenRenderbuffers(1, &msaa_rbo);
-    CGX_CHECK_GL_ERROR;
-    glBindRenderbuffer(GL_RENDERBUFFER, msaa_rbo);
-    CGX_CHECK_GL_ERROR;
-    glRenderbufferStorageMultisample(
-        GL_RENDERBUFFER,
-        4,
-        GL_DEPTH24_STENCIL8,
-        static_cast<GLsizei>(m_settings.render_width),
-        static_cast<GLsizei>(m_settings.render_height));
-    CGX_CHECK_GL_ERROR;
-    glBindRenderbuffer(GL_RENDERBUFFER, 0);
-    CGX_CHECK_GL_ERROR;
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, msaa_rbo);
-    CGX_CHECK_GL_ERROR;
-
-    CGX_ASSERT(glCheckFramebufferStatus(GL_FRAMEBUFFER) == GL_FRAMEBUFFER_COMPLETE, "MSAA Framebuffer not complete.");
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    CGX_CHECK_GL_ERROR;
-}
-
-
-void RenderSystem::setup_test_triangle()
-{
-    auto* test_vert_source = "#version 330 core\n" "layout (location = 0) in vec3 aPos;\n" "void main()\n" "{\n"
-            "   gl_Position = vec4(aPos, 1.0);\n" "}\0";
-
-    auto* test_frag_source = "#version 330 core\n" "out vec4 FragColor;\n" "void main()\n" "{\n"
-            "   FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);\n" "}\n\0";
-
-    int success;
-
-    const uint32_t vert_shader = glCreateShader(GL_VERTEX_SHADER);
-    glShaderSource(vert_shader, 1, &test_vert_source, nullptr);
-    glCompileShader(vert_shader);
-    glGetShaderiv(vert_shader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        char info_log[512];
-        glGetShaderInfoLog(vert_shader, 512, nullptr, info_log);
-        CGX_ERROR("Shader: test vertex shader compilation failed:\n {}", info_log)
-    }
-
-    const uint32_t frag_shader = glCreateShader(GL_FRAGMENT_SHADER);
-    glShaderSource(frag_shader, 1, &test_frag_source, nullptr);
-    glCompileShader(frag_shader);
-    glGetShaderiv(frag_shader, GL_COMPILE_STATUS, &success);
-    if (!success) {
-        char info_log[512];
-        glGetShaderInfoLog(frag_shader, 512, nullptr, info_log);
-        CGX_ERROR("Shader: test fragment shader compilation failed:\n {}", info_log);
-    }
-
-    m_settings.m_render_test_shader = glCreateProgram();
-    glAttachShader(m_settings.m_render_test_shader, vert_shader);
-    glAttachShader(m_settings.m_render_test_shader, frag_shader);
-    glLinkProgram(m_settings.m_render_test_shader);
-    glGetProgramiv(m_settings.m_render_test_shader, GL_LINK_STATUS, &success);
-    if (!success) {
-        char info_log[512];
-        glGetProgramInfoLog(m_settings.m_render_test_shader, 512, nullptr, info_log);
-        CGX_ERROR("Shader: test shader linking failed:\n {}", info_log);
-    }
-    glDeleteShader(vert_shader);
-    glDeleteShader(frag_shader);
-
-    constexpr float vertices[] = {-0.5f, -0.5f, 0.0f, 0.5f, -0.5f, 0.0f, 0.0f, 0.5f, 0.0f};
-
-    uint32_t VBO;
-    glGenVertexArrays(1, &m_settings.m_render_test_vao);
-    glGenBuffers(1, &VBO);
-    glBindVertexArray(m_settings.m_render_test_vao);
-
-    glBindBuffer(GL_ARRAY_BUFFER, VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), nullptr);
-    glEnableVertexAttribArray(0);
-
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-}
-
-void RenderSystem::draw_cube(const glm::vec3& size)
-{
-    static GLuint vao = 0;
-    static GLuint vbo = 0;
-    static GLuint ebo = 0;
-
-    if (vao == 0) {
-        glGenVertexArrays(1, &vao);
-        glGenBuffers(1, &vbo);
-        glGenBuffers(1, &ebo);
-
-        std::vector<glm::vec3> vertices = {
-            // Front face
-            {-size.x / 2, -size.y / 2, size.z / 2}, {size.x / 2, -size.y / 2, size.z / 2},
-            {size.x / 2, size.y / 2, size.z / 2}, {-size.x / 2, size.y / 2, size.z / 2},
-
-            // Back face
-            {-size.x / 2, -size.y / 2, -size.z / 2}, {size.x / 2, -size.y / 2, -size.z / 2},
-            {size.x / 2, size.y / 2, -size.z / 2}, {-size.x / 2, size.y / 2, -size.z / 2}
-        };
-
-        std::vector<GLuint> indices = {
-            0, 1, 1, 2, 2, 3, 3, 0, // Front face
-            4, 5, 5, 6, 6, 7, 7, 4, // Back face
-            0, 4, 1, 5, 2, 6, 3, 7  // Connecting lines
-        };
-
-        glBindVertexArray(vao);
-
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
-
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), nullptr);
-        glEnableVertexAttribArray(0);
-
-        glBindVertexArray(0);
-    }
-
-    glBindVertexArray(vao);
-    glDrawElements(GL_LINES, 24, GL_UNSIGNED_INT, nullptr);
-    glBindVertexArray(0);
-}
-
-void RenderSystem::draw_sphere(float radius)
-{
-    static GLuint vao = 0;
-    static GLuint vbo = 0;
-
-    const int segments = 16;
-    const int rings    = 16;
-
-    if (vao == 0) {
-        glGenVertexArrays(1, &vao);
-        glGenBuffers(1, &vbo);
-
-
-        std::vector<glm::vec3> vertices;
-        std::vector<GLuint>    indices;
-
-        for (int i = 0 ; i <= rings ; ++i) {
-            float theta = glm::pi<float>() * i / rings;
-            for (int j = 0 ; j <= segments ; ++j) {
-                float phi = 2.0f * glm::pi<float>() * j / segments;
-                float x   = radius * std::sin(theta) * std::cos(phi);
-                float y   = radius * std::cos(theta);
-                float z   = radius * std::sin(theta) * std::sin(phi);
-                vertices.emplace_back(x, y, z);
-            }
-        }
-
-        for (int i = 0 ; i < rings ; ++i) {
-            for (int j = 0 ; j < segments ; ++j) {
-                indices.push_back(i * (segments + 1) + j);
-                indices.push_back(i * (segments + 1) + j + 1);
-                indices.push_back((i + 1) * (segments + 1) + j);
-
-                indices.push_back(i * (segments + 1) + j + 1);
-                indices.push_back((i + 1) * (segments + 1) + j + 1);
-                indices.push_back((i + 1) * (segments + 1) + j);
-            }
-        }
-
-        glBindVertexArray(vao);
-        glBindBuffer(GL_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), vertices.data(), GL_STATIC_DRAW);
-
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(glm::vec3), nullptr);
-
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, vbo);
-        glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
-
-        glBindVertexArray(0);
-    }
-
-    glBindVertexArray(vao);
-    glDrawElements(GL_LINES, segments * rings * 6, GL_UNSIGNED_INT, nullptr);
-    glBindVertexArray(0);
-}
-
 void RenderSystem::render_cube()
 {
     // initialize (if necessary)
-    if (m_light_cube_vao == 0)
-    {
+    if (m_light_cube_vao == 0) {
         constexpr float vertices[] = {
             // back face
-            -0.1f, -0.1f, -0.1f,  0.0f,  0.0f, -0.1f, 0.0f, 0.0f, // bottom-left
-             0.1f,  0.1f, -0.1f,  0.0f,  0.0f, -0.1f, 0.1f, 0.1f, // top-right
-             0.1f, -0.1f, -0.1f,  0.0f,  0.0f, -0.1f, 0.1f, 0.0f, // bottom-right
-             0.1f,  0.1f, -0.1f,  0.0f,  0.0f, -0.1f, 0.1f, 0.1f, // top-right
-            -0.1f, -0.1f, -0.1f,  0.0f,  0.0f, -0.1f, 0.0f, 0.0f, // bottom-left
-            -0.1f,  0.1f, -0.1f,  0.0f,  0.0f, -0.1f, 0.0f, 0.1f, // top-left
+            -0.1f, -0.1f, -0.1f, 0.0f, 0.0f, -0.1f, 0.0f, 0.0f, // bottom-left
+            0.1f, 0.1f, -0.1f, 0.0f, 0.0f, -0.1f, 0.1f, 0.1f,   // top-right
+            0.1f, -0.1f, -0.1f, 0.0f, 0.0f, -0.1f, 0.1f, 0.0f,  // bottom-right
+            0.1f, 0.1f, -0.1f, 0.0f, 0.0f, -0.1f, 0.1f, 0.1f,   // top-right
+            -0.1f, -0.1f, -0.1f, 0.0f, 0.0f, -0.1f, 0.0f, 0.0f, // bottom-left
+            -0.1f, 0.1f, -0.1f, 0.0f, 0.0f, -0.1f, 0.0f, 0.1f,  // top-left
             // front face
-            -0.1f, -0.1f,  0.1f,  0.0f,  0.0f,  0.1f, 0.0f, 0.0f, // bottom-left
-             0.1f, -0.1f,  0.1f,  0.0f,  0.0f,  0.1f, 0.1f, 0.0f, // bottom-right
-             0.1f,  0.1f,  0.1f,  0.0f,  0.0f,  0.1f, 0.1f, 0.1f, // top-right
-             0.1f,  0.1f,  0.1f,  0.0f,  0.0f,  0.1f, 0.1f, 0.1f, // top-right
-            -0.1f,  0.1f,  0.1f,  0.0f,  0.0f,  0.1f, 0.0f, 0.1f, // top-left
-            -0.1f, -0.1f,  0.1f,  0.0f,  0.0f,  0.1f, 0.0f, 0.0f, // bottom-left
+            -0.1f, -0.1f, 0.1f, 0.0f, 0.0f, 0.1f, 0.0f, 0.0f, // bottom-left
+            0.1f, -0.1f, 0.1f, 0.0f, 0.0f, 0.1f, 0.1f, 0.0f,  // bottom-right
+            0.1f, 0.1f, 0.1f, 0.0f, 0.0f, 0.1f, 0.1f, 0.1f,   // top-right
+            0.1f, 0.1f, 0.1f, 0.0f, 0.0f, 0.1f, 0.1f, 0.1f,   // top-right
+            -0.1f, 0.1f, 0.1f, 0.0f, 0.0f, 0.1f, 0.0f, 0.1f,  // top-left
+            -0.1f, -0.1f, 0.1f, 0.0f, 0.0f, 0.1f, 0.0f, 0.0f, // bottom-left
             // left face
-            -0.1f,  0.1f,  0.1f, -0.1f,  0.0f,  0.0f, 0.1f, 0.0f, // top-right
-            -0.1f,  0.1f, -0.1f, -0.1f,  0.0f,  0.0f, 0.1f, 0.1f, // top-left
-            -0.1f, -0.1f, -0.1f, -0.1f,  0.0f,  0.0f, 0.0f, 0.1f, // bottom-left
-            -0.1f, -0.1f, -0.1f, -0.1f,  0.0f,  0.0f, 0.0f, 0.1f, // bottom-left
-            -0.1f, -0.1f,  0.1f, -0.1f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-right
-            -0.1f,  0.1f,  0.1f, -0.1f,  0.0f,  0.0f, 0.1f, 0.0f, // top-right
+            -0.1f, 0.1f, 0.1f, -0.1f, 0.0f, 0.0f, 0.1f, 0.0f,   // top-right
+            -0.1f, 0.1f, -0.1f, -0.1f, 0.0f, 0.0f, 0.1f, 0.1f,  // top-left
+            -0.1f, -0.1f, -0.1f, -0.1f, 0.0f, 0.0f, 0.0f, 0.1f, // bottom-left
+            -0.1f, -0.1f, -0.1f, -0.1f, 0.0f, 0.0f, 0.0f, 0.1f, // bottom-left
+            -0.1f, -0.1f, 0.1f, -0.1f, 0.0f, 0.0f, 0.0f, 0.0f,  // bottom-right
+            -0.1f, 0.1f, 0.1f, -0.1f, 0.0f, 0.0f, 0.1f, 0.0f,   // top-right
             // right face
-             0.1f,  0.1f,  0.1f,  0.1f,  0.0f,  0.0f, 0.1f, 0.0f, // top-left
-             0.1f, -0.1f, -0.1f,  0.1f,  0.0f,  0.0f, 0.0f, 0.1f, // bottom-right
-             0.1f,  0.1f, -0.1f,  0.1f,  0.0f,  0.0f, 0.1f, 0.1f, // top-right
-             0.1f, -0.1f, -0.1f,  0.1f,  0.0f,  0.0f, 0.0f, 0.1f, // bottom-right
-             0.1f,  0.1f,  0.1f,  0.1f,  0.0f,  0.0f, 0.1f, 0.0f, // top-left
-             0.1f, -0.1f,  0.1f,  0.1f,  0.0f,  0.0f, 0.0f, 0.0f, // bottom-left
+            0.1f, 0.1f, 0.1f, 0.1f, 0.0f, 0.0f, 0.1f, 0.0f,   // top-left
+            0.1f, -0.1f, -0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.1f, // bottom-right
+            0.1f, 0.1f, -0.1f, 0.1f, 0.0f, 0.0f, 0.1f, 0.1f,  // top-right
+            0.1f, -0.1f, -0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.1f, // bottom-right
+            0.1f, 0.1f, 0.1f, 0.1f, 0.0f, 0.0f, 0.1f, 0.0f,   // top-left
+            0.1f, -0.1f, 0.1f, 0.1f, 0.0f, 0.0f, 0.0f, 0.0f,  // bottom-left
             // bottom face
-            -0.1f, -0.1f, -0.1f,  0.0f, -0.1f,  0.0f, 0.0f, 0.1f, // top-right
-             0.1f, -0.1f, -0.1f,  0.0f, -0.1f,  0.0f, 0.1f, 0.1f, // top-left
-             0.1f, -0.1f,  0.1f,  0.0f, -0.1f,  0.0f, 0.1f, 0.0f, // bottom-left
-             0.1f, -0.1f,  0.1f,  0.0f, -0.1f,  0.0f, 0.1f, 0.0f, // bottom-left
-            -0.1f, -0.1f,  0.1f,  0.0f, -0.1f,  0.0f, 0.0f, 0.0f, // bottom-right
-            -0.1f, -0.1f, -0.1f,  0.0f, -0.1f,  0.0f, 0.0f, 0.1f, // top-right
+            -0.1f, -0.1f, -0.1f, 0.0f, -0.1f, 0.0f, 0.0f, 0.1f, // top-right
+            0.1f, -0.1f, -0.1f, 0.0f, -0.1f, 0.0f, 0.1f, 0.1f,  // top-left
+            0.1f, -0.1f, 0.1f, 0.0f, -0.1f, 0.0f, 0.1f, 0.0f,   // bottom-left
+            0.1f, -0.1f, 0.1f, 0.0f, -0.1f, 0.0f, 0.1f, 0.0f,   // bottom-left
+            -0.1f, -0.1f, 0.1f, 0.0f, -0.1f, 0.0f, 0.0f, 0.0f,  // bottom-right
+            -0.1f, -0.1f, -0.1f, 0.0f, -0.1f, 0.0f, 0.0f, 0.1f, // top-right
             // top face
-            -0.1f,  0.1f, -0.1f,  0.0f,  0.1f,  0.0f, 0.0f, 0.1f, // top-left
-             0.1f,  0.1f , 0.1f,  0.0f,  0.1f,  0.0f, 0.1f, 0.0f, // bottom-right
-             0.1f,  0.1f, -0.1f,  0.0f,  0.1f,  0.0f, 0.1f, 0.1f, // top-right
-             0.1f,  0.1f,  0.1f,  0.0f,  0.1f,  0.0f, 0.1f, 0.0f, // bottom-right
-            -0.1f,  0.1f, -0.1f,  0.0f,  0.1f,  0.0f, 0.0f, 0.1f, // top-left
-            -0.1f,  0.1f,  0.1f,  0.0f,  0.1f,  0.0f, 0.0f, 0.0f  // bottom-left
+            -0.1f, 0.1f, -0.1f, 0.0f, 0.1f, 0.0f, 0.0f, 0.1f, // top-left
+            0.1f, 0.1f, 0.1f, 0.0f, 0.1f, 0.0f, 0.1f, 0.0f,   // bottom-right
+            0.1f, 0.1f, -0.1f, 0.0f, 0.1f, 0.0f, 0.1f, 0.1f,  // top-right
+            0.1f, 0.1f, 0.1f, 0.0f, 0.1f, 0.0f, 0.1f, 0.0f,   // bottom-right
+            -0.1f, 0.1f, -0.1f, 0.0f, 0.1f, 0.0f, 0.0f, 0.1f, // top-left
+            -0.1f, 0.1f, 0.1f, 0.0f, 0.1f, 0.0f, 0.0f, 0.0f   // bottom-left
         };
         glGenVertexArrays(1, &m_light_cube_vao);
         glGenBuffers(1, &m_light_cube_vbo);
@@ -580,11 +450,11 @@ void RenderSystem::render_cube()
         // link vertex attributes
         glBindVertexArray(m_light_cube_vao);
         glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) 0);
         glEnableVertexAttribArray(1);
-        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(3 * sizeof(float)));
+        glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) (3 * sizeof(float)));
         glEnableVertexAttribArray(2);
-        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*)(6 * sizeof(float)));
+        glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(float), (void*) (6 * sizeof(float)));
         glBindBuffer(GL_ARRAY_BUFFER, 0);
         glBindVertexArray(0);
     }

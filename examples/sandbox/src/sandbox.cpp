@@ -48,7 +48,6 @@ void Sandbox::initialize()
         casted_viewport_panel->set_camera(dynamic_pointer_cast<cgx::scene::Node>(node_sptr));
     }
 
-    m_render_system->get_render_settings().default_shader_enabled = true;
     load_assets();
 }
 

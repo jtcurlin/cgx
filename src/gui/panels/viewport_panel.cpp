@@ -14,7 +14,7 @@ ViewportPanel::ViewportPanel(GUIContext* context, ImGuiManager* manager)
     m_enforce_aspect_ratio = true;
     m_window_flags |= ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse;
 
-    const auto framebuffer = m_context->get_render_system()->get_output_buffer();
+    const auto framebuffer = m_context->get_render_system()->get_output_fb();
     uint32_t   width, height;
     framebuffer->get_dimensions(width, height);
 

@@ -31,55 +31,56 @@ void RenderSettingsPanel::render()
             // ImGui::TableNextRow(ImGuiTableRowFlags_None, 100);
 
             ImGui::TableNextColumn();
-            ImGui::Checkbox("Enable MSAA", &render_settings.msaa_enabled);
-            ImGui::TableNextColumn();
-            ImGui::Checkbox("Enable Rendering Test", &render_settings.m_render_test_enabled);
-            ImGui::TableNextColumn();
-            ImGui::Checkbox("Enable Default Shader", &render_settings.default_shader_enabled);
-            ImGui::TableNextColumn();
-            ImGui::Checkbox("Enable Default Model", &render_settings.default_model_enabled);
-            ImGui::TableNextColumn();
             ImGui::Checkbox("Draw Colliders", &render_settings.draw_colliders);
+
+            ImGui::TableNextColumn();
+            ImGui::Checkbox("Enable SSAO", &render_settings.ssao_enabled);
 
             ImGui::EndTable();
         }
 
         // draw_skybox_menu();
 
-        auto position_texture  = m_context->get_render_system()->get_g_buffer()->get_texture(GL_COLOR_ATTACHMENT0);
-        auto normal_texture    = m_context->get_render_system()->get_g_buffer()->get_texture(GL_COLOR_ATTACHMENT1);
-        auto albedo_texture    = m_context->get_render_system()->get_g_buffer()->get_texture(GL_COLOR_ATTACHMENT2);
-        auto metallic_texture  = m_context->get_render_system()->get_g_buffer()->get_texture(GL_COLOR_ATTACHMENT3);
-        auto roughness_texture = m_context->get_render_system()->get_g_buffer()->get_texture(GL_COLOR_ATTACHMENT4);
+        auto position_texture  = m_context->get_render_system()->get_gbuffer_fb()->get_texture(GL_COLOR_ATTACHMENT0);
+        auto normal_texture    = m_context->get_render_system()->get_gbuffer_fb()->get_texture(GL_COLOR_ATTACHMENT1);
+        auto albedo_texture    = m_context->get_render_system()->get_gbuffer_fb()->get_texture(GL_COLOR_ATTACHMENT2);
+        auto metallic_texture  = m_context->get_render_system()->get_gbuffer_fb()->get_texture(GL_COLOR_ATTACHMENT3);
+        auto roughness_texture = m_context->get_render_system()->get_gbuffer_fb()->get_texture(GL_COLOR_ATTACHMENT4);
+        auto ssao_blur_texture = m_context->get_render_system()->get_ssao_blur_fb()->get_texture(GL_COLOR_ATTACHMENT0);
 
         position_texture->bind(0);
         normal_texture->bind(1);
         albedo_texture->bind(2);
         metallic_texture->bind(3);
         roughness_texture->bind(4);
+        ssao_blur_texture->bind(5);
 
         ImGui::TableNextColumn();
         if (ImGui::BeginTable(
             "gBufferViewTable",
-            5,
+            3,
             ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_BordersInnerH)) {
+            /*
             ImGui::TableSetupColumn("Position");
             ImGui::TableSetupColumn("Normal");
             ImGui::TableSetupColumn("Albedo");
             ImGui::TableSetupColumn("Metallic");
             ImGui::TableSetupColumn("Roughness");
             ImGui::TableHeadersRow();
+            */
 
             ImGui::TableNextColumn();
-            ImGui::Image((void*) (intptr_t) position_texture->get_texture_id(), ImVec2(256, 144));
+            ImGui::Image((void*) (intptr_t) position_texture->get_texture_id(), ImVec2(256, 144), ImVec2(1,1), ImVec2(0,0));
             ImGui::TableNextColumn();
-            ImGui::Image((void*) (intptr_t) normal_texture->get_texture_id(), ImVec2(256, 144));
+            ImGui::Image((void*) (intptr_t) normal_texture->get_texture_id(), ImVec2(256, 144), ImVec2(1,1), ImVec2(0,0));
             ImGui::TableNextColumn();
-            ImGui::Image((void*) (intptr_t) albedo_texture->get_texture_id(), ImVec2(256, 144));
+            ImGui::Image((void*) (intptr_t) albedo_texture->get_texture_id(), ImVec2(256, 144), ImVec2(1,1), ImVec2(0,0));
             ImGui::TableNextColumn();
-            ImGui::Image((void*) (intptr_t) metallic_texture->get_texture_id(), ImVec2(256, 144));
+            ImGui::Image((void*) (intptr_t) metallic_texture->get_texture_id(), ImVec2(256, 144), ImVec2(1,1), ImVec2(0,0));
             ImGui::TableNextColumn();
-            ImGui::Image((void*) (intptr_t) roughness_texture->get_texture_id(), ImVec2(256, 144));
+            ImGui::Image((void*) (intptr_t) roughness_texture->get_texture_id(), ImVec2(256, 144), ImVec2(1,1), ImVec2(0,0));
+            ImGui::TableNextColumn();
+            ImGui::Image((void*) (intptr_t) ssao_blur_texture->get_texture_id(), ImVec2(256, 144), ImVec2(1,1), ImVec2(0,0));
 
             ImGui::EndTable();
         }
