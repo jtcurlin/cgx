@@ -35,12 +35,10 @@ struct RenderSettings
     uint32_t render_height{720};
 
     bool skybox_enabled{false};
-    bool draw_colliders{false};
 
     const std::string geometry_shader_path{std::string(DATA_DIRECTORY) + "/shaders/geometry"};
     const std::string lighting_shader_path{std::string(DATA_DIRECTORY) + "/shaders/lighting"};
     const std::string light_mesh_shader_path{std::string(DATA_DIRECTORY) + "/shaders/light_mesh"};
-    const std::string collider_shader_path{std::string(DATA_DIRECTORY) + "/shaders/collider"};
 };
 
 struct SSAOConfig
@@ -50,10 +48,10 @@ struct SSAOConfig
     float power{1.0f};
     float radius{0.5f};
     float bias{0.025f};
-    int kernel_size{64};
+    int   kernel_size{64};
 
-    std::shared_ptr<Framebuffer>   main_fb;
-    std::shared_ptr<Framebuffer>   blur_fb;
+    std::shared_ptr<Framebuffer> main_fb;
+    std::shared_ptr<Framebuffer> blur_fb;
 
     std::unique_ptr<asset::Shader> main_shader;
     std::unique_ptr<asset::Shader> blur_shader;
@@ -72,6 +70,16 @@ struct LightingConfig
     glm::vec3 base_ambient_factor = glm::vec3(0.03);
 };
 
+struct ColliderConfig
+{
+    bool                         enabled{false};
+    std::shared_ptr<asset::Mesh> box_mesh;
+    std::shared_ptr<asset::Mesh> sphere_mesh;
+
+    const std::string              shader_path{std::string(DATA_DIRECTORY) + "/shaders/collider"};
+    std::unique_ptr<asset::Shader> shader;
+};
+
 class RenderSystem final : public ecs::System
 {
 public:
@@ -87,6 +95,7 @@ public:
     void lighting_pass();
     void light_mesh_pass();
     void ssao_pass();
+    void collider_pass();
     void output_pass();
 
     void render_quad();
@@ -110,7 +119,8 @@ public:
 
     void            render_cube();
     RenderSettings& get_render_settings();
-    SSAOConfig& get_ssao_config();
+    SSAOConfig&     get_ssao_config();
+    ColliderConfig& get_collider_config();
 
     [[nodiscard]] ecs::Entity get_camera() const;
     void                      set_camera(ecs::Entity camera_entity);
@@ -120,7 +130,6 @@ private:
 
     std::shared_ptr<Framebuffer> m_output_fb;
     std::shared_ptr<Framebuffer> m_gbuffer_fb;
-
 
     glm::mat4 m_view_mat{glm::mat4(1.0f)};
     glm::mat4 m_proj_mat{glm::mat4(1.0f)};
@@ -134,6 +143,7 @@ private:
     RenderSettings m_settings{};
     SSAOConfig     m_ssao_config{};
     LightingConfig m_pbr_config{};
+    ColliderConfig m_collider_config{};
 
     std::vector<ecs::Entity> m_curr_lights{};
 

@@ -48,7 +48,6 @@ void ImGuiManager::shutdown()
 {
     const std::string ini_path = std::string(DATA_DIRECTORY) + "/gui_layout.ini";
     ImGui::SaveIniSettingsToDisk(ini_path.c_str());
-    CGX_INFO("Saved imgui configuration to disk @ {}", ini_path);
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();

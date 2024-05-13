@@ -10,7 +10,7 @@ struct Transform;
 struct Collider;
 }
 
-namespace cgx::core
+namespace cgx::physics
 {
 
 class CollisionSystem final : public ecs::System

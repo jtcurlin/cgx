@@ -17,7 +17,6 @@
 
 #include "ecs/ecs_manager.h"
 
-#include "scene/scene.h"
 #include "scene/node.h"
 
 #include <stb/stb_image.h>
@@ -27,7 +26,6 @@
 
 #define _USE_MATH_DEFINES
 #include <cmath>
-#include "math.h"
 
 #ifndef M_PI
     #define M_PI 3.14159265358979323846
@@ -78,6 +76,7 @@ void SceneImporter::process_node(
     const tinygltf::Node&  gltf_node,
     Node*                  parent)
 {
+
     NodeFlag flags = NodeFlag::None;
     auto entity = m_ecs_manager->acquire_entity();
 
@@ -117,7 +116,7 @@ void SceneImporter::process_node(
             std::stringstream default_tag_ss, source_path_ss;
             static size_t     model_count = 0;
 
-            default_tag_ss << ":mesh_" << std::setw(3) << std::setfill('0') << std::to_string(++model_count);
+            default_tag_ss << "mesh/" << std::setw(3) << std::setfill('0') << std::to_string(++model_count);
             source_path_ss << m_root_path.string() << ":" << default_tag_ss.str();
 
             std::string tag = !gltf_mesh.name.empty() ? gltf_mesh.name : default_tag_ss.str();
@@ -173,6 +172,7 @@ void SceneImporter::process_node(
     const auto node = std::make_shared<Node>(std::move(tag), entity, flags);
     node->set_parent(parent);
 
+
     for (const auto& child_node_index : gltf_node.children) {
         const auto& child_gltf_node = gltf_model.nodes[child_node_index];
         process_node(gltf_model, child_gltf_node, node.get());
@@ -185,6 +185,7 @@ std::shared_ptr<asset::Material> SceneImporter::process_material(
 {
     std::stringstream path_ss;
     path_ss << m_root_path.string() << ":material_" << std::setw(3) << std::setfill('0') << m_material_count++;
+
 
     const std::string tag  = gltf_material.name;
     const std::string path = path_ss.str();
@@ -262,7 +263,7 @@ std::shared_ptr<asset::Material> SceneImporter::process_material(
             normal_map,
             occlusion_map,
             emissive_map);
-        m_asset_manager->add_asset(material_asset);
+        m_asset_manager->add_asset(material_asset, true);
         return material_asset;
     }
     CGX_INFO("(todo) No material value specified");
@@ -313,20 +314,25 @@ std::shared_ptr<asset::Texture> SceneImporter::process_texture(
             case 4:
                 format = asset::Texture::Format::RGBA;
                 break;
-            default: CGX_ERROR("Unsupported number of channels: {}", num_channels);
+            default: {
+                CGX_ERROR("Unsupported number of channels: {}", num_channels);
                 return nullptr;
+            }
         }
 
+        std::string source_path = m_root_path.string() + ":textures/" + gltf_texture.name;
+
         auto texture = std::make_shared<asset::Texture>(
-            texture_source.name,
-            "",
-            // Empty source path for embedded textures
+            gltf_texture.name,
+            source_path,
             image_width,
             image_height,
             num_channels,
             format,
             asset::Texture::DataType::UnsignedByte,
             const_cast<unsigned char*>(image_data.data()));
+
+        auto texture_asset_id = m_asset_manager->add_asset(texture, true);
 
         if (gltf_texture.sampler >= 0) {
             const auto& texture_sampler = gltf_model.samplers[gltf_texture.sampler];
@@ -336,7 +342,7 @@ std::shared_ptr<asset::Texture> SceneImporter::process_texture(
             texture->set_wrap_t(static_cast<asset::Texture::WrapMode>(texture_sampler.wrapT));
         }
 
-        return texture;
+        return dynamic_pointer_cast<asset::Texture>(m_asset_manager->get_asset(texture_asset_id));
     }
     else if (!texture_source.uri.empty()) {
         // The texture is external and referenced by URI
@@ -477,6 +483,7 @@ std::vector<std::shared_ptr<asset::Mesh>> SceneImporter::process_mesh(
             mesh->set_material(material);
         }
         m_asset_manager->add_asset(mesh);
+
 
         meshes.push_back(mesh);
     }

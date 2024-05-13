@@ -1,6 +1,6 @@
 // Copyright © 2024 Jacob Curlin
 
-#include "core/systems/collision_system.h"
+#include "physics/collision_system.h"
 
 #include "asset/model.h"
 #include "asset/mesh.h"
@@ -10,7 +10,7 @@
 #include "core/components/transform.h"
 #include "core/components/rigid_body.h"
 
-namespace cgx::core
+namespace cgx::physics
 {
 
 CollisionSystem::CollisionSystem(ecs::ECSManager* ecs_manager): System{ecs_manager} {}
@@ -52,10 +52,8 @@ void CollisionSystem::on_entity_added(ecs::Entity entity)
 
             auto& meshes = rc.model->get_meshes();
             for (const auto& mesh : meshes) {
-                for (const auto& vertex : mesh->get_vertices()) {
-                    min_bounds = glm::min(min_bounds, vertex.position);
-                    max_bounds = glm::max(max_bounds, vertex.position);
-                }
+                min_bounds = glm::min(min_bounds, mesh->get_min_bounds());
+                max_bounds = glm::max(max_bounds, mesh->get_max_bounds());
             }
 
             cc.size = max_bounds - min_bounds;

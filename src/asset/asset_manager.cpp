@@ -79,6 +79,9 @@ AssetID AssetManager::add_asset(const std::shared_ptr<Asset>& asset, bool return
     }
 
     if (const auto path_it = m_source_path_to_id.find(path_fs.string()) ; path_it != m_source_path_to_id.end()) {
+        if (return_original_on_duplicate) {
+            return m_source_path_to_id[path_fs.string()];
+        }
         CGX_ERROR(
             "AssetManager: failed to add asset. (path [{}] already registered, duplicates not permitted)",
             path_fs.string());

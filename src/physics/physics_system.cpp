@@ -1,12 +1,10 @@
 // Copyright © 2024 Jacob Curlin
 
-#include "core/systems/physics_system.h"
-
+#include "physics/physics_system.h"
 #include "core/components/transform.h"
 #include "core/components/rigid_body.h"
-#include "core/events/physics_events.h"
 
-namespace cgx::core
+namespace cgx::physics
 {
 PhysicsSystem::PhysicsSystem(ecs::ECSManager* ecs_manager)
     : System(ecs_manager)
@@ -19,7 +17,7 @@ void PhysicsSystem::frame_update(const float dt)
     // do nothing
 }
 
-void PhysicsSystem::fixed_update(float dt)
+void PhysicsSystem::fixed_update(const float dt)
 {
     for (auto const& entity : m_entities) {
         auto& rigid_body = get_component<component::RigidBody>(entity);
@@ -29,10 +27,7 @@ void PhysicsSystem::fixed_update(float dt)
         rigid_body.velocity += rigid_body.acceleration * dt;
 
         transform.rotation += rigid_body.angular_velocity * dt;
-
-
         transform.scale += rigid_body.scale_rate * dt;
-
         transform.dirty = true;
     }
 }

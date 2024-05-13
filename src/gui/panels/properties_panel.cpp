@@ -239,14 +239,14 @@ void PropertiesPanel::draw_item_metadata(core::Item* item)
             ImGui::Text("Tag");
             ImGui::TableSetColumnIndex(1);
             ImGui::SetNextItemWidth(-FLT_MIN);
-            ImGui::Text(item->get_tag().c_str());
+            ImGui::Text("%s", item->get_tag().c_str());
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             ImGui::Text("Internal Path");
             ImGui::TableSetColumnIndex(1);
             ImGui::SetNextItemWidth(-FLT_MIN);
-            ImGui::Text(item->get_internal_path().c_str());
+            ImGui::Text("%s", item->get_internal_path().c_str());
 
             if (item->get_item_type() == core::ItemType::Node) {
                 const auto entity = dynamic_cast<scene::Node*>(item)->get_entity();
@@ -255,7 +255,7 @@ void PropertiesPanel::draw_item_metadata(core::Item* item)
                 ImGui::Text("Entity ID");
                 ImGui::TableSetColumnIndex(1);
                 ImGui::SetNextItemWidth(-FLT_MIN);
-                ImGui::Text("%zu", entity);
+                ImGui::Text("%zu", static_cast<size_t>(entity));
             }
             else if (item->get_item_type() == core::ItemType::Asset) {
                 ImGui::TableNextRow();
@@ -263,7 +263,7 @@ void PropertiesPanel::draw_item_metadata(core::Item* item)
                 ImGui::Text("External Path");
                 ImGui::TableSetColumnIndex(1);
                 ImGui::SetNextItemWidth(-FLT_MIN);
-                ImGui::Text(item->get_external_path().c_str());
+                ImGui::Text("%s", item->get_external_path().c_str());
             }
             ImGui::EndTable();
         }
@@ -305,14 +305,14 @@ void PropertiesPanel::draw_hierarchy_component_editor(const scene::Node* node)
             ImGui::Text("Parent");
             ImGui::TableSetColumnIndex(1);
             ImGui::SetNextItemWidth(-FLT_MIN);
-            ImGui::Text(parent.c_str());
+            ImGui::Text("%s", parent.c_str());
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             ImGui::Text("Children");
             ImGui::TableSetColumnIndex(1);
             ImGui::SetNextItemWidth(-FLT_MIN);
-            ImGui::Text(children.c_str());
+            ImGui::Text("%s", children.c_str());
 
             ImGui::EndTable();
         }
@@ -972,24 +972,28 @@ void PropertiesPanel::draw_point_light_component_editor(const scene::Node* node)
             ImGui::Text("Color");
             ImGui::TableSetColumnIndex(1);
             ImGui::SetNextItemWidth(-FLT_MIN);
-            updated |= ImGui::ColorEdit3("##BaseColorFactorSlider", &component.color[0]);
-            if (updated) {
-                CGX_INFO("Color: {}, {}, {}", component.color.r, component.color.g, component.color.b);
-            }
+            updated |= ImGui::ColorEdit3("PointLight##BaseColorFactorSlider", &component.color[0]);
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             ImGui::Text("Intensity");
             ImGui::TableSetColumnIndex(1);
             ImGui::SetNextItemWidth(-FLT_MIN);
-            updated |= ImGui::SliderFloat("##Intensity", &component.intensity, 0.01f, 100.0f, "%.2f");
+            updated |= ImGui::SliderFloat("##PointLightIntensity", &component.intensity, 0.01f, 100.0f, "%.2f");
 
             ImGui::TableNextRow();
             ImGui::TableSetColumnIndex(0);
             ImGui::Text("Range");
             ImGui::TableSetColumnIndex(1);
             ImGui::SetNextItemWidth(-FLT_MIN);
-            updated |= ImGui::SliderFloat("##Range", &component.range, 0.1f, 100.0f, "%.0f");
+            updated |= ImGui::SliderFloat("##PointLightRange", &component.range, 0.1f, 100.0f, "%.0f", ImGuiSliderFlags_Logarithmic);
+
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::Text("Cutoff");
+            ImGui::TableSetColumnIndex(1);
+            ImGui::SetNextItemWidth(-FLT_MIN);
+            updated |= ImGui::SliderFloat("PointLight##Cutoff", &component.cutoff, 0.1f, 30.0f, "%.0f", ImGuiSliderFlags_Logarithmic);
 
             ImGui::EndTable();
         }
@@ -1034,8 +1038,8 @@ void PropertiesPanel::draw_mesh_asset_editor(asset::Mesh* mesh)
         ImGui::Text("VBO ID: %u", mesh->m_vbo);
         ImGui::Text("EBO ID: %u", mesh->m_ebo);
 
-        ImGui::Text("Vertex Count: %zu", mesh->m_vertices.size());
-        ImGui::Text("Index Count: %zu", mesh->m_indices.size());
+        ImGui::Text("Vertex Count: %zu", mesh->get_vertex_count());
+        ImGui::Text("Index Count: %zu", mesh->get_index_count());
 
         draw_asset_selector(asset::AssetType::Material, mesh->m_material, "Material");
         ImGui::PopFont();
@@ -1184,7 +1188,7 @@ void PropertiesPanel::draw_material_asset_editor(asset::Material* material)
                 ImGui::TableSetColumnIndex(1);
                 if (pbr_material->m_base_color_map) {
                     pbr_material->m_base_color_map->bind(0);
-                    ImGui::Image((ImTextureID) pbr_material->m_base_color_map->get_texture_id(), ImVec2(64, 64));
+                    ImGui::Image(reinterpret_cast<ImTextureID>(pbr_material->m_base_color_map->get_texture_id()), ImVec2(64, 64));
                 }
 
                 ImGui::TableNextRow();
@@ -1198,7 +1202,7 @@ void PropertiesPanel::draw_material_asset_editor(asset::Material* material)
                 if (pbr_material->m_metallic_roughness_map) {
                     pbr_material->m_metallic_roughness_map->bind(0);
                     ImGui::Image(
-                        (ImTextureID) pbr_material->m_metallic_roughness_map->get_texture_id(),
+                        reinterpret_cast<ImTextureID>(pbr_material->m_metallic_roughness_map->get_texture_id()),
                         ImVec2(64, 64));
                 }
 

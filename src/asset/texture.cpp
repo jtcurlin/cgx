@@ -14,7 +14,8 @@ Texture::Texture(
     const uint32_t num_channels,
     const Format   format,
     const DataType   data_type,
-    void* pixels)
+    void* pixels,
+    bool stb_owned_data)
     : Asset(tag, get_path_prefix() + tag, std::move(source_path))
     , m_width(width)
     , m_height(height)
@@ -22,40 +23,18 @@ Texture::Texture(
     , m_format(format)
     , m_data_type(data_type)
     , m_pixels(pixels)
+    , m_stb_owned_data(stb_owned_data)
 {
     setup();
 }
-
-/*
-Texture::Texture(
-    std::string    tag,
-    std::string    source_path,
-    const uint32_t width,
-    const uint32_t height,
-    const uint32_t num_channels,
-    const Format   format,
-    const DataType   data_type,
-    unsigned char* pixels)
-    : Asset(tag, get_path_prefix() + tag, std::move(source_path))
-    , m_width(width)
-    , m_height(height)
-    , m_num_channels(num_channels)
-    , m_format(format)
-    , m_data_type(data_type)
-    , m_pixels(reinterpret_cast<unsigned char*)
-{
-    setup();
-}
-*/
 
 Texture::~Texture()
 {
-    if (m_internal_path == "cgx://item/asset/texture/colormap") {
-        CGX_INFO("this one");
-    }
     glDeleteTextures(1, &m_texture_id);
     CGX_CHECK_GL_ERROR;
-    stbi_image_free(m_pixels);
+    if (m_stb_owned_data) {
+        stbi_image_free(m_pixels);
+    }
 }
 
 void Texture::setup()
@@ -217,16 +196,6 @@ void Texture::set_wrap_t(WrapMode wrap)
     CGX_CHECK_GL_ERROR;
 }
 
-/*
-Texture::Format get_internal_format(Texture::Format format)
-{
-    switch(format) {
-        case Texture::Format::Red: return GL_R16F;
-    }
-}
-*/
-
-
 std::string Texture::get_path_prefix() const
 {
     return Asset::get_path_prefix() + "/" + AssetType::get_lower_typename(AssetType::Texture) + "/";
@@ -236,5 +205,4 @@ AssetType::Type Texture::get_asset_type() const
 {
     return AssetType::Texture;
 }
-
 }

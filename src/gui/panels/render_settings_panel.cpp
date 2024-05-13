@@ -21,6 +21,7 @@ void RenderSettingsPanel::render()
 {
     auto& render_settings = m_context->get_render_system()->get_render_settings();
     auto& ssao_config = m_context->get_render_system()->get_ssao_config();
+    auto& collider_config = m_context->get_render_system()->get_collider_config();
 
     if (ImGui::BeginTable("RenderSettingsTable", 2, ImGuiTableFlags_Borders | ImGuiTableFlags_Resizable)) {
         ImGui::TableSetupColumn("Settings");
@@ -32,11 +33,10 @@ void RenderSettingsPanel::render()
             // ImGui::TableNextRow(ImGuiTableRowFlags_None, 100);
 
             ImGui::TableNextColumn();
-            ImGui::Checkbox("Draw Colliders", &render_settings.draw_colliders);
+            ImGui::Checkbox("Draw Colliders", &collider_config.enabled);
 
             ImGui::TableNextColumn();
             ImGui::Checkbox("Enable SSAO", &ssao_config.enabled);
-
 
             ImGui::TableNextColumn();
             ImGui::SliderFloat("SSAO Power", &ssao_config.power, 0, 10, "%.3f");
@@ -49,7 +49,6 @@ void RenderSettingsPanel::render()
 
             ImGui::TableNextColumn();
             ImGui::SliderInt("SSAO Kernel Size", &ssao_config.kernel_size, 0, 64, "%d");
-
 
             ImGui::EndTable();
         }

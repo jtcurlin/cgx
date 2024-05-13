@@ -59,10 +59,8 @@ target_sources(cgx PRIVATE
         ${SOURCE_DIR}/asset/shader.cpp
         ${SOURCE_DIR}/asset/texture.cpp
         ${SOURCE_DIR}/core/systems/camera_system.cpp
-        ${SOURCE_DIR}/core/systems/collision_system.cpp
         ${SOURCE_DIR}/core/systems/control_system.cpp
         ${SOURCE_DIR}/core/systems/hierarchy_system.cpp
-        ${SOURCE_DIR}/core/systems/physics_system.cpp
         ${SOURCE_DIR}/core/systems/time_system.cpp
         ${SOURCE_DIR}/core/systems/transform_system.cpp
         ${SOURCE_DIR}/core/engine.cpp
@@ -85,6 +83,8 @@ target_sources(cgx PRIVATE
         ${SOURCE_DIR}/gui/gui_context.cpp
         ${SOURCE_DIR}/gui/imgui_manager.cpp
         ${SOURCE_DIR}/gui/imgui_panel.cpp
+        ${SOURCE_DIR}/physics/physics_system.cpp
+        ${SOURCE_DIR}/physics/collision_system.cpp
         ${SOURCE_DIR}/render/framebuffer.cpp
         ${SOURCE_DIR}/render/render_system.cpp
         ${SOURCE_DIR}/scene/node.cpp

@@ -60,7 +60,8 @@ AssetID AssetImporterImage::import(const std::string& source_path)
         num_channels,
         format,
         Texture::DataType::UnsignedByte,
-        data);
+        data,
+        true);
 
     // this class has an inherited member variable std::weak_ptr<AssetManager>  m_asset_manager
     // at the start of import, it should get this asset manager object / make sure its been initialized / still exists

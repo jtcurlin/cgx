@@ -17,13 +17,5 @@ protected:
 
     void geometry_test() const;
 
-    // void audio_setup();
-    //void audio_test();
-
-    //ALCdevice* m_al_device{nullptr};
-    //ALCcontext* m_al_context{nullptr};
-    //ALuint m_al_buffer{0};
-    //ALuint m_al_source{0};
-
     void load_assets() const;
 };

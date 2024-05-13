@@ -23,7 +23,9 @@
 #include <iostream>
 #include <filesystem>
 #include <random>
+#include <core/components/collider.h>
 #include <utility/math.h>
+#include <utility/primitive_mesh.h>
 
 #include "core/components/point_light.h"
 
@@ -51,9 +53,11 @@ void RenderSystem::initialize()
         m_settings.light_mesh_shader_path,
         asset::ShaderType::Unknown);
 
-    m_collider_shader = std::make_unique<asset::Shader>(
+    m_collider_config.box_mesh = geometry::create_cube();
+    m_collider_config.sphere_mesh = geometry::create_sphere();
+    m_collider_config.shader = std::make_unique<asset::Shader>(
         "collider_shader",
-        m_settings.collider_shader_path,
+        m_collider_config.shader_path,
         asset::ShaderType::Unknown);
 
     // setup output framebuffer
@@ -94,7 +98,7 @@ void RenderSystem::init_ssao()
     // setup ssao framebuffer
     m_ssao_config.main_fb = std::make_shared<Framebuffer>(m_settings.render_width, m_settings.render_height);
     m_output_fb->set_clear_color(0.0f, 0.0f, 0.0f, 1.0f);
-    m_ssao_config.main_fb->add_color_attachment(asset::Texture::Format::Red, asset::Texture::DataType::Float); // ssao color buffer
+    m_ssao_config.main_fb->add_color_attachment(asset::Texture::Format::Red, asset::Texture::DataType::Float);
     m_ssao_config.main_fb->check_completeness();
 
     // setup ssaa-blur framebuffer
@@ -109,7 +113,6 @@ void RenderSystem::init_ssao()
     glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzle);
     m_ssao_config.blur_fb->get_texture(GL_COLOR_ATTACHMENT0)->bind(0);
     glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzle);
-
 
     std::uniform_real_distribution<GLfloat> random_floats(0.0, 1.0);
     std::default_random_engine              generator;
@@ -164,6 +167,11 @@ void RenderSystem::render()
     }
     lighting_pass();
     light_mesh_pass();
+
+    if (m_collider_config.enabled) {
+        CGX_TRACE("Drawing Colliders Enabled");
+        collider_pass();
+    }
 
     if (m_settings.skybox_enabled) {
         draw_skybox();
@@ -226,11 +234,11 @@ void RenderSystem::lighting_pass()
     m_output_fb->clear(true, true, true);
 
     // bind color attachment textures
-    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT0)->bind(0);   // position
-    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT1)->bind(1);   // normal
-    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT2)->bind(2);   // albedo
-    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT3)->bind(3);   // roughness
-    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT4)->bind(4);   // metallic
+    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT0)->bind(0);          // position
+    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT1)->bind(1);          // normal
+    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT2)->bind(2);          // albedo
+    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT3)->bind(3);          // roughness
+    m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT4)->bind(4);          // metallic
     m_ssao_config.blur_fb->get_texture(GL_COLOR_ATTACHMENT0)->bind(5); // ssao
 
     m_lighting_shader->use();
@@ -265,6 +273,7 @@ void RenderSystem::lighting_pass()
         m_lighting_shader->set_vec3("lights[" + std::to_string(light_index) + "].color", lc.color);
         m_lighting_shader->set_float("lights[" + std::to_string(light_index) + "].intensity", lc.intensity);
         m_lighting_shader->set_float("lights[" + std::to_string(light_index) + "].range", lc.range);
+        m_lighting_shader->set_float("lights[" + std::to_string(light_index) + "].cutoff", lc.cutoff);
 
         light_index++;
         m_curr_lights.push_back(entity);
@@ -348,6 +357,32 @@ void RenderSystem::ssao_pass()
     glEnable(GL_BLEND);
 
     m_ssao_config.blur_fb->unbind();
+}
+
+void RenderSystem::collider_pass()
+{
+    m_output_fb->bind();
+    for (auto& entity : m_entities) {
+        if (!m_ecs_manager->has_component<component::Collider>(entity)) {
+            continue;
+        }
+
+        auto& transform_c = m_ecs_manager->get_component<component::Transform>(entity);
+        auto& collider_c  = m_ecs_manager->get_component<component::Collider>(entity);
+
+        m_collider_config.shader->set_mat4("proj", m_proj_mat);
+        m_collider_config.shader->set_mat4("view", m_view_mat);
+
+        glm::mat4 scaled_mesh = glm::scale(transform_c.world_matrix, collider_c.size);
+        m_collider_config.shader->set_mat4("model", scaled_mesh);
+
+        if (collider_c.type == component::Collider::Type::AABB) {
+            m_collider_config.box_mesh->draw(m_collider_config.shader.get());
+        }
+        else if (collider_c.type == component::Collider::Type::Sphere) {
+            m_collider_config.sphere_mesh->draw(m_collider_config.shader.get());
+        }
+    }
 }
 
 void RenderSystem::render_quad()
@@ -501,6 +536,11 @@ RenderSettings& RenderSystem::get_render_settings()
 SSAOConfig& RenderSystem::get_ssao_config()
 {
     return m_ssao_config;
+}
+
+ColliderConfig& RenderSystem::get_collider_config()
+{
+    return m_collider_config;
 }
 
 ecs::Entity RenderSystem::get_camera() const

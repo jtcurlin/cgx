@@ -82,7 +82,8 @@ public:
         uint32_t    num_channels,
         Format      format,
         DataType    data_type,
-        void*       pixels);
+        void*       pixels,
+        bool        stb_owned_data = false);
     ~Texture() override;
 
     void setup();
@@ -112,18 +113,18 @@ public:
     AssetType::Type get_asset_type() const override;
 
 private:
-    uint32_t m_texture_id;
-    uint32_t m_width;
-    uint32_t m_height;
-    uint32_t m_num_channels;
+    uint32_t m_texture_id{};
+    uint32_t m_width{};
+    uint32_t m_height{};
+    uint32_t m_num_channels{};
     Format   m_format;
     DataType m_data_type;
-    void*    m_pixels;
+    void*    m_pixels{nullptr};
+    bool m_stb_owned_data{false};
 
     FilterMode m_min_filter{FilterMode::Linear};
     FilterMode m_mag_filter{FilterMode::Linear};
     WrapMode   m_wrap_s{WrapMode::Repeat};
     WrapMode   m_wrap_t{WrapMode::Repeat};
 };
-
 }

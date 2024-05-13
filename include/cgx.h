@@ -8,7 +8,7 @@
 #include "core/hierarchy.h"
 #include "core/item.h"
 #include "core/input_manager.h"
-#include "core/systems/physics_system.h"
+#include "physics/physics_system.h"
 #include "core/systems/time_system.h"
 #include "core/window_manager.h"
 

@@ -14,7 +14,7 @@ namespace cgx::ecs
 class EventHandler;
 }
 
-namespace cgx::core
+namespace cgx::physics
 {
 class PhysicsSystem final : public ecs::System
 {

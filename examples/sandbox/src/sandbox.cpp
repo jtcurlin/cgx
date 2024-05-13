@@ -15,8 +15,7 @@ void Sandbox::initialize()
     m_scene_manager->add_scene("Default Scene");
     m_scene_manager->set_active_scene("Default Scene");
 
-    // m_scene_manager->import_node(std::string(DATA_DIRECTORY) + "/assets/scenes/default_scene.glb");
-    m_scene_manager->import_node(std::string(DATA_DIRECTORY) + "/assets/scenes/physics_demo.glb");
+    m_scene_manager->import_node(std::string(DATA_DIRECTORY) + "/scenes/physics_demo.glb");
 
     const auto        root   = m_scene_manager->get_active_scene()->get_root();
     cgx::scene::Node* camera = nullptr;
@@ -75,14 +74,6 @@ void Sandbox::load_assets() const
     for (const auto& filename : model_filenames) {
         std::filesystem::path model_path = asset_dir / filename;
         m_asset_manager->import_asset(model_path.string());
-    }
-
-    // load model, lighting shaders
-    const std::vector<std::string> shader_names = {"model", "lighting", "pbr", "default"};
-    for (const auto& name : shader_names) {
-        std::filesystem::path shader_path = shader_dir / name;
-        auto shader = std::make_shared<cgx::asset::Shader>(name, shader_path.string(), cgx::asset::ShaderType::Unknown);
-        m_asset_manager->add_asset(shader);
     }
 
     std::filesystem::path grid_tex_path(

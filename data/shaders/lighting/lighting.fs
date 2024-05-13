@@ -19,6 +19,7 @@ struct PointLight
     vec3 color;
     float intensity;
     float range;
+    float cutoff;
 };
 
 uniform PointLight lights[100];
@@ -112,7 +113,11 @@ void main()
         vec3 L = normalize(lights[i].position - position);
         vec3 H = normalize(V + L);
         float distance = length(lights[i].position - position);
-        float attenuation = 1.0 / (distance * distance);
+        // float attenuation = 1.0 / (distance * distance);
+
+        float attenuation = 1.0 / (1.0 + 0.09 * distance + 0.032 * distance*distance);
+        attenuation *= clamp(1.0 - pow(distance / lights[i].range, lights[i].cutoff), 0.0, 1.0);
+
         vec3 radiance = lights[i].color * attenuation * lights[i].intensity;
 
         float NDF = distribution_ggx(N, H, roughness);

@@ -5,12 +5,12 @@
 #include "core/input_manager.h"
 
 #include "core/systems/time_system.h"
-#include "core/systems/physics_system.h"
+#include "physics/physics_system.h"
 #include "core/systems/transform_system.h"
 #include "core/systems/hierarchy_system.h"
 #include "core/systems/camera_system.h"
 #include "core/systems/control_system.h"
-#include "core/systems/collision_system.h"
+#include "physics/collision_system.h"
 
 #include "ecs/ecs_manager.h"
 #include "core/event_handler.h"
@@ -102,19 +102,19 @@ void Engine::initialize()
         m_ecs_manager->set_system_signature<ControlSystem>(signature);
     }
 
-    m_ecs_manager->register_system<PhysicsSystem>(); {
+    m_ecs_manager->register_system<physics::PhysicsSystem>(); {
         ecs::Signature signature;
         signature.set(m_ecs_manager->get_component_type<component::RigidBody>());
         signature.set(m_ecs_manager->get_component_type<component::Transform>());
-        m_ecs_manager->set_system_signature<PhysicsSystem>(signature);
+        m_ecs_manager->set_system_signature<physics::PhysicsSystem>(signature);
     }
 
-    m_ecs_manager->register_system<CollisionSystem>(); {
+    m_ecs_manager->register_system<physics::CollisionSystem>(); {
         ecs::Signature signature;
         // signature.set(m_ecs_manager->get_component_type<component::RigidBody>());
         signature.set(m_ecs_manager->get_component_type<component::Transform>());
         signature.set(m_ecs_manager->get_component_type<component::Collider>());
-        m_ecs_manager->set_system_signature<CollisionSystem>(signature);
+        m_ecs_manager->set_system_signature<physics::CollisionSystem>(signature);
     }
 
     m_render_system = m_ecs_manager->register_system<render::RenderSystem>(); {
