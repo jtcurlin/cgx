@@ -47,10 +47,12 @@ class Cubemap final : public Asset
 
 public:
     Cubemap(std::string tag, std::string path, const std::vector<std::string>& face_texture_paths);
+    Cubemap(std::string tag, std::string hdr_path);
     ~Cubemap() override;
 
     void draw() const;
 
+    [[nodiscard]] uint32_t get_texture_id() const;
     [[nodiscard]] uint32_t get_width() const;
     [[nodiscard]] uint32_t get_height() const;
     [[nodiscard]] GLenum   get_format() const;

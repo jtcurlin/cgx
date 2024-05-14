@@ -11,7 +11,9 @@ uniform sampler2D g_normal;
 uniform sampler2D g_albedo;
 uniform sampler2D g_metallic;
 uniform sampler2D g_roughness;
+
 uniform sampler2D ssao;
+uniform samplerCube irradiance_map;
 
 struct PointLight
 {
@@ -137,7 +139,13 @@ void main()
         Lo += (kD * albedo / PI + specular) * radiance * NdotL;
     }
 
-    vec3 ambient = vec3(0.03) * albedo;
+    vec3 kS = fresnel_schlick(max(dot(N, V), 0.0), F0);
+    vec3 kD = 1.0 - kS;
+    kD *= 1.0 - metallic;
+    vec3 irradiance = texture(irradiance_map, N).rgb;
+    vec3 diffuse      = irradiance * albedo;
+    vec3 ambient = (kD * diffuse); //  * ao;
+
 
     ambient *= ssao_enabled ? texture(ssao, uv).r : 1.0;
 

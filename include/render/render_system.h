@@ -77,6 +77,7 @@ struct ColliderConfig
     std::shared_ptr<asset::Mesh> sphere_mesh;
 
     const std::string              shader_path{std::string(DATA_DIRECTORY) + "/shaders/collider"};
+    const glm::vec4                color{0.0f, 0.0f, 1.0f, 0.5f};
     std::unique_ptr<asset::Shader> shader;
 };
 
@@ -134,11 +135,13 @@ private:
     glm::mat4 m_view_mat{glm::mat4(1.0f)};
     glm::mat4 m_proj_mat{glm::mat4(1.0f)};
 
+    std::shared_ptr<asset::Cubemap> m_env_map{};
     std::shared_ptr<asset::Cubemap> m_skybox_cubemap{};
-    std::unique_ptr<asset::Shader>  m_geometry_shader{};
-    std::unique_ptr<asset::Shader>  m_lighting_shader{};
-    std::unique_ptr<asset::Shader>  m_light_mesh_shader{};
-    std::unique_ptr<asset::Shader>  m_collider_shader{};
+
+    std::unique_ptr<asset::Shader> m_geometry_shader{};
+    std::unique_ptr<asset::Shader> m_lighting_shader{};
+    std::unique_ptr<asset::Shader> m_light_mesh_shader{};
+    std::unique_ptr<asset::Shader> m_collider_shader{};
 
     RenderSettings m_settings{};
     SSAOConfig     m_ssao_config{};

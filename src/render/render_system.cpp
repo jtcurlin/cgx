@@ -53,12 +53,14 @@ void RenderSystem::initialize()
         m_settings.light_mesh_shader_path,
         asset::ShaderType::Unknown);
 
-    m_collider_config.box_mesh = geometry::create_cube();
+    m_collider_config.box_mesh    = geometry::create_cube();
     m_collider_config.sphere_mesh = geometry::create_sphere();
-    m_collider_config.shader = std::make_unique<asset::Shader>(
+    m_collider_config.shader      = std::make_unique<asset::Shader>(
         "collider_shader",
         m_collider_config.shader_path,
         asset::ShaderType::Unknown);
+
+    m_env_map = std::make_shared<asset::Cubemap>("env_map", std::string(DATA_DIRECTORY) + "/assets/misc/metro_noord_8k.hdr");
 
     // setup output framebuffer
     m_output_fb = std::make_shared<Framebuffer>(m_settings.render_width, m_settings.render_height);
@@ -241,6 +243,10 @@ void RenderSystem::lighting_pass()
     m_gbuffer_fb->get_texture(GL_COLOR_ATTACHMENT4)->bind(4);          // metallic
     m_ssao_config.blur_fb->get_texture(GL_COLOR_ATTACHMENT0)->bind(5); // ssao
 
+    auto env_map_texture = m_env_map->get_texture_id();
+    glActiveTexture(GL_TEXTURE6); CGX_CHECK_GL_ERROR;
+    glBindTexture(GL_TEXTURE_CUBE_MAP, env_map_texture); CGX_CHECK_GL_ERROR;
+
     m_lighting_shader->use();
 
     m_lighting_shader->set_int("g_position", 0);
@@ -256,6 +262,8 @@ void RenderSystem::lighting_pass()
     else {
         m_lighting_shader->set_bool("ssao_enabled", false);
     }
+
+    m_lighting_shader->set_int("irradiance_map", 6);
 
     int light_index = 0;
     m_curr_lights.clear();
@@ -361,6 +369,11 @@ void RenderSystem::ssao_pass()
 
 void RenderSystem::collider_pass()
 {
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+    //glEnable(GL_BLEND);
+    //glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     m_output_fb->bind();
     for (auto& entity : m_entities) {
         if (!m_ecs_manager->has_component<component::Collider>(entity)) {
@@ -370,11 +383,13 @@ void RenderSystem::collider_pass()
         auto& transform_c = m_ecs_manager->get_component<component::Transform>(entity);
         auto& collider_c  = m_ecs_manager->get_component<component::Collider>(entity);
 
+        glm::mat4 scaled_mesh = glm::scale(transform_c.world_matrix, collider_c.size);
+
+        m_collider_config.shader->use();
         m_collider_config.shader->set_mat4("proj", m_proj_mat);
         m_collider_config.shader->set_mat4("view", m_view_mat);
-
-        glm::mat4 scaled_mesh = glm::scale(transform_c.world_matrix, collider_c.size);
         m_collider_config.shader->set_mat4("model", scaled_mesh);
+        m_collider_config.shader->set_vec4("color", m_collider_config.color);
 
         if (collider_c.type == component::Collider::Type::AABB) {
             m_collider_config.box_mesh->draw(m_collider_config.shader.get());
@@ -383,6 +398,9 @@ void RenderSystem::collider_pass()
             m_collider_config.sphere_mesh->draw(m_collider_config.shader.get());
         }
     }
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+    //glDisable(GL_BLEND);
 }
 
 void RenderSystem::render_quad()
